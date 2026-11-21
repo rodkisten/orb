@@ -33,14 +33,11 @@ api() {
     "https://api.cloudflare.com/client/v4/$endpoint"
 }
 
-# Never create or publish a Worker as a side effect of secret configuration.
-if ! api GET "accounts/$ACCOUNT_ID/workers/scripts/$WORKER" >/dev/null 2>&1; then
-  cat >&2 <<'MESSAGE'
-The orb-api Worker does not exist or is inaccessible.
-Stop: verify the build, apply D1 migrations, and deploy only to a protected
-hostname before uploading secrets. No Worker was created.
-MESSAGE
-  exit 2
+# Bootstrap can run before the Worker exists. Secrets are generated locally
+# and uploaded only after a verified, separately approved deployment.
+WORKER_EXISTS=false
+if api GET "accounts/$ACCOUNT_ID/workers/scripts/$WORKER" >/dev/null 2>&1; then
+  WORKER_EXISTS=true
 fi
 
 mkdir -p "$SECRETS_DIR"
@@ -66,25 +63,48 @@ TEAM_DOMAIN="$(jq -er '.result.auth_domain' <<<"$TEAM_JSON")"
   exit 1
 }
 
+# Create a dedicated, fail-closed Access application on first run.
+# Only the explicitly supplied operator email is allowed.
 APPS_JSON="$(api GET "accounts/$ACCOUNT_ID/access/apps")"
-echo
-echo 'Cloudflare Access applications (orb-specific application required):'
-jq -r '.result[] | [.name, (.domain // ""), (.aud // "")] | @tsv' <<<"$APPS_JSON"
-echo
-read -rp 'orb Access application ID (create a dedicated private app first): ' ACCESS_APP_ID
-[[ "$ACCESS_APP_ID" =~ ^[a-fA-F0-9-]{36}$ ]] || { echo 'Invalid application ID' >&2; exit 1; }
-
-ACCESS_APP="$(api GET "accounts/$ACCOUNT_ID/access/apps/$ACCESS_APP_ID")"
-AUD="$(jq -er '.result.aud' <<<"$ACCESS_APP")"
-APP_NAME="$(jq -er '.result.name' <<<"$ACCESS_APP")"
-APP_DOMAIN="$(jq -er '.result.domain' <<<"$ACCESS_APP")"
-if [[ ! "$APP_NAME" =~ [Oo][Rr][Bb] ]]; then
-  echo 'Selected application is not orb-specific. Refusing to reuse another app.' >&2
-  exit 1
+APP_ID="$(jq -r '.result[] | select(.name == "orb · API") | .id' <<<"$APPS_JSON" | head -n 1)"
+if [[ -z "$APP_ID" ]]; then
+  read -rp 'Protected API hostname [api.orb.migos.club]: ' APP_DOMAIN
+  APP_DOMAIN="${APP_DOMAIN:-api.orb.migos.club}"
+  [[ "$APP_DOMAIN" =~ ^[a-zA-Z0-9.-]+$ ]] || { echo 'Invalid hostname' >&2; exit 1; }
+  read -rp 'Authorized operator email: ' OPERATOR_EMAIL
+  [[ "$OPERATOR_EMAIL" =~ ^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$ ]] || {
+    echo 'Invalid operator email' >&2; exit 1;
+  }
+  echo "Creating a private Access app for $APP_DOMAIN with email-only allow policy."
+  APP_PAYLOAD="$(jq -nc --arg domain "$APP_DOMAIN" --arg email "$OPERATOR_EMAIL" '{
+    name:"orb · API",type:"self_hosted",domain:$domain,
+    session_duration:"24h",app_launcher_visible:false,
+    policies:[{name:"orb operators",decision:"allow",include:[{email:{email:$email}}]}]
+  }')"
+  APP_JSON="$(api POST "accounts/$ACCOUNT_ID/access/apps" --data "$APP_PAYLOAD")"
+  APP_ID="$(jq -er '.result.id' <<<"$APP_JSON")"
 fi
-printf 'Selected Access application: %s (%s)\n' "$APP_NAME" "$APP_DOMAIN"
-read -rp 'Confirm this application is restricted to authorized operators? [yes/N] ' CONFIRM
-[[ "$CONFIRM" == yes ]] || { echo 'Cancelled.'; exit 1; }
+ACCESS_APP="$(api GET "accounts/$ACCOUNT_ID/access/apps/$APP_ID")"
+AUD="$(jq -er '.result.aud' <<<"$ACCESS_APP")"
+APP_DOMAIN="$(jq -er '.result.domain' <<<"$ACCESS_APP")"
+printf '✔ Access application: %s (%s)\\n' "$APP_ID" "$APP_DOMAIN"
+
+if [[ "$WORKER_EXISTS" != true ]]; then
+  {
+    printf 'CF_ACCESS_TEAM_DOMAIN=%q\\n' "$TEAM_DOMAIN"
+    printf 'CF_ACCESS_AUD=%q\\n' "$AUD"
+    printf 'CF_ACCESS_APP_ID=%q\\n' "$APP_ID"
+    printf 'CF_ACCESS_APP_DOMAIN=%q\\n' "$APP_DOMAIN"
+  } >> "$SECRETS_FILE"
+  cat <<MESSAGE
+✔ Access application created or reused.
+✔ Secrets preserved in $SECRETS_FILE (mode 600).
+ℹ orb-api Worker does not exist yet, so no secrets were uploaded.
+Next: verify the build, apply D1 migration, deploy behind Access,
+then rerun this script to upload secrets. Do not expose workers.dev publicly.
+MESSAGE
+  exit 0
+fi
 
 upload() {
   local name="$1" value="$2"
