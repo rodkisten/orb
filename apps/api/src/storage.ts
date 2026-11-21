@@ -36,8 +36,40 @@ export async function markQueued(db: D1Database, id: string): Promise<void> {
   ).bind(id).run()
 }
 
-export async function markProcessed(db: D1Database, id: string): Promise<void> {
+export async function markReceived(db: D1Database, id: string): Promise<void> {
+  // 'processed' currently means queue delivery was durably acknowledged.
+  // Connector-specific business processing is not yet implemented.
   await db.prepare(
     "UPDATE events SET status = 'processed', attempts = attempts + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status != 'processed'"
   ).bind(id).run()
+}
+
+export async function recoverOutbox(
+  db: D1Database,
+  queue: Queue<{ eventId: string }>,
+  limit = 50,
+): Promise<{ scanned: number; enqueued: number; failed: number }> {
+  // Re-dispatch pending records and stale queued records. This is at-least-once
+  // delivery: downstream handlers MUST be idempotent.
+  const rows = await db.prepare(
+    `SELECT id FROM events
+     WHERE status = 'pending'
+        OR (status = 'queued' AND updated_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-10 minutes'))
+     ORDER BY created_at ASC LIMIT ?`
+  ).bind(limit).all<{ id: string }>()
+
+  let enqueued = 0
+  let failed = 0
+  for (const row of rows.results) {
+    try {
+      await queue.send({ eventId: row.id })
+      await db.prepare(
+        "UPDATE events SET status = 'queued', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status != 'processed'"
+      ).bind(row.id).run()
+      enqueued++
+    } catch {
+      failed++
+    }
+  }
+  return { scanned: rows.results.length, enqueued, failed }
 }
