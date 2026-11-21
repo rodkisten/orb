@@ -125,3 +125,12 @@ Updated: 2026-11-21
 - [ ] Provision `GITHUB_WEBHOOK_SECRET` as a Worker secret and configure GitHub App webhook delivery; do not deploy publicly before this and session authorization are verified.
 - [ ] Add replay-window policy, repository allowlisting, minimal payload retention/redaction, rate limiting, and event-specific connector handlers.
 - [ ] Replace global bearer authentication with per-integration credentials and server-managed browser sessions.
+
+## Access authentication milestone (2026-11-21)
+
+- [x] Commit RS256 Cloudflare Access JWT verification with JWKS, issuer, audience, expiry, not-before, and subject checks.
+- [x] Gate event list and event detail reads behind verified Access identity; missing configuration fails closed.
+- [x] Document Access environment configuration and remaining deployment security gates in `docs/AUTH.md`.
+- [ ] Verify TypeScript compilation and real Access-protected requests. No production deployment yet.
+- [ ] Enforce project-level authorization before inviting additional users or exposing event data.
+- [ ] Replace bootstrap bearer token with scoped per-integration credentials and add rate limiting.
