@@ -1,0 +1,41 @@
+name: 🪐 Web verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/web-verify.yml'
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/web-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orb-web-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 📦 Install workspace
+        run: pnpm install --no-frozen-lockfile
+      - name: 🧭 Typecheck and bundle web
+        run: pnpm --filter @orb/web build
