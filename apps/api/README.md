@@ -36,8 +36,8 @@ Only deploy after provisioning and validating the bindings.
 ## Important limitations
 
 - The Queue consumer currently acknowledges **durable receipt only**; no connector-specific processing is implemented. Its `processed` status does not imply any external side effects.
-- D1 insert and Queue send are not atomic. Failed sends leave `pending` records, but **automatic recovery sweep is not implemented yet**.
-- Concurrent retries of a pending event may enqueue duplicates. Consumers must remain idempotent.
+- D1 insert and Queue send are not atomic. A scheduled sweep runs every five minutes and re-enqueues pending or stale queued records. This provides at-least-once delivery, not exactly-once processing.
+- Concurrent retries of pending or stale events may enqueue duplicates. Consumers must remain idempotent. The initial consumer only records durable receipt, not connector-specific completion.
 - A shared bearer token is only a bootstrap credential. Per-connector credentials, GitHub HMAC verification, authorization scopes, rate limiting, and retention are future work.
 - Never put tokens in URL query parameters or log raw secrets.
 - This milestone has not been runtime-verified against Cloudflare. Validate the build, migration, queue and OpenAPI before production deployment.
