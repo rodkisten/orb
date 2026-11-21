@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createRouter, RouterProvider, createRootRoute, createRoute, createHashHistory, Outlet, Link } from '@tanstack/react-router'
+import { createRouter, RouterProvider, createRootRoute, createRoute, Outlet, Link } from '@tanstack/react-router'
 import { z } from 'zod'
 import { EventExplorer } from './pages/events'
 import './styles.css'
