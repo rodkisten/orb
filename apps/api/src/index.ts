@@ -2,11 +2,14 @@ import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
+import { accessIdentity } from './access-auth'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
   ORB_INGEST_TOKEN?: string
   GITHUB_WEBHOOK_SECRET?: string
+  CF_ACCESS_TEAM_DOMAIN?: string
+  CF_ACCESS_AUD?: string
   ORB_DB: D1Database
   ORB_EVENTS: Queue<{ eventId: string }>
 }
@@ -60,7 +63,7 @@ function createApp(env: Bindings) {
       detail: { tags: ['Events'], summary: 'Ingest an event idempotently' },
     })
     .get('/events', async ({ query, request, set }) => {
-      if (!authorized(request.headers.get('authorization'), env.ORB_INGEST_TOKEN)) {
+      if (!(await accessIdentity(request, env))) {
         set.status = 401
         return { error: 'Unauthorized' }
       }
@@ -105,7 +108,7 @@ function createApp(env: Bindings) {
       detail: { tags: ['Events'], summary: 'List events with typed filters and pagination' },
     })
     .get('/events/:id', async ({ params, request, set }) => {
-      if (!authorized(request.headers.get('authorization'), env.ORB_INGEST_TOKEN)) {
+      if (!(await accessIdentity(request, env))) {
         set.status = 401
         return { error: 'Unauthorized' }
       }
