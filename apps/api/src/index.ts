@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
-import { markProcessed, markQueued, persistEvent } from './storage'
+import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
   ORB_INGEST_TOKEN: string
@@ -82,12 +82,16 @@ export default {
   fetch(request: Request, env: Bindings) {
     return createApp(env).fetch(request)
   },
+  async scheduled(_controller: ScheduledController, env: Bindings) {
+    const result = await recoverOutbox(env.ORB_DB, env.ORB_EVENTS)
+    console.log(JSON.stringify({ component: 'orb.outbox', ...result }))
+  },
   async queue(batch: MessageBatch<{ eventId: string }>, env: Bindings) {
     for (const message of batch.messages) {
       try {
         // Processing handlers will be registered by connector modules.
         // For now only mark processed after successful durable receipt.
-        await markProcessed(env.ORB_DB, message.body.eventId)
+        await markReceived(env.ORB_DB, message.body.eventId)
         message.ack()
       } catch {
         message.retry()
