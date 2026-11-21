@@ -1,0 +1,44 @@
+name: 🪐 API verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/api-verify.yml'
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/api-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orb-api-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: 📦 Install workspace
+        run: pnpm install --no-frozen-lockfile
+      - name: 🔎 Typecheck API
+        run: pnpm --filter @orb/api typecheck
+      - name: 🛠️ Dry-run Worker build
+        run: pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
