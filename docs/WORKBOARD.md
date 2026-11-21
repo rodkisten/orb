@@ -29,7 +29,8 @@ Updated: 2026-11-21
 ## Automations
 - [ ] GitHub App webhook validation, deduplication, and TODO-to-Issue engine
 - [x] Commit D1 event ledger and Cloudflare Queue producer/consumer skeleton (provisioning and runtime verification pending)
-- [ ] Implement Queue recovery sweep, connector handlers, dead-letter inspection and durable workflows
+- [x] Commit scheduled outbox recovery sweep (runtime validation pending)
+- [ ] Implement connector handlers, dead-letter inspection and durable workflows
 - [ ] Event Explorer, execution inspector, and future log viewer
 - [ ] Manage and Relay integrations
 
@@ -63,3 +64,13 @@ Updated: 2026-11-21
 - [ ] Implement outbox recovery sweep and atomic processing state transitions.
 - [ ] Implement real connector handlers before treating `processed` as business completion.
 - [ ] Add webhook-specific HMAC verification, replay-window validation and per-connector permissions.
+
+## Reliability follow-up (2026-11-21)
+
+- [x] Add five-minute cron recovery for pending and stale queued events.
+- [x] Add API CI workflow for TypeScript and Wrangler dry-run build (execution pending).
+- [ ] Verify CI result and fix actual compilation/runtime errors.
+- [ ] Generate and commit pnpm lockfile after successful install.
+- [ ] Add queue delivery state distinct from connector processing completion.
+- [ ] Add atomic lease/claim to prevent competing outbox sweep dispatches.
+- [ ] Add authenticated connector processing, DLQ replay tooling and observability.
