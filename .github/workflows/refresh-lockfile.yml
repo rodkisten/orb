@@ -1,0 +1,60 @@
+name: 📦 Refresh workspace lockfile
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: 'Run workspace typechecks after generating lockfile'
+        type: boolean
+        default: true
+        required: true
+      commit_changes:
+        description: 'Commit and push the generated lockfile to the selected branch'
+        type: boolean
+        default: true
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: orb-lockfile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.21.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 📦 Generate real workspace lockfile
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: 🔎 Verify workspace
+        if: ${{ inputs.run_checks }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -r --if-present typecheck
+      - name: 📝 Commit generated lockfile
+        if: ${{ inputs.commit_changes }}
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml && git ls-files --error-unmatch pnpm-lock.yaml >/dev/null 2>&1; then
+            echo "Lockfile unchanged"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            echo "No lockfile changes"
+            exit 0
+          fi
+          git commit -m 'chore: generate pnpm 12 workspace lockfile [deploy]'
+          git push
