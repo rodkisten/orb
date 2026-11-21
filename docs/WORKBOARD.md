@@ -115,3 +115,13 @@ Updated: 2026-11-21
 - [x] Load selected event by ID, independently of current URL pagination.
 - [ ] Run `refresh-lockfile.yml` with `run_checks=true` and `commit_changes=true`; confirm lockfile commit and fix any failures.
 - [ ] Complete authenticated frontend access before deploying production UI.
+
+## GitHub webhook security (2026-11-21)
+
+- [x] Commit a dedicated `POST /v1/webhooks/github` handler that verifies GitHub's SHA-256 HMAC against the exact raw request body before JSON parsing or database writes.
+- [x] Require `GITHUB_WEBHOOK_SECRET`, validate delivery/event headers, reject oversized requests, and deduplicate by GitHub delivery ID through the existing D1 ledger.
+- [x] Persist before queue dispatch; retain pending records for scheduled recovery on queue failures.
+- [ ] Install dependencies and verify API TypeScript compilation, Wrangler dry-run, and real GitHub webhook deliveries.
+- [ ] Provision `GITHUB_WEBHOOK_SECRET` as a Worker secret and configure GitHub App webhook delivery; do not deploy publicly before this and session authorization are verified.
+- [ ] Add replay-window policy, repository allowlisting, minimal payload retention/redaction, rate limiting, and event-specific connector handlers.
+- [ ] Replace global bearer authentication with per-integration credentials and server-managed browser sessions.
