@@ -106,3 +106,12 @@ Updated: 2026-11-21
 - [ ] Apply D1 migration remotely, set `ORB_INGEST_TOKEN`, validate Worker build and deploy.
 - [ ] Confirm `GET /v1/health` on a deployed endpoint and verify queue consumption.
 - [ ] Add production-safe auth/session model before exposing the Event Explorer.
+
+## Dependency and CI hardening (2026-11-21)
+
+- [x] Pin pnpm 12.22.0 consistently across root manifest and GitHub Actions.
+- [x] Remove unconditional dependency build-script approval from lockfile workflow.
+- [x] Extend lockfile verification to frontend build and Worker dry-run.
+- [x] Load selected event by ID, independently of current URL pagination.
+- [ ] Run `refresh-lockfile.yml` with `run_checks=true` and `commit_changes=true`; confirm lockfile commit and fix any failures.
+- [ ] Complete authenticated frontend access before deploying production UI.
