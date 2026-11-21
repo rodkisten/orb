@@ -4,5 +4,17 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
-  "workers_dev": true
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "ORB_DB",
+      "database_name": "orb-events",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "queues": {
+    "producers": [{ "binding": "ORB_EVENTS", "queue": "orb-events" }],
+    "consumers": [{ "queue": "orb-events", "max_batch_size": 10, "max_retries": 5, "dead_letter_queue": "orb-events-dlq" }]
+  }
 }
