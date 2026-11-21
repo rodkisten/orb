@@ -97,3 +97,12 @@ Updated: 2026-11-21
 - [ ] Add secure server-managed browser session for protected API reads.
 - [ ] Add backend project scoping; current project URL param does not filter API results.
 - [ ] Generate and integrate Hey API client from actual OpenAPI output.
+
+## Cloudflare provisioning (2026-11-21)
+
+- [x] Confirm connected Cloudflare account and inspect existing Workers, D1 databases and Queues.
+- [x] Create D1 `orb-events`, Queue `orb-events` and DLQ `orb-events-dlq`.
+- [x] Update Wrangler D1 binding to actual provisioned database ID.
+- [ ] Apply D1 migration remotely, set `ORB_INGEST_TOKEN`, validate Worker build and deploy.
+- [ ] Confirm `GET /v1/health` on a deployed endpoint and verify queue consumption.
+- [ ] Add production-safe auth/session model before exposing the Event Explorer.
