@@ -1,7 +1,7 @@
 {
   "name": "orb",
   "private": true,
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@12.21.0",
   "scripts": {
     "dev:api": "pnpm --filter @orb/api dev",
     "build:api": "pnpm --filter @orb/api build",
