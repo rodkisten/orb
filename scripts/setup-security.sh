@@ -72,10 +72,12 @@ if [[ -z "$APP_ID" ]]; then
   APP_DOMAIN="${APP_DOMAIN:-api.orb.migos.club}"
   [[ "$APP_DOMAIN" =~ ^[a-zA-Z0-9.-]+$ ]] || { echo 'Invalid hostname' >&2; exit 1; }
   read -rp 'Authorized operator email: ' OPERATOR_EMAIL
-  [[ "$OPERATOR_EMAIL" =~ ^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$ ]] || {
-    echo 'Invalid operator email' >&2; exit 1;
-  }
-  echo "Creating a private Access app for $APP_DOMAIN with email-only allow policy."
+  OPERATOR_EMAIL="${OPERATOR_EMAIL//$'\\r'/}"
+  OPERATOR_EMAIL="${OPERATOR_EMAIL##+([[:space:]])}"
+  if [[ "$OPERATOR_EMAIL" != *@*.* || "$OPERATOR_EMAIL" == *[[:space:]]* ]]; then
+    echo 'Invalid operator email' >&2
+    exit 1
+  fi
   APP_PAYLOAD="$(jq -nc --arg domain "$APP_DOMAIN" --arg email "$OPERATOR_EMAIL" '{
     name:"orb · API",type:"self_hosted",domain:$domain,
     session_duration:"24h",app_launcher_visible:false,
