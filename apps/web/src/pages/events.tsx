@@ -26,6 +26,12 @@ async function fetchEvents(filters: { source: string; type: string; status: stri
   return response.json() as Promise<EventList>
 }
 
+async function fetchEvent(id: string): Promise<EventItem> {
+  const response = await fetch('/v1/events/' + encodeURIComponent(id), { credentials: 'include' })
+  if (!response.ok) throw new Error(response.status === 401 ? 'Authentication required.' : 'Unable to load selected event (' + response.status + ')')
+  return response.json() as Promise<EventItem>
+}
+
 export function EventExplorer() {
   const search = useSearch({ from: '/events' })
   const navigate = useNavigate({ from: '/events' })
@@ -33,7 +39,8 @@ export function EventExplorer() {
   const filters = { source: search.source, type: search.type, status: search.status, sort: search.sort, limit: search.limit, offset }
   const query = useQuery({ queryKey: ['events', filters], queryFn: () => fetchEvents(filters) })
   const patch = (updates: Partial<typeof search>) => navigate({ search: previous => ({ ...previous, ...updates }), replace: false })
-  const selected = query.data?.items.find(item => item.id === search.selected)
+  const detailQuery = useQuery({ queryKey: ['event', search.selected], queryFn: () => fetchEvent(search.selected), enabled: search.panel === 'open' && Boolean(search.selected) })
+  const selected = detailQuery.data ?? query.data?.items.find(item => item.id === search.selected)
   return <section className="explorer">
     <div className="heading"><div><p className="eyebrow">EVENT STREAM</p><h1>Event Explorer</h1><p>Shareable filters and navigation. Every change lives in the URL.</p></div><Link to="/">Overview</Link></div>
     <div className="toolbar">
@@ -54,6 +61,6 @@ export function EventExplorer() {
         <div className="pagination"><button disabled={search.page <= 1} onClick={() => void patch({ page: search.page - 1 })}>Previous</button><button disabled={offset + search.limit >= query.data.total} onClick={() => void patch({ page: search.page + 1 })}>Next</button></div>
       </>}
     </div>
-    {search.panel === 'open' && <aside className="detail"><div className="detail-heading"><h2>Event details</h2><button aria-label="Close details" onClick={() => void patch({ panel: 'closed', selected: '' })}>Close</button></div>{selected ? <pre>{JSON.stringify(selected, null, 2)}</pre> : <p>Select an event from the current page.</p>}</aside>}
+    {search.panel === 'open' && <aside className="detail"><div className="detail-heading"><h2>Event details</h2><button aria-label="Close details" onClick={() => void patch({ panel: 'closed', selected: '' })}>Close</button></div>{detailQuery.isError ? <p role="alert" className="error">{detailQuery.error.message}</p> : selected ? <pre>{JSON.stringify(selected, null, 2)}</pre> : detailQuery.isPending && search.selected ? <p>Loading event…</p> : <p>Select an event.</p>}</aside>}
   </section>
 }
