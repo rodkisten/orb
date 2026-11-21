@@ -25,6 +25,9 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # Aprova automaticamente todos os build scripts sem pedir confirmação
+      npm_config_dangerously_allow_all_builds: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
