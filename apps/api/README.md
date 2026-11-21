@@ -9,13 +9,10 @@ pnpm install
 pnpm --filter @orb/api typecheck
 pnpm --filter @orb/api dev
 cd apps/api
-pnpm exec wrangler d1 create orb-events
-pnpm exec wrangler queues create orb-events
-pnpm exec wrangler queues create orb-events-dlq
 pnpm exec wrangler secret put ORB_INGEST_TOKEN
 ```
 
-Replace `REPLACE_WITH_D1_DATABASE_ID` in `wrangler.jsonc` with the created database ID. Then run migrations:
+The D1 database and both queues were provisioned on 2026-11-21, and the real D1 binding ID is committed to `wrangler.jsonc`. Configure the secret and apply migrations:
 
 ```bash
 pnpm exec wrangler d1 migrations apply orb-events --local
