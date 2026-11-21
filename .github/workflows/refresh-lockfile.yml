@@ -25,16 +25,13 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      # Aprova automaticamente todos os build scripts sem pedir confirmação
-      npm_config_dangerously_allow_all_builds: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
       - uses: pnpm/action-setup@v4
         with:
-          version: 12.21.0
+          version: 12.22.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -45,6 +42,8 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm -r --if-present typecheck
+          pnpm --filter @orb/web build
+          pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
       - name: 📝 Commit generated lockfile
         if: ${{ inputs.commit_changes }}
         run: |
