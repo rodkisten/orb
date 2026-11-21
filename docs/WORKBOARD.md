@@ -28,7 +28,8 @@ Updated: 2026-11-21
 
 ## Automations
 - [ ] GitHub App webhook validation, deduplication, and TODO-to-Issue engine
-- [ ] Cloudflare Queues and durable workflows
+- [x] Commit D1 event ledger and Cloudflare Queue producer/consumer skeleton (provisioning and runtime verification pending)
+- [ ] Implement Queue recovery sweep, connector handlers, dead-letter inspection and durable workflows
 - [ ] Event Explorer, execution inspector, and future log viewer
 - [ ] Manage and Relay integrations
 
@@ -53,3 +54,12 @@ Updated: 2026-11-21
 - Committed `apps/api` Elysia Worker, `/v1/health`, `/v1/meta`, `/v1/events/validate`, and OpenAPI configuration to `main`.
 - **Not verified yet:** dependency installation, TypeScript compilation, Worker runtime, endpoint behavior, and OpenAPI spec generation.
 - Validation endpoint does not ingest or persist data. Authentication, idempotency, durable storage, replay protection, and GitHub signature verification remain planned.
+
+## Event Core milestone (2026-11-21)
+
+- [x] Commit event schema, D1 migration, idempotent insert, bearer token gate, Queue producer and consumer skeleton.
+- [x] Document Cloudflare resource provisioning, migration commands, and known failure modes.
+- [ ] Verify dependencies, TypeScript compilation, migration, OpenAPI output and Worker behavior.
+- [ ] Implement outbox recovery sweep and atomic processing state transitions.
+- [ ] Implement real connector handlers before treating `processed` as business completion.
+- [ ] Add webhook-specific HMAC verification, replay-window validation and per-connector permissions.
