@@ -57,6 +57,49 @@ function createApp(env: Bindings) {
       body: eventSchema,
       detail: { tags: ['Events'], summary: 'Ingest an event idempotently' },
     })
+    .get('/events', async ({ query, request, set }) => {
+      if (!authorized(request.headers.get('authorization'), env.ORB_INGEST_TOKEN)) {
+        set.status = 401
+        return { error: 'Unauthorized' }
+      }
+      const clauses: string[] = []
+      const values: string[] = []
+      if (query.source) {
+        clauses.push('source = ?')
+        values.push(query.source)
+      }
+      if (query.status) {
+        clauses.push('status = ?')
+        values.push(query.status)
+      }
+      if (query.type) {
+        clauses.push('type = ?')
+        values.push(query.type)
+      }
+      const where = clauses.length ? ` WHERE ${clauses.join(' AND ')}` : ''
+      const limit = query.limit ?? 25
+      const offset = query.offset ?? 0
+      const records = await env.ORB_DB.prepare(
+        `SELECT id, type, source, subject_id, occurred_at, observed_at, status, attempts
+         FROM events${where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`
+      ).bind(...values, limit, offset).all()
+      const total = await env.ORB_DB.prepare(
+        `SELECT COUNT(*) AS total FROM events${where}`
+      ).bind(...values).first<{ total: number }>()
+      return { items: records.results, total: total?.total ?? 0, limit, offset }
+    }, {
+      query: t.Object({
+        source: t.Optional(t.String({ minLength: 1 })),
+        type: t.Optional(t.String({ minLength: 1 })),
+        status: t.Optional(t.Union([
+          t.Literal('pending'), t.Literal('queued'),
+          t.Literal('processed'), t.Literal('failed'),
+        ])),
+        limit: t.Optional(t.Integer({ minimum: 1, maximum: 100, default: 25 })),
+        offset: t.Optional(t.Integer({ minimum: 0, default: 0 })),
+      }),
+      detail: { tags: ['Events'], summary: 'List events with typed filters and pagination' },
+    })
     .get('/events/:id', async ({ params, request, set }) => {
       if (!authorized(request.headers.get('authorization'), env.ORB_INGEST_TOKEN)) {
         set.status = 401
