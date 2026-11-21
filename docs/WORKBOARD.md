@@ -22,7 +22,8 @@ Updated: 2026-11-21
 
 ## API and SDK
 - [x] Commit initial Elysia Worker routes and OpenAPI configuration (runtime validation pending)
-- [ ] Generate typed SDK with `@hey-api/openapi-ts`
+- [x] Commit Hey API SDK generator scaffold (generation and version compatibility pending)
+- [ ] Generate and verify actual SDK from exported OpenAPI JSON
 - [ ] TanStack Query integration and contract checks
 - [ ] SSE with replay / event IDs
 
@@ -74,3 +75,13 @@ Updated: 2026-11-21
 - [ ] Add queue delivery state distinct from connector processing completion.
 - [ ] Add atomic lease/claim to prevent competing outbox sweep dispatches.
 - [ ] Add authenticated connector processing, DLQ replay tooling and observability.
+
+## SDK and event list milestone (2026-11-21)
+
+- [x] Commit authenticated `GET /v1/events` with source/type/status filters and offset pagination.
+- [x] Commit Hey API configuration and SDK workspace package scaffold.
+- [x] Document URL-first TanStack Router contract in `docs/URL_STATE.md`.
+- [ ] Export actual OpenAPI JSON from Elysia and generate client code.
+- [ ] Install dependencies, pin verified versions, commit lockfile and pass CI.
+- [ ] Integrate the generated SDK with TanStack Query and the real web app.
+- [ ] Add Event Explorer UI with typed TanStack Router search params.
