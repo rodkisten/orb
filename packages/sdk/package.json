@@ -1,0 +1,19 @@
+{
+  "name": "@orb/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "openapi-ts",
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm run generate && pnpm run typecheck"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.13.0",
+    "@tanstack/react-query": "^5.0.0"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.90.0",
+    "typescript": "^5.9.3"
+  }
+}
