@@ -85,3 +85,15 @@ Updated: 2026-11-21
 - [ ] Install dependencies, pin verified versions, commit lockfile and pass CI.
 - [ ] Integrate the generated SDK with TanStack Query and the real web app.
 - [ ] Add Event Explorer UI with typed TanStack Router search params.
+
+## URL-first web bootstrap (2026-11-21)
+
+- [x] Commit `apps/web` Vite + React 19 + TanStack Router + TanStack Query scaffold.
+- [x] Commit URL-backed Event Explorer controls: project, source, type, status, sort, page size, page, view, selected event, detail panel.
+- [x] Commit API sort support and web build verification workflow.
+- [ ] Verify GitHub Actions run and fix compilation errors.
+- [ ] Replace temporary native controls/CSS with required Tailwind CSS v4 and shadcn/ui.
+- [ ] Import uploaded reference component catalog into `apps/web`.
+- [ ] Add secure server-managed browser session for protected API reads.
+- [ ] Add backend project scoping; current project URL param does not filter API results.
+- [ ] Generate and integrate Hey API client from actual OpenAPI output.
