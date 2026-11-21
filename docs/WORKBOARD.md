@@ -9,7 +9,7 @@ Updated: 2026-11-21
 ## Foundation
 - [x] Create `rodkisten/orb` repository
 - [x] Document monorepo architecture and routing conventions
-- [ ] Commit pnpm workspace and install dependencies
+- [x] Commit pnpm workspace skeleton (dependencies not yet installed)
 - [ ] Configure Cloudflare deployments and environment bindings
 - [ ] Establish typecheck, lint, format, and build CI
 
@@ -21,7 +21,7 @@ Updated: 2026-11-21
 - [ ] Verify responsive iOS Safari layouts and theme switching
 
 ## API and SDK
-- [ ] Elysia Worker + OpenAPI specification
+- [x] Commit initial Elysia Worker routes and OpenAPI configuration (runtime validation pending)
 - [ ] Generate typed SDK with `@hey-api/openapi-ts`
 - [ ] TanStack Query integration and contract checks
 - [ ] SSE with replay / event IDs
@@ -47,3 +47,9 @@ Updated: 2026-11-21
 - OpenAPI generated client via Hey API.
 - Experimental tools require pinned versions, compatibility verification and rollback plan.
 - Update this board only after verifying completion; use large coherent changes.
+
+## API bootstrap notes (2026-11-21)
+
+- Committed `apps/api` Elysia Worker, `/v1/health`, `/v1/meta`, `/v1/events/validate`, and OpenAPI configuration to `main`.
+- **Not verified yet:** dependency installation, TypeScript compilation, Worker runtime, endpoint behavior, and OpenAPI spec generation.
+- Validation endpoint does not ingest or persist data. Authentication, idempotency, durable storage, replay protection, and GitHub signature verification remain planned.
