@@ -76,12 +76,13 @@ function createApp(env: Bindings) {
         clauses.push('type = ?')
         values.push(query.type)
       }
+      const order = query.sort === 'oldest' ? 'ASC' : 'DESC'
       const where = clauses.length ? ` WHERE ${clauses.join(' AND ')}` : ''
       const limit = query.limit ?? 25
       const offset = query.offset ?? 0
       const records = await env.ORB_DB.prepare(
         `SELECT id, type, source, subject_id, occurred_at, observed_at, status, attempts
-         FROM events${where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`
+         FROM events${where} ORDER BY created_at ${order}, id ${order} LIMIT ? OFFSET ?`
       ).bind(...values, limit, offset).all()
       const total = await env.ORB_DB.prepare(
         `SELECT COUNT(*) AS total FROM events${where}`
@@ -97,6 +98,7 @@ function createApp(env: Bindings) {
         ])),
         limit: t.Optional(t.Integer({ minimum: 1, maximum: 100, default: 25 })),
         offset: t.Optional(t.Integer({ minimum: 0, default: 0 })),
+        sort: t.Optional(t.Union([t.Literal('newest'), t.Literal('oldest')])),
       }),
       detail: { tags: ['Events'], summary: 'List events with typed filters and pagination' },
     })
