@@ -134,3 +134,12 @@ Updated: 2026-11-21
 - [ ] Verify TypeScript compilation and real Access-protected requests. No production deployment yet.
 - [ ] Enforce project-level authorization before inviting additional users or exposing event data.
 - [ ] Replace bootstrap bearer token with scoped per-integration credentials and add rate limiting.
+
+## Security bootstrap follow-up (2026-11-21)
+
+- [x] Add `scripts/setup-security.sh`: generates 256-bit secrets, reuses them on rerun, stores them outside the repository with restrictive permissions, and uploads Worker secrets via Wrangler stdin.
+- [x] Fail closed if `orb-api` is absent; require an orb-specific Access application and explicit confirmation of its operator-only policy.
+- [x] Inspect connected Cloudflare account: Access team is `photointel.cloudflareaccess.com`; no orb-specific Access app and no `orb-api` Worker currently exist.
+- [ ] Verify pnpm dependency installation and API/web builds, apply D1 migration, and deploy the Worker behind a restrictive Access policy.
+- [ ] Create a dedicated orb Access application and configure the GitHub App with the same webhook secret stored by the bootstrap script.
+- [ ] Validate production authorization and GitHub HMAC deliveries; project isolation remains incomplete.
