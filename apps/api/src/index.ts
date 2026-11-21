@@ -1,10 +1,12 @@
 import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
+import { handleGitHubWebhook } from './github-webhook'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
-  ORB_INGEST_TOKEN: string
+  ORB_INGEST_TOKEN?: string
+  GITHUB_WEBHOOK_SECRET?: string
   ORB_DB: D1Database
   ORB_EVENTS: Queue<{ eventId: string }>
 }
@@ -36,7 +38,7 @@ function createApp(env: Bindings) {
       detail: { tags: ['Events'], summary: 'Validate an event without persisting it' },
     })
     .post('/events', async ({ body, request, set }) => {
-      if (!authorized(request.headers.get('authorization'), env.ORB_INGEST_TOKEN)) {
+      if (!authorized(request.headers.get('authorization'), env.ORB_INGEST_TOKEN ?? '')) {
         set.status = 401
         return { error: 'Unauthorized' }
       }
@@ -125,6 +127,9 @@ export type OrbApi = ReturnType<typeof createApp>
 
 export default {
   fetch(request: Request, env: Bindings) {
+    if (new URL(request.url).pathname === '/v1/webhooks/github') {
+      return handleGitHubWebhook(request, env)
+    }
     return createApp(env).fetch(request)
   },
   async scheduled(_controller: ScheduledController, env: Bindings) {
