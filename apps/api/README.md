@@ -1,28 +1,43 @@
 # 🪐 orb API
 
-Elysia API on Cloudflare Workers. The initial milestone intentionally includes **no database writes, auth bypasses, or pretend ingestion**.
+Elysia on Cloudflare Workers, with a D1 event ledger and Queue-backed dispatch.
 
-## Commands
+## Provisioning
 
 ```bash
 pnpm install
-pnpm --filter @orb/api dev
 pnpm --filter @orb/api typecheck
-pnpm --filter @orb/api deploy
+pnpm --filter @orb/api dev
+cd apps/api
+pnpm exec wrangler d1 create orb-events
+pnpm exec wrangler queues create orb-events
+pnpm exec wrangler queues create orb-events-dlq
+pnpm exec wrangler secret put ORB_INGEST_TOKEN
 ```
 
-## Endpoints
+Replace `REPLACE_WITH_D1_DATABASE_ID` in `wrangler.jsonc` with the created database ID. Then run migrations:
 
-- `GET /v1/health`: liveness
-- `GET /v1/meta`: capabilities
-- `POST /v1/events/validate`: validates an event envelope, **does not persist**
-- `GET /v1/openapi`: OpenAPI UI/spec endpoint, subject to plugin defaults
+```bash
+pnpm exec wrangler d1 migrations apply orb-events --local
+pnpm exec wrangler d1 migrations apply orb-events --remote
+```
 
-## Next milestones
+Only deploy after provisioning and validating the bindings.
 
-1. Verify Elysia + Workers runtime and OpenAPI generation.
-2. Generate a typed SDK with Hey API.
-3. Add signed webhook verification, authentication, idempotent event storage, queues and replay.
-4. Integrate with Jardim, PhotoIntel, GitHub and Relay.
+## Routes
 
-Do not deploy event ingestion without authentication, provenance checks and replay protection.
+- `GET /v1/health`: public liveness
+- `GET /v1/meta`: public API metadata
+- `POST /v1/events/validate`: validate without persistence
+- `POST /v1/events`: bearer-token protected, D1-backed idempotent ingestion
+- `GET /v1/events/:id`: bearer-token protected processing status
+- `GET /v1/openapi`: OpenAPI plugin documentation
+
+## Important limitations
+
+- The Queue consumer currently acknowledges **durable receipt only**; no connector-specific processing is implemented. Its `processed` status does not imply any external side effects.
+- D1 insert and Queue send are not atomic. Failed sends leave `pending` records, but **automatic recovery sweep is not implemented yet**.
+- Concurrent retries of a pending event may enqueue duplicates. Consumers must remain idempotent.
+- A shared bearer token is only a bootstrap credential. Per-connector credentials, GitHub HMAC verification, authorization scopes, rate limiting, and retention are future work.
+- Never put tokens in URL query parameters or log raw secrets.
+- This milestone has not been runtime-verified against Cloudflare. Validate the build, migration, queue and OpenAPI before production deployment.
