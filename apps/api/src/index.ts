@@ -1,3 +1,4 @@
+import { GitHubGateway } from './github-gateway'
 import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
@@ -31,6 +32,8 @@ function createApp(env: Bindings) {
         ],
       },
     }))
+    .get('/actions/search', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
+    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
     .get('/health', () => ({
       status: 'ok' as const,
       service: 'orb-api' as const,
