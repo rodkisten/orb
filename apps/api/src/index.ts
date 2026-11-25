@@ -5,6 +5,7 @@ import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
 import { readPrFailure } from './github-pr-ci'
 import { ciPage } from './github-pr-ci-page'
+import { readStepLog } from './github-ci-log'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
@@ -44,6 +45,7 @@ function createApp(env: Bindings) {
       const { owner, repo, number } = params
       const url = new URL(request.url)
       const wantsPage = url.searchParams.get('view') === 'page'
+      const wantsLog = url.searchParams.get('log') === '1'
       const label = `${owner}/${repo} #${number}`
       const respond = (body: Parameters<typeof ciPage>[1], status = 200) => {
         if (wantsPage) return ciPage(label, body, status)
@@ -69,6 +71,14 @@ function createApp(env: Bindings) {
       const cacheKey = url
       cacheKey.search = ''
       try {
+        if (wantsLog) {
+          // Recheck the latest run before retrieving privileged log content.
+          const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
+          const excerpt = status.failure
+            ? await readStepLog(owner, repo, status.failure, env.GITHUB_CI_READ_TOKEN).catch(() => null)
+            : null
+          return respond({ ...status, excerpt })
+        }
         const edgeCache = await caches.open('orb-github-pr-ci-v2')
         const cached = await edgeCache.match(cacheKey.href)
         if (cached) return respond(await cached.json<Awaited<ReturnType<typeof readPrFailure>>>())

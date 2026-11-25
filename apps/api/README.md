@@ -52,3 +52,8 @@ mais recente estiver em andamento ou tiver outra conclusão, devolve `{"failure"
 A mesma rota com `?view=page` exibe um diagnóstico HTML protegido pelo
 Cloudflare Access. Abra essa URL em uma aba para consultar o resultado quando
 o navegador bloquear a sessão em requisições feitas a partir de github.com.
+
+Com `?log=1`, o Orb verifica a execução mais recente novamente e tenta
+retornar um trecho do log da etapa que falhou. O trecho tem no máximo 6.000
+caracteres e não entra no cache. Quando o GitHub não disponibiliza esse log,
+o diagnóstico mantém o link para a execução.
