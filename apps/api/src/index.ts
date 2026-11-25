@@ -1,3 +1,5 @@
+import type {JardimBindings} from './jardim'
+import {processDelivery,replayDelivery} from './delivery'
 import { GitHubGateway, gatewayMetrics } from './github-gateway'
 import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
@@ -9,7 +11,7 @@ import { ciPage } from './github-pr-ci-page'
 import { readStepLog } from './github-ci-log'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
-type Bindings = {
+type Bindings = JardimBindings & {
   ORB_INGEST_TOKEN?: string
   ORB_WEBHOOK_SECRET?: string
   ORB_CI_READ_TOKEN?: string
@@ -172,6 +174,16 @@ function createApp(env: Bindings) {
         sort: t.Optional(t.Union([t.Literal('newest'), t.Literal('oldest')])),
       }),
       detail: { tags: ['Events'], summary: 'List events with typed filters and pagination' },
+    })
+    .get('/connectors/jardim/deliveries',async ({request,set})=>{
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      const rows=await env.ORB_DB.prepare("SELECT event_id,state,attempts,last_error,next_attempt_at,updated_at FROM connector_deliveries ORDER BY updated_at DESC LIMIT 100").all()
+      return {enabled:env.JARDIM_CAPTURE_ENABLED==='true',items:rows.results}
+    })
+    .post('/connectors/jardim/deliveries/:id/replay',async ({request,params,set})=>{
+      if(!(await accessIdentity(request,env))||request.headers.get('origin')!==new URL(request.url).origin){set.status=403;return {error:'Forbidden'}}
+      await replayDelivery(env.ORB_DB,params.id)
+      return {accepted:true}
     })
     .get('/events/:id', async ({ params, request, set }) => {
       if (!(await accessIdentity(request, env))) {
@@ -582,10 +594,14 @@ export default {
       try {
         // Processing handlers will be registered by connector modules.
         // For now only mark processed after successful durable receipt.
+        const state=await env.ORB_DB.prepare('SELECT status FROM events WHERE id=?').bind(message.body.eventId).first<{status:string}>()
+        if(state?.status==='failed'){message.ack();continue}
+        const delivery=await env.ORB_DB.prepare('SELECT state FROM connector_deliveries WHERE event_id=?').bind(message.body.eventId).first<{state:string}>()
+        if(delivery?.state!=='delivered')await processDelivery(env.ORB_DB,message.body.eventId,env)
         await markReceived(env.ORB_DB, message.body.eventId)
         message.ack()
       } catch {
-        message.retry()
+        message.retry({delaySeconds:60})
       }
     }
   },

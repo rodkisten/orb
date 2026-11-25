@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createRouter, RouterProvider, createRootRoute, createRoute, Outlet, Link } from '@tanstack/react-router'
 import { z } from 'zod'
 import { EventExplorer } from './pages/events'
+import { Connectors } from './pages/connectors'
 import './styles.css'
 
 const searchSchema = z.object({
@@ -19,10 +20,11 @@ const searchSchema = z.object({
   selected: z.string().catch(''),
 })
 
-const root = createRootRoute({ component: () => <div className="app"><header><Link to="/" className="brand">🪐 orb</Link><nav><Link to="/events" search={{}} activeProps={{ className: 'active' }}>Events</Link></nav></header><main><Outlet /></main></div> })
+const root = createRootRoute({ component: () => <div className="app"><header><Link to="/" className="brand">🪐 orb</Link><nav><Link to="/events" search={{}} activeProps={{ className: 'active' }}>Events</Link><Link to="/connectors" activeProps={{className:'active'}}>Connectors</Link></nav></header><main><Outlet /></main></div> })
 const home = createRoute({ getParentRoute: () => root, path: '/', component: () => <section className="intro"><p className="eyebrow">AUTOMATION CONTROL PLANE</p><h1>Everything in orbit.</h1><p>Event streams, workflows and connected systems. Navigate to the event explorer to inspect your activity.</p><Link to="/events" search={{}}>Explore events →</Link></section> })
 const events = createRoute({ getParentRoute: () => root, path: '/events', validateSearch: searchSchema, component: EventExplorer })
-const routeTree = root.addChildren([home, events])
+const connectors = createRoute({getParentRoute:()=>root,path:'/connectors',component:Connectors})
+const routeTree = root.addChildren([home, events, connectors])
 const router = createRouter({ routeTree, defaultPreload: 'intent' })
 declare module '@tanstack/react-router' { interface Register { router: typeof router } }
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } })

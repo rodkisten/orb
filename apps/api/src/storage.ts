@@ -40,7 +40,7 @@ export async function markReceived(db: D1Database, id: string): Promise<void> {
   // 'processed' currently means queue delivery was durably acknowledged.
   // Connector-specific business processing is not yet implemented.
   await db.prepare(
-    "UPDATE events SET status = 'processed', attempts = attempts + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status != 'processed'"
+    "UPDATE events SET status = 'processed', attempts = attempts + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND status IN ('pending','queued')"
   ).bind(id).run()
 }
 
@@ -53,8 +53,9 @@ export async function recoverOutbox(
   // delivery: downstream handlers MUST be idempotent.
   const rows = await db.prepare(
     `SELECT id FROM events
-     WHERE status = 'pending'
-        OR (status = 'queued' AND updated_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-10 minutes'))
+     WHERE (status = 'pending'
+        OR (status = 'queued' AND updated_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-10 minutes')))
+        AND NOT EXISTS(SELECT 1 FROM connector_deliveries d WHERE d.event_id=events.id AND d.next_attempt_at > unixepoch('now')*1000)
      ORDER BY created_at ASC LIMIT ?`
   ).bind(limit).all<{ id: string }>()
 
