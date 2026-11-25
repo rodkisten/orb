@@ -39,3 +39,5 @@ export function replaceScalar(source:string,path:(string|number)[],value:string)
  const result=parseWorkflow(yaml)
  return {yaml,patches:[patch],...result}
 }
+
+export * from './adapters.ts'

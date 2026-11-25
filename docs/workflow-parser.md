@@ -9,3 +9,6 @@ Tree-sitter WASM for incremental syntax and embedded shell languages; GitHub act
 
 ## Verification
 API typecheck and dry-run are release gates. Fixed Workers TextDecoder constructor incompatibility by using supported constructor; malformed UTF-8 is decoded with replacement characters. Lockfile importer added for shared package using existing YAML version; CI must verify frozen install.
+
+## Compatibility probe
+The official parser adapter and syntax session are available via core exports. The isolated workflow-parser-probe workflow installs pinned official parser 0.3.61 and web-tree-sitter 0.27.2 without changing production dependencies, validates a positive and negative workflow, and initializes WASM. This is a compatibility gate only, not production integration. No grammar loaded yet; incremental edits and browser/Worker runtime verification remain pending. The syntax session performs full parses and owns tree disposal. Official validation returns normalized messages; no expression evaluation.
