@@ -47,10 +47,10 @@ if [[ -f "$SECRETS_FILE" ]]; then
   # shellcheck disable=SC1090
   source "$SECRETS_FILE"
 else
-  GITHUB_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+  ORB_WEBHOOK_SECRET="$(openssl rand -hex 32)"
   ORB_INGEST_TOKEN="$(openssl rand -hex 32)"
   {
-    printf 'GITHUB_WEBHOOK_SECRET=%q\n' "$GITHUB_WEBHOOK_SECRET"
+    printf 'ORB_WEBHOOK_SECRET=%q\n' "$ORB_WEBHOOK_SECRET"
     printf 'ORB_INGEST_TOKEN=%q\n' "$ORB_INGEST_TOKEN"
   } > "$SECRETS_FILE"
   chmod 600 "$SECRETS_FILE"
@@ -115,7 +115,7 @@ upload() {
   printf '✔ Uploaded %s\n' "$name"
 }
 
-upload GITHUB_WEBHOOK_SECRET "$GITHUB_WEBHOOK_SECRET"
+upload ORB_WEBHOOK_SECRET "$ORB_WEBHOOK_SECRET"
 upload ORB_INGEST_TOKEN "$ORB_INGEST_TOKEN"
 upload CF_ACCESS_TEAM_DOMAIN "$TEAM_DOMAIN"
 upload CF_ACCESS_AUD "$AUD"
@@ -124,9 +124,9 @@ cat <<MESSAGE
 
 ✔ Worker secrets configured.
 ✔ Secrets preserved at $SECRETS_FILE (mode 600; do not commit).
-⚠ Configure the GitHub App webhook with the SAME GITHUB_WEBHOOK_SECRET.
+⚠ Configure the GitHub App webhook with the SAME ORB_WEBHOOK_SECRET.
   Retrieve it locally with:
-  source "$SECRETS_FILE"; printf '%s\\n' "\$GITHUB_WEBHOOK_SECRET"
+  source "$SECRETS_FILE"; printf '%s\\n' "\$ORB_WEBHOOK_SECRET"
 
 ⚠ The Worker is NOT deployed by this script.
 ⚠ Access policy, hostname routing, project authorization, and CI verification
