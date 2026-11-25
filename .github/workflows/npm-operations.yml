@@ -49,6 +49,7 @@ jobs:
       commit_sha: ${{ steps.run_op.outputs.commit_sha }}
       pr_number: ${{ steps.run_op.outputs.pr_number }}
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: 🔑 Authenticate Rod GitHub App
         id: app-token
