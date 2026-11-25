@@ -12,6 +12,9 @@ import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage
 type Bindings = {
   ORB_INGEST_TOKEN?: string
   GITHUB_WEBHOOK_SECRET?: string
+  GITHUB_APP_ID?: string
+  GITHUB_APP_PRIVATE_KEY?: string
+  GITHUB_APP_INSTALLATION_ID?: string
   GITHUB_CI_READ_TOKEN?: string
   GITHUB_CI_REPOSITORIES?: string
   CF_ACCESS_TEAM_DOMAIN?: string
@@ -33,8 +36,8 @@ function createApp(env: Bindings) {
       },
     }))
     .get('/github/gateway/metrics',async ({request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}set.headers['cache-control']='no-store';return gatewayMetrics()})
-    .get('/actions/versions',async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).versions(query.owner,query.repo)}catch{set.status=502;return {error:'Version lookup failed'}}},{query:t.Object({owner:t.String({pattern:'^[A-Za-z0-9-]{1,39}, async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
-    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
+    .get('/actions/versions',async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).versions(query.owner,query.repo)}catch{set.status=502;return {error:'Version lookup failed'}}},{query:t.Object({owner:t.String({pattern:'^[A-Za-z0-9-]{1,39}, async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
+    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
     .get('/health', () => ({
       status: 'ok' as const,
       service: 'orb-api' as const,
@@ -219,8 +222,8 @@ export default {
     }
   },
 }
-}),repo:t.String({pattern:'^[A-Za-z0-9_.-]{1,100}, async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
-    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
+}),repo:t.String({pattern:'^[A-Za-z0-9_.-]{1,100}, async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
+    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
     .get('/health', () => ({
       status: 'ok' as const,
       service: 'orb-api' as const,
@@ -405,8 +408,8 @@ export default {
   },
 }
 })})})
-    .get('/actions/search', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
-    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}if(!env.GITHUB_CI_READ_TOKEN){set.status=503;return {error:'GitHub not configured'}}try{return await new GitHubGateway(env.ORB_DB,env.GITHUB_CI_READ_TOKEN).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
+    .get('/actions/search', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).search(query.q)}catch{set.status=502;return {error:'GitHub search failed'}}},{query:t.Object({q:t.String({minLength:2,maxLength:100})})})
+    .get('/actions/resolve', async ({query,request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}try{return await (await GitHubGateway.create(env.ORB_DB,env)).resolve(query.uses)}catch{set.status=502;return {error:'Action resolution failed'}}},{query:t.Object({uses:t.String({minLength:3,maxLength:250})})})
     .get('/health', () => ({
       status: 'ok' as const,
       service: 'orb-api' as const,

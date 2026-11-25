@@ -1,3 +1,4 @@
+import {githubToken,type GitHubCredentials} from './github-auth'
 import {Octokit} from '@octokit/core'
 import {parseDocument} from 'yaml'
 const metrics={memoryHits:0,d1Hits:0,coalesced:0,upstream:0,errors:0};
@@ -6,8 +7,10 @@ const pending=new Map<string,Promise<unknown>>()
 const memory=new Map<string,{value:unknown;expires:number}>()
 async function hash(value:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('')}
 export class GitHubGateway {
+ static async create(db:D1Database,env:GitHubCredentials){return new GitHubGateway(db,await githubToken(env))}
  private client:Octokit
  constructor(private db:D1Database,private token:string){this.client=new Octokit({auth:token})}
+ async rest<T>(path:string,parameters:Record<string,unknown>={}):Promise<T>{if(!/^GET \/[a-zA-Z0-9_/{}/.-]+$/.test(path))throw Error('Only internal GET routes supported');const result=await this.client.request(path,parameters);return result.data as T}
  async query<T>(document:string,variables:Record<string,unknown>,ttl=60):Promise<T>{
   const key=await hash(JSON.stringify([this.token,document,Object.entries(variables).sort(([a],[b])=>a.localeCompare(b))]));const now=Date.now();const hit=memory.get(key);if(hit&&hit.expires>now){metrics.memoryHits++;return hit.value as T;}
   const active=pending.get(key);if(active){metrics.coalesced++;return active as Promise<T>;}
