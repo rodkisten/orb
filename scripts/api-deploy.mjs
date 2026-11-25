@@ -38,6 +38,20 @@ const required = [
   ...workerKeys,
 ]
 
+async function resolveAccessApp() {
+  const base = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID
+  const response = await fetch(base + '/access/apps?exact=true&domain=' + encodeURIComponent(host), {
+    headers: { Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN },
+    signal: AbortSignal.timeout(20000),
+  })
+  const data = await response.json()
+  if (!response.ok || !data.success || !Array.isArray(data.result)) throw Error('Access application discovery failed: ' + response.status)
+  const matches = data.result.filter(app => app.domain === host && app.type === 'self_hosted' && app.id && app.aud)
+  if (matches.length !== 1) throw Error('Expected exactly one Access application for ' + host + '; found ' + matches.length)
+  process.env.CF_ACCESS_APP_ID = matches[0].id
+  process.env.CF_ACCESS_AUD = matches[0].aud
+}
+
 async function inspectAccess() {
   const api = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID
 
@@ -178,6 +192,10 @@ async function bootstrapCredentials() {
 }
 
 async function deploy() {
+  await log.step('Discover Orb Access application', async () => {
+    log.requireEnv(['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'])
+    await resolveAccessApp()
+  })
   if (process.env.ORB_BOOTSTRAP === '1') await log.step('Provision missing credentials', bootstrapCredentials)
 
   await log.step('Validate environment variables', () => {
