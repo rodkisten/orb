@@ -1,7 +1,7 @@
 export type JardimBindings={JARDIM_CAPTURE_TOKEN?:string;JARDIM_CAPTURE_ENABLED?:string};
 type Record={id:string;type:string;occurred_at:string;payload_json:string;status:string};
 export async function deliverJardim(db:D1Database,id:string,env:JardimBindings,fetcher=fetch){
- if(env.JARDIM_CAPTURE_ENABLED!=='true')return;
+ if(env.JARDIM_CAPTURE_ENABLED!=='true')throw Error('Jardim connector disabled');
  const row=await db.prepare('SELECT id,type,occurred_at,payload_json,status FROM events WHERE id=?').bind(id).first<Record>();
  if(!row||row.status==='processed'||row.type!=='jardim.capture')return;
  if(!env.JARDIM_CAPTURE_TOKEN)throw Error('Jardim token missing');

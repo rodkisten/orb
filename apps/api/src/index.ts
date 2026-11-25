@@ -1,4 +1,5 @@
-import {deliverJardim,type JardimBindings} from './jardim'
+import type {JardimBindings} from './jardim'
+import {processDelivery,replayDelivery} from './delivery'
 import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
@@ -170,6 +171,16 @@ function createApp(env: Bindings) {
       }),
       detail: { tags: ['Events'], summary: 'List events with typed filters and pagination' },
     })
+    .get('/connectors/jardim/deliveries',async ({request,set})=>{
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      const rows=await env.ORB_DB.prepare("SELECT event_id,state,attempts,last_error,next_attempt_at,updated_at FROM connector_deliveries ORDER BY updated_at DESC LIMIT 100").all()
+      return {enabled:env.JARDIM_CAPTURE_ENABLED==='true',items:rows.results}
+    })
+    .post('/connectors/jardim/deliveries/:id/replay',async ({request,params,set})=>{
+      if(!(await accessIdentity(request,env))||request.headers.get('origin')!==new URL(request.url).origin){set.status=403;return {error:'Forbidden'}}
+      await replayDelivery(env.ORB_DB,params.id)
+      return {accepted:true}
+    })
     .get('/events/:id', async ({ params, request, set }) => {
       if (!(await accessIdentity(request, env))) {
         set.status = 401
@@ -207,11 +218,14 @@ export default {
       try {
         // Processing handlers will be registered by connector modules.
         // For now only mark processed after successful durable receipt.
-        await deliverJardim(env.ORB_DB,message.body.eventId,env)
+        const state=await env.ORB_DB.prepare('SELECT status FROM events WHERE id=?').bind(message.body.eventId).first<{status:string}>()
+        if(state?.status==='failed'){message.ack();continue}
+        const delivery=await env.ORB_DB.prepare('SELECT state FROM connector_deliveries WHERE event_id=?').bind(message.body.eventId).first<{state:string}>()
+        if(delivery?.state!=='delivered')await processDelivery(env.ORB_DB,message.body.eventId,env)
         await markReceived(env.ORB_DB, message.body.eventId)
         message.ack()
       } catch {
-        message.retry()
+        message.retry({delaySeconds:60})
       }
     }
   },
