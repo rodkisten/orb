@@ -3,11 +3,16 @@ import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
+import { readPrFailure } from './github-pr-ci'
+import { ciPage } from './github-pr-ci-page'
+import { readStepLog } from './github-ci-log'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
   ORB_INGEST_TOKEN?: string
   GITHUB_WEBHOOK_SECRET?: string
+  GITHUB_CI_READ_TOKEN?: string
+  GITHUB_CI_REPOSITORIES?: string
   CF_ACCESS_TEAM_DOMAIN?: string
   CF_ACCESS_AUD?: string
   ORB_DB: D1Database
@@ -36,6 +41,63 @@ function createApp(env: Bindings) {
       apiVersion: 'v1',
       capabilities: ['events', 'connectors', 'automation'],
     }), { detail: { tags: ['System'], summary: 'API capabilities' } })
+    .get('/github/:owner/:repo/pulls/:number/ci', async ({ params, request, set }) => {
+      const { owner, repo, number } = params
+      const url = new URL(request.url)
+      const wantsPage = url.searchParams.get('view') === 'page'
+      const wantsLog = url.searchParams.get('log') === '1'
+      const label = `${owner}/${repo} #${number}`
+      const respond = (body: Parameters<typeof ciPage>[1], status = 200) => {
+        if (wantsPage) return ciPage(label, body, status)
+        set.status = status
+        return body
+      }
+      set.headers['cache-control'] = 'no-store'
+      set.headers.vary = 'Origin'
+      if (request.headers.get('origin') === 'https://github.com') {
+        set.headers['access-control-allow-origin'] = 'https://github.com'
+        set.headers['access-control-allow-credentials'] = 'true'
+      }
+      if (!(await accessIdentity(request, env))) {
+        return respond({ error: 'Sessão do Orb necessária.' }, 401)
+      }
+      const allowlist = env.GITHUB_CI_REPOSITORIES?.toLowerCase().split(',').map(value => value.trim())
+      if (!allowlist?.includes(`${owner}/${repo}`.toLowerCase())) {
+        return respond({ error: 'Repositório indisponível para este conector.' }, 404)
+      }
+      if (!env.GITHUB_CI_READ_TOKEN) {
+        return respond({ error: 'Conector de CI do GitHub ainda não configurado.' }, 503)
+      }
+      const cacheKey = url
+      cacheKey.search = ''
+      try {
+        if (wantsLog) {
+          // Recheck the latest run before retrieving privileged log content.
+          const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
+          const excerpt = status.failure
+            ? await readStepLog(owner, repo, status.failure, env.GITHUB_CI_READ_TOKEN).catch(() => null)
+            : null
+          return respond({ ...status, excerpt })
+        }
+        const edgeCache = await caches.open('orb-github-pr-ci-v2')
+        const cached = await edgeCache.match(cacheKey.href)
+        if (cached) return respond(await cached.json<Awaited<ReturnType<typeof readPrFailure>>>())
+        const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
+        await edgeCache.put(cacheKey.href, Response.json(status, {
+          headers: { 'Cache-Control': 'max-age=15' },
+        }))
+        return respond(status)
+      } catch {
+        return respond({ error: 'Não foi possível consultar o CI no GitHub.' }, 502)
+      }
+    }, {
+      params: t.Object({
+        owner: t.String({ pattern: '^[A-Za-z0-9-]{1,39}$' }),
+        repo: t.String({ pattern: '^[A-Za-z0-9_.-]{1,100}$' }),
+        number: t.Numeric({ minimum: 1, maximum: 2147483647, multipleOf: 1 }),
+      }),
+      detail: { tags: ['System'], summary: 'Inspect the latest workflow failure for a pull request' },
+    })
     .post('/events/validate', ({ body }) => ({ valid: true as const, event: body }), {
       body: eventSchema,
       detail: { tags: ['Events'], summary: 'Validate an event without persisting it' },

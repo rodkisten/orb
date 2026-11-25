@@ -143,3 +143,10 @@ Updated: 2026-11-21
 - [ ] Verify pnpm dependency installation and API/web builds, apply D1 migration, and deploy the Worker behind a restrictive Access policy.
 - [ ] Create a dedicated orb Access application and configure the GitHub App with the same webhook secret stored by the bootstrap script.
 - [ ] Validate production authorization and GitHub HMAC deliveries; project isolation remains incomplete.
+
+## Production API deployment
+
+- [x] Verify the existing D1 database, event queues, and operator-only Access application for `api.orb.migos.club`.
+- [x] Allow the native binaries required by the locked workspace. Verify API tests, Wrangler dry-run, and the web build.
+- [x] Add a manual production workflow on main that checks Access, applies D1 migrations, deploys the Worker, and checks protected health.
+- [ ] Configure the GitHub production environment and the dedicated Access service-token policy, then run the first deployment.
