@@ -124,12 +124,30 @@ function runWrangler(...args) {
   }
 }
 
+async function ensureQueues() {
+  const base = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID
+  const headers = { Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN, 'Content-Type': 'application/json' }
+  for (const name of ['orb-events', 'orb-events-dlq']) {
+    const response = await fetch(base + '/queues?name=' + encodeURIComponent(name), { headers })
+    const payload = await response.json()
+    if (!response.ok || !payload.success || !Array.isArray(payload.result)) throw Error('Queue discovery failed: ' + name)
+    if (payload.result.some(queue => queue.queue_name === name)) continue
+    const created = await fetch(base + '/queues', { method: 'POST', headers, body: JSON.stringify({ queue_name: name }) })
+    const result = await created.json()
+    if (!created.ok || !result.success) throw Error('Queue creation failed: ' + name)
+  }
+}
+
 async function deploy() {
   await log.step('Validate environment variables', () => {
     log.requireEnv(required)
   })
 
   await log.step('Inspect Cloudflare Access policies', () => inspectAccess())
+
+  if (process.env.ORB_BOOTSTRAP === '1') {
+    await log.step('Ensure queues exist', ensureQueues)
+  }
 
   const temporary = mkdtempSync(join(tmpdir(), 'orb-deploy-'))
   try {
