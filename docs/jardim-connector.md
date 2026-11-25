@@ -3,3 +3,6 @@ Opt-in: JARDIM_CAPTURE_ENABLED=true and secret JARDIM_CAPTURE_TOKEN. Provision a
 
 ## Delivery ledger
 Apply migration 0002 before deploying. Eight attempts maximum, exponential delay capped at one hour, terminal 400/409/413/422. Access-authenticated listing and same-origin replay endpoint. Replay retains the stable event ID. Disabled connector does not acknowledge capture as delivered. UI and integration tests pending.
+
+## Operations UI
+Open /connectors for the latest 100 deliveries, state filters, event inspection and confirmed replay. Counts reflect only the loaded window. Disabled connectors retain queued events without consuming delivery attempts. Error messages are sanitized.

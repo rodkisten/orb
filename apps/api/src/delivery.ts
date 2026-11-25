@@ -3,6 +3,7 @@ export async function processDelivery(db:D1Database,id:string,env:JardimBindings
  const event=await db.prepare('SELECT type,status FROM events WHERE id=?').bind(id).first<{type:string;status:string}>()
  if(!event||event.status==='processed'||event.status==='failed')return
  if(event.type!=='jardim.capture')return
+ if(env.JARDIM_CAPTURE_ENABLED!=='true')throw Error('Connector disabled; retained for recovery')
  const now=Date.now()
  await db.prepare("INSERT OR IGNORE INTO connector_deliveries(event_id,connector,updated_at) VALUES(?,'jardim',?)").bind(id,now).run()
  const claim=await db.prepare("UPDATE connector_deliveries SET state='sending',attempts=attempts+1,updated_at=? WHERE event_id=? AND (state='pending' OR (state='sending' AND updated_at<?)) AND next_attempt_at<=?").bind(now,id,now-60000,now).run()
@@ -16,7 +17,7 @@ export async function processDelivery(db:D1Database,id:string,env:JardimBindings
  const attempts=row?.attempts??1
  const permanent=/^Jardim delivery failed: (400|409|413|422)$/.test(reason)||attempts>=8
  await db.batch([
- db.prepare("UPDATE connector_deliveries SET state=?,last_error=?,next_attempt_at=?,updated_at=? WHERE event_id=?").bind(permanent?'failed':'pending',reason.slice(0,160),Date.now()+Math.min(3600000,30000*2**attempts),Date.now(),id),
+ db.prepare("UPDATE connector_deliveries SET state=?,last_error=?,next_attempt_at=?,updated_at=? WHERE event_id=?").bind(permanent?'failed':'pending',/^Jardim delivery failed: [0-9]{3}$/.test(reason)?reason:'Connector unavailable or invalid receipt',Date.now()+Math.min(3600000,30000*2**attempts),Date.now(),id),
  db.prepare("UPDATE events SET status=?,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND status!='processed'").bind(permanent?'failed':'queued',id)
  ])
  throw Error('Connector delivery unsuccessful')
