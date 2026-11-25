@@ -113,6 +113,7 @@ async function smoke(ctx) {
       },
     }).catch(() => null)
 
+    ctx.update(`tentativa ${attempt + 1}/12 · anonymous=${anonymous?.status ?? 'network error'} · authenticated=${authenticated?.status ?? 'network error'} · content-type=${authenticated?.headers.get('content-type')?.split(';')[0] ?? 'unknown'}`)
     if (authenticated?.ok && anonymous && [302, 401, 403].includes(anonymous.status)) {
       const result = await authenticated.json().catch(() => null)
       if (result?.status === 'ok' && result.service === 'orb-api') {
@@ -170,7 +171,17 @@ async function bootstrapCredentials() {
   const app = await cf('/access/apps/' + encodeURIComponent(process.env.CF_ACCESS_APP_ID))
   process.env.CF_ACCESS_AUD ||= app.aud
   const missing = ['ORB_INGEST_TOKEN', 'ORB_WEBHOOK_SECRET', 'CF_ACCESS_CLIENT_ID', 'CF_ACCESS_CLIENT_SECRET'].filter(key => !process.env[key])
-  if (!missing.length) return
+  if (!missing.length) {
+    const tokens = await cf('/access/service_tokens')
+    const token = tokens.find(item => item.client_id === process.env.CF_ACCESS_CLIENT_ID)
+    if (!token) throw Error('Configured Access Client ID does not match an account service token')
+    const path = '/access/apps/' + app.id + '/policies'
+    const policies = await cf(path)
+    if (!policies.some(policy => policy.decision === 'non_identity' && policy.include?.some(rule => rule.service_token?.token_id === token.id))) {
+      await cf(path, 'POST', { name: 'Orb bootstrap service authentication', decision: 'non_identity', include: [{ service_token: { token_id: token.id } }] })
+    }
+    return
+  }
   if (!process.env.GH_TOKEN) throw Error('Missing ORB_BOOTSTRAP_GITHUB_TOKEN: a GitHub credential with environment secrets write access is required to persist generated keys safely.')
   const save = (key, value) => {
     if (!value) throw Error('Empty generated credential: ' + key)
