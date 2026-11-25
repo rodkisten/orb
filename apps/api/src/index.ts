@@ -39,6 +39,13 @@ function createApp(env: Bindings) {
       },
     }))
     .get('/github/gateway/metrics',async ({request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}set.headers['cache-control']='no-store';return {...gatewayMetrics(), authMode: githubAuthMode(env)}})
+    .get('/github/repositories', async ({request,set}) => {
+      if (!(await accessIdentity(request,env))) { set.status=401; return {error:'Unauthorized'} }
+      set.headers['cache-control']='no-store'
+      if (githubAuthMode(env)==='unconfigured') {set.status=503;return {error:'GitHub credentials unavailable'}}
+      try {return await (await GitHubGateway.create(env.ORB_DB,env)).repositories((env.ORB_CI_REPOSITORIES??'').split(','))}
+      catch {set.status=502;return {error:'Repository discovery failed'}}
+    }, {detail:{tags:['System'],summary:'Discover accessible configured repositories'}})
     .get('/actions/versions', async ({query,request,set}) => {
       if (!(await accessIdentity(request,env))) { set.status=401; return {error:'Unauthorized'} }
       try { return await (await GitHubGateway.create(env.ORB_DB,env)).versions(query.owner,query.repo) }
