@@ -1,3 +1,4 @@
+import {deliverJardim,type JardimBindings} from './jardim'
 import { Elysia, t } from 'elysia'
 import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
@@ -8,7 +9,7 @@ import { ciPage } from './github-pr-ci-page'
 import { readStepLog } from './github-ci-log'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
-type Bindings = {
+type Bindings = JardimBindings & {
   ORB_INGEST_TOKEN?: string
   GITHUB_WEBHOOK_SECRET?: string
   GITHUB_CI_READ_TOKEN?: string
@@ -206,6 +207,7 @@ export default {
       try {
         // Processing handlers will be registered by connector modules.
         // For now only mark processed after successful durable receipt.
+        await deliverJardim(env.ORB_DB,message.body.eventId,env)
         await markReceived(env.ORB_DB, message.body.eventId)
         message.ack()
       } catch {
