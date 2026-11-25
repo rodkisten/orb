@@ -51,6 +51,12 @@ function createApp(env: Bindings) {
       try {return await (await GitHubGateway.create(env.ORB_DB,env)).repositories((env.ORB_CI_REPOSITORIES??'').split(','))}
       catch {set.status=502;return {error:'Repository discovery failed'}}
     }, {detail:{tags:['System'],summary:'Discover accessible configured repositories'}})
+    .get('/github/:owner/:repo/files', async ({params,query,request,set})=>{
+      set.headers['cache-control']='no-store'
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      try{return await repositoryRead(env,params.owner,params.repo,'contents',query.page??1,query.limit??30)}
+      catch(error){set.status=error instanceof GatewayError?error.status:502;return {error:error instanceof GatewayError?error.message:'GitHub request failed'}}
+    },{params:repositoryParams,query:paginationQuery,detail:{tags:['GitHub']}})
     .get('/github/:owner/:repo/branches', async ({params,query,request,set})=>{
       set.headers['cache-control']='no-store'
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}

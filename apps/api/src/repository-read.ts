@@ -1,7 +1,7 @@
 import {githubToken,type GitHubCredentials} from './github-auth'
 
 type Environment=GitHubCredentials & {ORB_CI_REPOSITORIES?:string}
-type Resource='branches'|'pulls'|'commits'|'actions/workflows'|'actions/runs'
+type Resource='contents'|'branches'|'pulls'|'commits'|'actions/workflows'|'actions/runs'
 export class GatewayError extends Error {
   constructor(public readonly status:404|503|502|429,message:string){super(message)}
 }

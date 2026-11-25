@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { EventExplorer } from './pages/events'
 import { Connectors } from './pages/connectors'
 import {ApiWorkbench} from './pages/api-workbench'
+import {WorkspaceProvider,ContextSelector} from './workspace/context'
+import {WorkspaceExplorer} from './workspace/explorer'
 import './styles.css'
 
 const searchSchema = z.object({
@@ -21,13 +23,14 @@ const searchSchema = z.object({
   selected: z.string().catch(''),
 })
 
-const root = createRootRoute({ component: () => <div className="app"><header><Link to="/" className="brand">🪐 orb</Link><nav><Link to="/events" search={{}} activeProps={{ className: 'active' }}>Events</Link><Link to="/connectors" activeProps={{className:'active'}}>Connectors</Link><Link to="/api" activeProps={{className:"active"}}>API Lab</Link></nav></header><main><Outlet /></main></div> })
+const root = createRootRoute({ component: () => <div className="app"><header><Link to="/" className="brand">🪐 orb</Link><ContextSelector/><nav><Link to="/workspace" activeProps={{className:'active'}}>Workspace</Link><Link to="/events" search={{}} activeProps={{ className: 'active' }}>Events</Link><Link to="/connectors" activeProps={{className:'active'}}>Connectors</Link><Link to="/api" activeProps={{className:"active"}}>API Lab</Link></nav></header><main><Outlet /></main></div> })
 const home = createRoute({ getParentRoute: () => root, path: '/', component: () => <section className="intro"><p className="eyebrow">AUTOMATION CONTROL PLANE</p><h1>Everything in orbit.</h1><p>Event streams, workflows and connected systems. Navigate to the event explorer to inspect your activity.</p><Link to="/events" search={{}}>Explore events →</Link></section> })
 const events = createRoute({ getParentRoute: () => root, path: '/events', validateSearch: searchSchema, component: EventExplorer })
 const connectors = createRoute({getParentRoute:()=>root,path:'/connectors',component:Connectors})
 const api = createRoute({getParentRoute:()=>root,path:'/api',component:ApiWorkbench})
-const routeTree = root.addChildren([home, events, connectors, api])
+const workspace=createRoute({getParentRoute:()=>root,path:'/workspace',component:WorkspaceExplorer})
+const routeTree = root.addChildren([home, events, connectors, api, workspace])
 const router = createRouter({ routeTree, defaultPreload: 'intent' })
 declare module '@tanstack/react-router' { interface Register { router: typeof router } }
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } })
-createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><RouterProvider router={router} /></QueryClientProvider></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><WorkspaceProvider><RouterProvider router={router} /></WorkspaceProvider></QueryClientProvider></React.StrictMode>)
