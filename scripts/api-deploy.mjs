@@ -121,6 +121,11 @@ async function smoke(ctx) {
       }
     }
 
+    if (authenticated?.status === 500) {
+      const body = await authenticated.text().catch(() => '')
+      const code = body.match(/(?:error code[:\s]*|Error\s+)(10\d{2}|11\d{2})/i)?.[1]
+      ctx.update('HTTP 500 · cf-ray=' + (authenticated.headers.get('cf-ray') ?? 'unknown') + ' · edge error=' + (code ?? 'unknown'))
+    }
     await authenticated?.body?.cancel().catch(() => {})
     await anonymous?.body?.cancel().catch(() => {})
     await new Promise((resolve) => setTimeout(resolve, 5000))

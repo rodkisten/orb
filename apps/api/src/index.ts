@@ -26,7 +26,7 @@ type Bindings = JardimBindings & {
 }
 
 function createApp(env: Bindings) {
-  return new Elysia({ prefix: '/v1' })
+  return new Elysia({ prefix: '/v1', aot: false })
     .use(openapi({
       path: '/openapi',
       documentation: {
@@ -223,11 +223,16 @@ function createApp(env: Bindings) {
 export type OrbApi = ReturnType<typeof createApp>
 
 export default {
-  fetch(request: Request, env: Bindings) {
+  async fetch(request: Request, env: Bindings) {
+    try {
     if (new URL(request.url).pathname === '/v1/webhooks/github') {
       return handleGitHubWebhook(request, env)
     }
-    return createApp(env).fetch(request)
+    return await createApp(env).fetch(request)
+    } catch (error) {
+      console.error('orb.fetch failed', error instanceof Error ? error.stack : 'Unknown error')
+      return Response.json({ error: 'Internal server error' }, { status: 500 })
+    }
   },
   async scheduled(_controller: ScheduledController, env: Bindings) {
     await env.ORB_DB.prepare('DELETE FROM github_cache WHERE expires_at <= ?').bind(Date.now()).run().catch(()=>null)
