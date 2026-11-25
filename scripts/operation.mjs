@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { appendFileSync, readFileSync } from 'node:fs'
+import { appendFileSync, readFileSync, lstatSync } from 'node:fs'
 
 const env = process.env
 const branch = env.INPUT_BRANCH || 'main'
@@ -36,6 +36,15 @@ if (!git('status', '--porcelain')) {
   run('git', ['config', 'user.name', 'ploocky[bot]'])
   run('git', ['config', 'user.email', 'ploocky[bot]@users.noreply.github.com'])
   run('git', ['add', '-A'])
+  const staged = run('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], true).split('\0').filter(Boolean)
+  for (const path of staged) {
+    if (/(^|\/)(node_modules|\.pnpm-store|\.wrangler|\.vite)(\/|$)/.test(path) ||
+        /(^|\/)(\.env(?:\..*)?|\.dev\.vars(?:\..*)?)$/.test(path) && !path.endsWith('.example') ||
+        /\.(pem|key|p12)$/.test(path) ||
+        lstatSync(path).size > 90 * 1024 * 1024) {
+      throw new Error('Refusing to commit unsafe or oversized artifact: ' + path)
+    }
+  }
   run('git', ['commit', '-m', 'chore(ops): ' + operation + ' [deploy]'])
   run('git', ['push', 'origin', 'HEAD:refs/heads/' + branch])
   output('changed', 'true')
