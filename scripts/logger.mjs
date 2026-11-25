@@ -68,7 +68,11 @@ export function createLogger(suiteName) {
       if (timer) clearInterval(timer)
 
       const duration = c.dim(formatDuration(performance.now() - start))
-      const line = ` ${c.red('❯')} ${c.red(title)} ${duration}`
+      const reason = err.missingVars?.length
+        ? c.yellow(` → faltando: ${c.bold(err.missingVars.join(', '))}`)
+        : c.dim(` → ${err.message}`)
+
+      const line = ` ${c.red('❯')} ${c.red(title)}${reason} ${duration}`
       process.stdout.write(isTTY ? `\r\x1b[2K${line}\n` : `${line}\n`)
       throw err
     }
@@ -77,7 +81,7 @@ export function createLogger(suiteName) {
   function requireEnv(keys) {
     const missing = keys.filter((key) => !process.env[key]?.trim())
     if (missing.length > 0) {
-      const err = new Error(`Missing ${missing.length} required environment variable(s)`)
+      const err = new Error(`Variáveis não definidas: ${missing.join(', ')}`)
       err.missingVars = missing
       throw err
     }
@@ -93,9 +97,8 @@ export function createLogger(suiteName) {
     console.error(`\n ${c.bgRed(' FAIL ')} ${c.bold(c.red(err.message))} ${c.dim(`(${total})`)}\n`)
 
     if (err.missingVars?.length) {
-      console.error(` ${c.yellow('Variáveis não definidas ou vazias:')}`)
       for (const key of err.missingVars) {
-        console.error(`   ${c.red('✖')} ${c.bold(key)}`)
+        console.error(`   ${c.red('✖')} ${c.bold(key)} ${c.dim('(não definida ou vazia)')}`)
       }
       console.error('')
     } else if (err.stderr) {
