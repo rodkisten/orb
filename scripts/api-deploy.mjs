@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -138,7 +139,47 @@ async function ensureQueues() {
   }
 }
 
+async function bootstrapCredentials() {
+  log.requireEnv(['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'])
+  const base = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CLOUDFLARE_ACCOUNT_ID
+  async function cf(path, method = 'GET', body) {
+    const response = await fetch(base + path, {
+      method, headers: { Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN, 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000),
+    })
+    const payload = await response.json()
+    if (!response.ok || !payload.success) throw Error('Cloudflare bootstrap failed: ' + method + ' ' + path + ' (' + response.status + ')')
+    return payload.result
+  }
+  const app = await cf('/access/apps/' + encodeURIComponent(process.env.CF_ACCESS_APP_ID))
+  process.env.CF_ACCESS_AUD ||= app.aud
+  const missing = ['ORB_INGEST_TOKEN', 'ORB_WEBHOOK_SECRET', 'CF_ACCESS_CLIENT_ID', 'CF_ACCESS_CLIENT_SECRET'].filter(key => !process.env[key])
+  if (!missing.length) return
+  if (!process.env.GH_TOKEN) throw Error('Missing ORB_BOOTSTRAP_GITHUB_TOKEN: a GitHub credential with environment secrets write access is required to persist generated keys safely.')
+  const save = (key, value) => {
+    if (!value) throw Error('Empty generated credential: ' + key)
+    execFileSync('gh', ['secret', 'set', key, '-R', 'rodkisten/orb', '-e', 'production'], { input: value, stdio: ['pipe', 'ignore', 'pipe'] })
+    process.env[key] = value
+  }
+  for (const key of ['ORB_INGEST_TOKEN', 'ORB_WEBHOOK_SECRET']) {
+    if (!process.env[key]) save(key, randomBytes(32).toString('hex'))
+  }
+  if (!process.env.CF_ACCESS_CLIENT_ID || !process.env.CF_ACCESS_CLIENT_SECRET) {
+    const tokens = await cf('/access/service_tokens')
+    if (tokens.some(token => token.name === 'orb-bootstrap')) throw Error('Existing orb-bootstrap service token found; recover its stored credentials or explicitly rotate it. No automatic rotation.')
+    const token = await cf('/access/service_tokens', 'POST', { name: 'orb-bootstrap', duration: '8760h' })
+    save('CF_ACCESS_CLIENT_ID', token.client_id)
+    save('CF_ACCESS_CLIENT_SECRET', token.client_secret)
+    const policies = await cf('/access/apps/' + app.id + '/policies')
+    if (!policies.some(policy => policy.decision === 'non_identity' && policy.include?.some(rule => rule.service_token?.token_id === token.id))) {
+      await cf('/access/apps/' + app.id + '/policies', 'POST', { name: 'Orb bootstrap smoke', decision: 'non_identity', include: [{ service_token: { token_id: token.id } }] })
+    }
+  }
+}
+
 async function deploy() {
+  if (process.env.ORB_BOOTSTRAP === '1') await log.step('Provision missing credentials', bootstrapCredentials)
+
   await log.step('Validate environment variables', () => {
     log.requireEnv(required)
   })
