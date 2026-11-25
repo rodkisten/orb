@@ -23,6 +23,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build and typecheck frontend
         run: pnpm --filter @orb/web build
+      - name: Typecheck gateway
+        run: pnpm --filter @orb/web exec tsc --noEmit --strict --target ES2022 --lib ES2022,DOM worker.ts --skipLibCheck
       - name: Deploy frontend
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
