@@ -9,9 +9,9 @@ const parserOps=['parse','validate','inspect','transform']
 export function ApiWorkbench(){const {repos}=useWorkspace();return <Lab key={repos.join(',')} repos={repos}/>}
 function Lab({repos}:{repos:string[]}){
  const [operation,setOperation]=useState<Operation>('workflow-source')
- const [repo,setRepo]=useState(repos[0]??'')
- const [ref,setRef]=useState('main')
- const [path,setPath]=useState('.github/workflows/api-verify.yml')
+ const [repo,setRepo]=useState(()=>{const r=new URLSearchParams(location.search).get('repo');return r&&repos.includes(r)?r:repos[0]??''})
+ const [ref,setRef]=useState(()=>new URLSearchParams(location.search).get('ref')??'main')
+ const [path,setPath]=useState(()=>new URLSearchParams(location.search).get('path')??'.github/workflows/api-verify.yml')
  const [yaml,setYaml]=useState('')
  const [nodePath,setNodePath]=useState('["name"]')
  const [value,setValue]=useState('Orb verification')

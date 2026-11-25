@@ -54,9 +54,9 @@ function createApp(env: Bindings) {
     .get('/github/:owner/:repo/files', async ({params,query,request,set})=>{
       set.headers['cache-control']='no-store'
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
-      try{return await repositoryRead(env,params.owner,params.repo,'contents',query.page??1,query.limit??30)}
+      try{return await repositoryRead(env,params.owner,params.repo,'contents',query.page??1,query.limit??30,{path:query.path,ref:query.ref})}
       catch(error){set.status=error instanceof GatewayError?error.status:502;return {error:error instanceof GatewayError?error.message:'GitHub request failed'}}
-    },{params:repositoryParams,query:paginationQuery,detail:{tags:['GitHub']}})
+    },{params:repositoryParams,query:t.Object({page:t.Optional(t.Numeric({minimum:1,maximum:1000})),limit:t.Optional(t.Numeric({minimum:1,maximum:100})),path:t.Optional(t.String({maxLength:1024})),ref:t.Optional(t.String({maxLength:256}))}),detail:{tags:['GitHub']}})
     .get('/github/:owner/:repo/branches', async ({params,query,request,set})=>{
       set.headers['cache-control']='no-store'
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
