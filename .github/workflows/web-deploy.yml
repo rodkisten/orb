@@ -24,11 +24,11 @@ jobs:
       - name: Build and typecheck frontend
         run: pnpm --filter @orb/web build
       - name: Deploy frontend
-        working-directory: apps/web
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: pnpm --filter @orb/api exec wrangler deploy --config ../web/wrangler.jsonc
+        run: pnpm --fail-if-no-match --filter @orb/api exec wrangler deploy --config ../web/wrangler.jsonc
       - name: Verify domain
         run: |
-          curl --retry 5 --retry-all-errors --fail --silent --show-error --output /dev/null https://orb.migos.club/
+          curl --retry 8 --retry-all-errors --retry-max-time 180 --fail --silent --show-error https://orb.migos.club/ -o /tmp/orb-index.html
+          grep -q 'id="root"' /tmp/orb-index.html
