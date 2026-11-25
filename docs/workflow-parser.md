@@ -12,3 +12,5 @@ API typecheck and dry-run are release gates. Fixed Workers TextDecoder construct
 
 ## Compatibility probe
 The official parser adapter and syntax session are available via core exports. The isolated workflow-parser-probe workflow installs pinned official parser 0.3.61 and web-tree-sitter 0.27.2 without changing production dependencies, validates a positive and negative workflow, and initializes WASM. This is a compatibility gate only, not production integration. No grammar loaded yet; incremental edits and browser/Worker runtime verification remain pending. The syntax session performs full parses and owns tree disposal. Official validation returns normalized messages; no expression evaluation.
+
+Probe failure ERR_IMPORT_ATTRIBUTE_MISSING in official package JSON imports on Node 22: bundle the probe with esbuild, externalizing web-tree-sitter so its WASM assets remain resolvable. Verification pending.

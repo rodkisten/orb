@@ -19,10 +19,11 @@ jobs:
         with:
           node-version: '22'
       - name: Install isolated probe dependencies
-        run: npm install --prefix .parser-probe --no-save --ignore-scripts @actions/workflow-parser@0.3.61 web-tree-sitter@0.27.2
+        run: npm install --prefix .parser-probe --no-save --ignore-scripts @actions/workflow-parser@0.3.61 web-tree-sitter@0.27.2 esbuild@0.25.12
       - name: Run official parser and WASM smoke
         run: |
           mkdir -p node_modules
           ln -s ../.parser-probe/node_modules/@actions node_modules/@actions
           ln -s ../.parser-probe/node_modules/web-tree-sitter node_modules/web-tree-sitter
-          node --experimental-strip-types scripts/workflow-parser-probe.mjs
+           .parser-probe/node_modules/.bin/esbuild scripts/workflow-parser-probe.mjs --bundle --platform=node --format=esm --external:web-tree-sitter --outfile=.parser-probe/probe.mjs
+          node .parser-probe/probe.mjs
