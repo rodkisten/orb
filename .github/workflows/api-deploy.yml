@@ -14,7 +14,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    #environment: production 
+    environment: production
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -50,4 +50,7 @@ jobs:
           ORB_WEBHOOK_SECRET: ${{ secrets.ORB_WEBHOOK_SECRET }}
           ORB_CI_READ_TOKEN: ${{ secrets.ORB_CI_READ_TOKEN }}
           ORB_CI_REPOSITORIES: ${{ vars.ORB_CI_REPOSITORIES }}
+          GITHUB_APP_ID: ${{ vars.GITHUB_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ vars.GITHUB_APP_INSTALLATION_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
         run: node scripts/api-deploy.mjs

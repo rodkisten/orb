@@ -7,7 +7,20 @@ import { createLogger } from './logger.mjs'
 const log = createLogger('ORB API DEPLOY')
 
 const host = 'api.orb.migos.club'
+const projectRepositories = [
+  'rodverse/rodverse', 'rodkisten/orb', 'rodkisten/photointel',
+  'rodkisten/userscripts-cf', 'rodkisten/shell', 'rodkisten/jardim',
+  'rodkisten/ast-explorer', 'rodkisten/ejc', 'rodkisten/github',
+  'rodkisten/rodtui', 'rodkisten/rodlog', 'rodkisten/zsh',
+]
+process.env.ORB_CI_REPOSITORIES = [...new Set([
+  ...projectRepositories,
+  ...(process.env.ORB_CI_REPOSITORIES || '').split(',').map(value => value.trim()).filter(Boolean),
+])].sort().join(',')
 const workerKeys = [
+  'GITHUB_APP_ID',
+  'GITHUB_APP_INSTALLATION_ID',
+  'GITHUB_APP_PRIVATE_KEY',
   'CF_ACCESS_AUD',
   'CF_ACCESS_TEAM_DOMAIN',
   'ORB_INGEST_TOKEN',
