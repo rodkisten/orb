@@ -41,6 +41,11 @@ function createApp(env: Bindings) {
     }), { detail: { tags: ['System'], summary: 'API capabilities' } })
     .get('/github/:owner/:repo/pulls/:number/ci', async ({ params, request, set }) => {
       set.headers['cache-control'] = 'no-store'
+      set.headers.vary = 'Origin'
+      if (request.headers.get('origin') === 'https://github.com') {
+        set.headers['access-control-allow-origin'] = 'https://github.com'
+        set.headers['access-control-allow-credentials'] = 'true'
+      }
       if (!(await accessIdentity(request, env))) {
         set.status = 401
         return { error: 'Unauthorized' }
