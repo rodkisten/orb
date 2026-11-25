@@ -3,11 +3,14 @@ import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
+import { readPrFailure } from './github-pr-ci'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
   ORB_INGEST_TOKEN?: string
   GITHUB_WEBHOOK_SECRET?: string
+  GITHUB_CI_READ_TOKEN?: string
+  GITHUB_CI_REPOSITORIES?: string
   CF_ACCESS_TEAM_DOMAIN?: string
   CF_ACCESS_AUD?: string
   ORB_DB: D1Database
@@ -36,6 +39,45 @@ function createApp(env: Bindings) {
       apiVersion: 'v1',
       capabilities: ['events', 'connectors', 'automation'],
     }), { detail: { tags: ['System'], summary: 'API capabilities' } })
+    .get('/github/:owner/:repo/pulls/:number/ci', async ({ params, request, set }) => {
+      set.headers['cache-control'] = 'no-store'
+      if (!(await accessIdentity(request, env))) {
+        set.status = 401
+        return { error: 'Unauthorized' }
+      }
+      const { owner, repo, number } = params
+      const allowlist = env.GITHUB_CI_REPOSITORIES?.toLowerCase().split(',').map(value => value.trim())
+      if (!allowlist?.includes(`${owner}/${repo}`.toLowerCase())) {
+        set.status = 404
+        return { error: 'Repository unavailable' }
+      }
+      if (!env.GITHUB_CI_READ_TOKEN) {
+        set.status = 503
+        return { error: 'GitHub CI connector not configured' }
+      }
+      const cacheKey = new URL(request.url)
+      cacheKey.search = ''
+      const edgeCache = await caches.open('orb-github-pr-ci-v1')
+      try {
+        const cached = await edgeCache.match(cacheKey.href)
+        if (cached) return await cached.json()
+        const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
+        await edgeCache.put(cacheKey.href, Response.json(status, {
+          headers: { 'Cache-Control': 'max-age=15' },
+        }))
+        return status
+      } catch {
+        set.status = 502
+        return { error: 'Could not read GitHub CI status' }
+      }
+    }, {
+      params: t.Object({
+        owner: t.String({ pattern: '^[A-Za-z0-9-]{1,39}$' }),
+        repo: t.String({ pattern: '^[A-Za-z0-9_.-]{1,100}$' }),
+        number: t.Numeric({ minimum: 1, maximum: 2147483647, multipleOf: 1 }),
+      }),
+      detail: { tags: ['System'], summary: 'Inspect the latest workflow failure for a pull request' },
+    })
     .post('/events/validate', ({ body }) => ({ valid: true as const, event: body }), {
       body: eventSchema,
       detail: { tags: ['Events'], summary: 'Validate an event without persisting it' },
