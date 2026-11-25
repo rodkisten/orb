@@ -7,7 +7,7 @@ import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
 import { workflowSource, validateWorkflow } from './workflow-builder'
-import { inspectWorkflow } from './workflow-inspect'
+import { inspectWorkflow, parseWorkflow, replaceScalar } from '@orb/workflow-core'
 import { repositoryRead, GatewayError } from './repository-read'
 import { githubToken, githubAuthMode } from './github-auth'
 import { readPrFailure } from './github-pr-ci'
@@ -91,6 +91,15 @@ function createApp(env: Bindings) {
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
       return validateWorkflow(body.yaml)
     },{body:t.Object({yaml:t.String({maxLength:262144})}),detail:{tags:['Workflow Builder']}})
+    .post('/workflows/parse',async ({body,request,set})=>{
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      return parseWorkflow(body.yaml)
+    },{body:t.Object({yaml:t.String({maxLength:262144})}),detail:{tags:['Workflow Builder']}})
+    .post('/workflows/transform',async ({body,request,set})=>{
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      try{return replaceScalar(body.yaml,body.path,body.value)}
+      catch{set.status=422;return {error:'Unsupported scalar transformation'}}
+    },{body:t.Object({yaml:t.String({maxLength:262144}),path:t.Array(t.Union([t.String({maxLength:255}),t.Integer({minimum:0})]),{minItems:1,maxItems:100}),value:t.String({maxLength:65536})}),detail:{tags:['Workflow Builder']}})
     .post('/workflows/inspect',async ({body,request,set})=>{
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
       return inspectWorkflow(body.yaml)
