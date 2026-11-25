@@ -6,6 +6,7 @@ import { openapi } from '@elysia/openapi'
 import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
+import { githubToken, githubAuthMode } from './github-auth'
 import { readPrFailure } from './github-pr-ci'
 import { ciPage } from './github-pr-ci-page'
 import { readStepLog } from './github-ci-log'
@@ -37,7 +38,7 @@ function createApp(env: Bindings) {
         ],
       },
     }))
-    .get('/github/gateway/metrics',async ({request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}set.headers['cache-control']='no-store';return gatewayMetrics()})
+    .get('/github/gateway/metrics',async ({request,set})=>{if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}set.headers['cache-control']='no-store';return {...gatewayMetrics(), authMode: githubAuthMode(env)}})
     .get('/actions/versions', async ({query,request,set}) => {
       if (!(await accessIdentity(request,env))) { set.status=401; return {error:'Unauthorized'} }
       try { return await (await GitHubGateway.create(env.ORB_DB,env)).versions(query.owner,query.repo) }
@@ -87,7 +88,8 @@ function createApp(env: Bindings) {
       if (!allowlist?.includes(`${owner}/${repo}`.toLowerCase())) {
         return respond({ error: 'Repositório indisponível para este conector.' }, 404)
       }
-      if (!env.ORB_CI_READ_TOKEN) {
+      const token = await githubToken(env).catch(() => null)
+      if (!token) {
         return respond({ error: 'Conector de CI do GitHub ainda não configurado.' }, 503)
       }
       const cacheKey = url
@@ -95,16 +97,16 @@ function createApp(env: Bindings) {
       try {
         if (wantsLog) {
           // Recheck the latest run before retrieving privileged log content.
-          const status = await readPrFailure(owner, repo, number, env.ORB_CI_READ_TOKEN)
+          const status = await readPrFailure(owner, repo, number, token)
           const excerpt = status.failure
-            ? await readStepLog(owner, repo, status.failure, env.ORB_CI_READ_TOKEN).catch(() => null)
+            ? await readStepLog(owner, repo, status.failure, token).catch(() => null)
             : null
           return respond({ ...status, excerpt })
         }
         const edgeCache = await caches.open('orb-github-pr-ci-v2')
         const cached = await edgeCache.match(cacheKey.href)
         if (cached) return respond(await cached.json<Awaited<ReturnType<typeof readPrFailure>>>())
-        const status = await readPrFailure(owner, repo, number, env.ORB_CI_READ_TOKEN)
+        const status = await readPrFailure(owner, repo, number, token)
         await edgeCache.put(cacheKey.href, Response.json(status, {
           headers: { 'Cache-Control': 'max-age=15' },
         }))
