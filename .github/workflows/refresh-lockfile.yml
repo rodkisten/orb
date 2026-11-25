@@ -37,13 +37,6 @@ jobs:
           node-version: '22'
       - name: 📦 Generate real workspace lockfile
         run: pnpm install --lockfile-only --no-frozen-lockfile
-      - name: 🔎 Verify workspace
-        if: ${{ inputs.run_checks }}
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm -r --if-present typecheck
-          pnpm --filter @orb/web build
-          pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
       - name: 📝 Commit generated lockfile
         if: ${{ inputs.commit_changes }}
         run: |
@@ -60,3 +53,10 @@ jobs:
           fi
           git commit -m 'chore: generate pnpm 12 workspace lockfile [deploy]'
           git push
+      - name: 🔎 Verify workspace
+        if: ${{ inputs.run_checks }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -r --if-present typecheck
+          pnpm --filter @orb/web build
+          pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
