@@ -4,7 +4,7 @@ import { markQueued, persistEvent } from './storage'
 type WebhookBindings = {
   ORB_DB: D1Database
   ORB_EVENTS: Queue<{ eventId: string }>
-  GITHUB_WEBHOOK_SECRET?: string
+  ORB_WEBHOOK_SECRET?: string
 }
 
 const encoder = new TextEncoder()
@@ -38,14 +38,14 @@ export async function handleGitHubWebhook(
   env: WebhookBindings,
 ): Promise<Response> {
   if (request.method !== 'POST') return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  if (!env.GITHUB_WEBHOOK_SECRET) return Response.json({ error: 'Webhook not configured' }, { status: 503 })
+  if (!env.ORB_WEBHOOK_SECRET) return Response.json({ error: 'Webhook not configured' }, { status: 503 })
 
   const length = Number(request.headers.get('content-length') ?? '0')
   if (length > MAX_BODY_BYTES) return Response.json({ error: 'Payload too large' }, { status: 413 })
   const body = await request.arrayBuffer()
   if (body.byteLength > MAX_BODY_BYTES) return Response.json({ error: 'Payload too large' }, { status: 413 })
 
-  if (!(await verifyGitHubSignature(body, request.headers.get('x-hub-signature-256'), env.GITHUB_WEBHOOK_SECRET))) {
+  if (!(await verifyGitHubSignature(body, request.headers.get('x-hub-signature-256'), env.ORB_WEBHOOK_SECRET))) {
     return Response.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
