@@ -19,3 +19,9 @@ Use original YAML as the source of truth. Graph nodes derive from jobs and edges
 
 ## Verification
 Run API typecheck and authenticated smoke requests. No new dependency required.
+
+## Inspector increment
+POST /v1/workflows/inspect accepts the same YAML payload as validate. Returns validation plus triggerNames, interface (workflow_call input/output/secret names and dispatch input names), details (job IDs, reusable workflow references, input/output names, ordered steps, action references, step kind and environment key names). No secret values, shell execution, alias expansion or remote resolution. Remote action manifests remain available via existing /v1/actions/resolve. Reusable workflow remote resolution and full typed metadata remain pending.
+
+## Regression repair
+Rebuilt index.ts from the last pre-gateway baseline and reapplied all eight read/validation/inspection routes using literal replacement callbacks to avoid JavaScript replacement-string dollar expansion. CI typecheck required before release.
