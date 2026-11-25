@@ -7,12 +7,14 @@ on:
       - 'apps/web/**'
       - 'package.json'
       - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/web-verify.yml'
   pull_request:
     paths:
       - 'apps/web/**'
       - 'package.json'
       - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/web-verify.yml'
   workflow_dispatch:
 
@@ -36,6 +38,6 @@ jobs:
         with:
           node-version: '22'
       - name: 📦 Install workspace
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: 🧭 Typecheck and bundle web
         run: pnpm --filter @orb/web build
