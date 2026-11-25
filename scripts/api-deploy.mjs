@@ -29,13 +29,15 @@ const workerKeys = [
   'ORB_CI_READ_TOKEN',
   'ORB_CI_REPOSITORIES',
 ]
+const githubKeys = ['ORB_GITHUB_APP_ID', 'ORB_GITHUB_APP_INSTALLATION_ID', 'ORB_GITHUB_APP_PRIVATE_KEY']
+const optionalKeys = new Set([...githubKeys, 'ORB_CI_READ_TOKEN'])
 const required = [
   'CLOUDFLARE_ACCOUNT_ID',
   'CLOUDFLARE_API_TOKEN',
   'CF_ACCESS_APP_ID',
   'CF_ACCESS_CLIENT_ID',
   'CF_ACCESS_CLIENT_SECRET',
-  ...workerKeys,
+  ...workerKeys.filter(key => !optionalKeys.has(key)),
 ]
 
 async function resolveAccessApp() {
@@ -202,6 +204,17 @@ async function deploy() {
     log.requireEnv(required)
   })
 
+  await log.step('Resolve GitHub integration credentials', () => {
+    const complete = githubKeys.every(key => process.env[key])
+    if (!complete) {
+      for (const key of githubKeys) delete process.env[key]
+      console.log('GitHub App credentials unavailable; preserving existing Worker bindings.')
+    }
+    if (!complete && !process.env.ORB_CI_READ_TOKEN) {
+      console.log('GitHub integration requires existing App bindings or a dedicated read token; core deployment continues.')
+    }
+  })
+
   await log.step('Inspect Cloudflare Access policies', () => inspectAccess())
 
   if (process.env.ORB_BOOTSTRAP === '1') {
@@ -213,7 +226,7 @@ async function deploy() {
     const secrets = join(temporary, 'secrets.json')
     writeFileSync(
       secrets,
-      JSON.stringify(Object.fromEntries(workerKeys.map((key) => [key, process.env[key]]))),
+      JSON.stringify(Object.fromEntries(workerKeys.filter(key => process.env[key]).map((key) => [key, process.env[key]]))),
       { mode: 0o600 },
     )
 
@@ -222,7 +235,7 @@ async function deploy() {
     })
 
     await log.step('Deploy Worker & sync secrets', () => {
-      runWrangler('deploy', '--secrets-file', secrets)
+      runWrangler('deploy', '--keep-vars', '--secrets-file', secrets)
     })
 
     await log.step(`Verify health check (${host})`, (ctx) => smoke(ctx))
