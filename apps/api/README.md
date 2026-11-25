@@ -48,3 +48,7 @@ A resposta guarda cache no edge por 15 segundos. Quando a execução mais recent
 commit atual termina com falha, o endpoint devolve workflow, job, etapa, primeira
 anotação de erro disponível e um link direto para o log no GitHub. Se a execução
 mais recente estiver em andamento ou tiver outra conclusão, devolve `{"failure":null}`.
+
+A mesma rota com `?view=page` exibe um diagnóstico HTML protegido pelo
+Cloudflare Access. Abra essa URL em uma aba para consultar o resultado quando
+o navegador bloquear a sessão em requisições feitas a partir de github.com.

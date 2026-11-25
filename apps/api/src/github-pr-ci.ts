@@ -65,19 +65,20 @@ type PrCheckQueryData = {
             oid: string
             checkSuites: {
               nodes: {
+                status: string
+                conclusion: string | null
                 workflowRun: {
-                  databaseId: number
+                  url: string
                   createdAt: string
                   event: string
                   workflow: { name: string }
                 } | null
                 checkRuns: {
                   nodes: {
-                    databaseId: number
                     name: string
                     status: string
                     conclusion: string | null
-                    detailsUrl: string
+                    detailsUrl: string | null
                     steps: {
                       nodes: {
                         name: string
@@ -126,8 +127,10 @@ export async function readPrFailure(
                 oid
                 checkSuites(last: 20) {
                   nodes {
+                    status
+                    conclusion
                     workflowRun {
-                      databaseId
+                      url
                       createdAt
                       event
                       workflow {
@@ -136,7 +139,6 @@ export async function readPrFailure(
                     }
                     checkRuns(first: 50) {
                       nodes {
-                        databaseId
                         name
                         status
                         conclusion
@@ -178,32 +180,39 @@ export async function readPrFailure(
     .sort((a, b) => {
       const runA = a.workflowRun!
       const runB = b.workflowRun!
-      return runB.createdAt.localeCompare(runA.createdAt) || runB.databaseId - runA.databaseId
+      return runB.createdAt.localeCompare(runA.createdAt) ||
+        runB.url.localeCompare(runA.url, 'en', { numeric: true })
     })
 
   const latestSuite = prSuites[0]
   const workflowRun = latestSuite?.workflowRun
-  if (!latestSuite || !workflowRun) return { failure: null }
+  if (!latestSuite || !workflowRun || latestSuite.status !== 'COMPLETED' ||
+      latestSuite.conclusion !== 'FAILURE') return { failure: null }
 
   // Ensure the run has finished and has a failing check run (job)
   const isStillRunning = latestSuite.checkRuns.nodes.some(run => run.status !== 'COMPLETED')
   if (isStillRunning) return { failure: null }
 
   const failedJob = latestSuite.checkRuns.nodes.find(run => run.conclusion === 'FAILURE')
-  if (!failedJob) return { failure: null }
-
-  const failedStep = failedJob.steps.nodes.find(step => step.conclusion === 'FAILURE')
-  const failureAnnotation = failedJob.annotations.nodes.find(
+  const failedStep = failedJob?.steps?.nodes?.find(step => step.conclusion === 'FAILURE')
+  const failureAnnotation = failedJob?.annotations?.nodes?.find(
     item => item.annotationLevel === 'FAILURE',
   )
 
-  const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${workflowRun.databaseId}`
-  const logUrl = `${runUrl}/job/${failedJob.databaseId}${failedStep ? `#step:${failedStep.number}:1` : ''}`
+  const prefix = `https://github.com/${owner}/${repo}/actions/runs/`
+  const runUrl = workflowRun.url
+  if (!runUrl.toLowerCase().startsWith(prefix.toLowerCase()) || !/^\d+$/.test(runUrl.slice(prefix.length))) {
+    throw new Error('Unexpected GitHub Actions URL')
+  }
+  const detailsUrl = failedJob?.detailsUrl
+  const logUrl = detailsUrl?.startsWith(runUrl + '/job/') && /^\d+$/.test(detailsUrl.slice(runUrl.length + 5))
+    ? detailsUrl + (failedStep ? `#step:${failedStep.number}:1` : '')
+    : runUrl
 
   return {
     failure: {
       workflow: workflowRun.workflow.name,
-      job: failedJob.name,
+      job: failedJob?.name ?? null,
       step: failedStep?.name ?? null,
       error: failureAnnotation?.message.slice(0, 2000) ?? null,
       runUrl,

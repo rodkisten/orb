@@ -4,6 +4,7 @@ import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
 import { readPrFailure } from './github-pr-ci'
+import { ciPage } from './github-pr-ci-page'
 import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage'
 
 type Bindings = {
@@ -40,6 +41,15 @@ function createApp(env: Bindings) {
       capabilities: ['events', 'connectors', 'automation'],
     }), { detail: { tags: ['System'], summary: 'API capabilities' } })
     .get('/github/:owner/:repo/pulls/:number/ci', async ({ params, request, set }) => {
+      const { owner, repo, number } = params
+      const url = new URL(request.url)
+      const wantsPage = url.searchParams.get('view') === 'page'
+      const label = `${owner}/${repo} #${number}`
+      const respond = (body: Parameters<typeof ciPage>[1], status = 200) => {
+        if (wantsPage) return ciPage(label, body, status)
+        set.status = status
+        return body
+      }
       set.headers['cache-control'] = 'no-store'
       set.headers.vary = 'Origin'
       if (request.headers.get('origin') === 'https://github.com') {
@@ -47,33 +57,28 @@ function createApp(env: Bindings) {
         set.headers['access-control-allow-credentials'] = 'true'
       }
       if (!(await accessIdentity(request, env))) {
-        set.status = 401
-        return { error: 'Unauthorized' }
+        return respond({ error: 'Sessão do Orb necessária.' }, 401)
       }
-      const { owner, repo, number } = params
       const allowlist = env.GITHUB_CI_REPOSITORIES?.toLowerCase().split(',').map(value => value.trim())
       if (!allowlist?.includes(`${owner}/${repo}`.toLowerCase())) {
-        set.status = 404
-        return { error: 'Repository unavailable' }
+        return respond({ error: 'Repositório indisponível para este conector.' }, 404)
       }
       if (!env.GITHUB_CI_READ_TOKEN) {
-        set.status = 503
-        return { error: 'GitHub CI connector not configured' }
+        return respond({ error: 'Conector de CI do GitHub ainda não configurado.' }, 503)
       }
-      const cacheKey = new URL(request.url)
+      const cacheKey = url
       cacheKey.search = ''
-      const edgeCache = await caches.open('orb-github-pr-ci-v1')
       try {
+        const edgeCache = await caches.open('orb-github-pr-ci-v2')
         const cached = await edgeCache.match(cacheKey.href)
-        if (cached) return await cached.json()
+        if (cached) return respond(await cached.json<Awaited<ReturnType<typeof readPrFailure>>>())
         const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
         await edgeCache.put(cacheKey.href, Response.json(status, {
           headers: { 'Cache-Control': 'max-age=15' },
         }))
-        return status
+        return respond(status)
       } catch {
-        set.status = 502
-        return { error: 'Could not read GitHub CI status' }
+        return respond({ error: 'Não foi possível consultar o CI no GitHub.' }, 502)
       }
     }, {
       params: t.Object({
