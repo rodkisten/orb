@@ -46,19 +46,30 @@ jobs:
           node-version: '22'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @orb/api typecheck && pnpm --filter @orb/web build
-      - name: Deploy isolated frontend
+      - name: Deploy isolated API and frontend
         id: deploy
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCESS_AUD: ${{ vars.CF_ACCESS_AUD }}
+          CF_ACCESS_TEAM_DOMAIN: ${{ vars.CF_ACCESS_TEAM_DOMAIN }}
+          ORB_GITHUB_APP_ID: ${{ vars.ORB_GITHUB_APP_ID }}
+          ORB_GITHUB_APP_INSTALLATION_ID: ${{ vars.ORB_GITHUB_APP_INSTALLATION_ID }}
+          ORB_GITHUB_APP_PRIVATE_KEY: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY }}
+          ORB_CI_READ_TOKEN: ${{ secrets.ORB_CI_READ_TOKEN }}
+          ORB_CI_REPOSITORIES: ${{ vars.ORB_CI_REPOSITORIES }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           test "$(gh pr view "$PR" --json headRefOid --jq .headRefOid)" = "$(git rev-parse HEAD)"
           node scripts/preview-config.mjs "$PR"
+          node scripts/preview-secrets.mjs /tmp/orb-preview-secrets.json
+          trap 'rm -f /tmp/orb-preview-secrets.json' EXIT
+          pnpm --filter @orb/api exec wrangler deploy --config wrangler.preview.json --secrets-file /tmp/orb-preview-secrets.json
           pnpm --filter @orb/api exec wrangler deploy --config ../web/wrangler.preview.json
-          url="https://$PR.orb.migos.club"
+          url="https://pr$PR.orb.migos.club"
           curl --retry 8 --retry-all-errors --retry-max-time 180 -fsS -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$url/api" -o /tmp/orb-preview.html
+          curl --retry 8 --retry-all-errors --retry-max-time 180 -fsS -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "https://pr$PR.api.orb.migos.club/v1/health" | jq -e '.status == "ok"'
           grep -q 'id="root"' /tmp/orb-preview.html
           curl -fsS -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$url/v1/health" | jq -e '.status == "ok"'
       - name: Generate preview report
@@ -69,7 +80,7 @@ jobs:
         run: |
           status=failure
           if [[ "$OUTCOME" == success ]]; then status=success; fi
-          jq -n --arg sha "$SHA" --arg status "$status" --arg url "https://$PR.orb.migos.club/api" '{title:"🪐 Orb preview",sha:$sha,status:$status,url:$url,description:"API Lab · real API through authenticated gateway",links:[{label:"API Lab",url:$url}]}' > /tmp/orb-report.json
+          jq -n --arg sha "$SHA" --arg status "$status" --arg url "https://pr$PR.orb.migos.club/api" '{title:"🪐 Orb preview",sha:$sha,status:$status,url:$url,description:"API Lab · real API through authenticated gateway",links:[{label:"API Lab",url:$url},{label:"API health",url:($url|sub("\\.orb\\.migos\\.club/api$";".api.orb.migos.club/v1/health"))}]}' > /tmp/orb-report.json
       - uses: rodkisten/github/preview-report@main
         if: always() && steps.pr.outputs.sha != ''
         with:
@@ -100,3 +111,4 @@ jobs:
         run: |
           node scripts/preview-config.mjs "$PR"
           pnpm --filter @orb/api exec wrangler delete --config ../web/wrangler.preview.json --force
+          pnpm --filter @orb/api exec wrangler delete --config wrangler.preview.json --force
