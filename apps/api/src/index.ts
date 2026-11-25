@@ -14,9 +14,9 @@ import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage
 type Bindings = JardimBindings & {
   ORB_INGEST_TOKEN?: string
   ORB_WEBHOOK_SECRET?: string
-  GITHUB_APP_ID?: string
-  GITHUB_APP_INSTALLATION_ID?: string
-  GITHUB_APP_PRIVATE_KEY?: string
+  ORB_GITHUB_APP_ID?: string
+  ORB_GITHUB_APP_INSTALLATION_ID?: string
+  ORB_GITHUB_APP_PRIVATE_KEY?: string
   ORB_CI_READ_TOKEN?: string
   ORB_CI_REPOSITORIES?: string
   CF_ACCESS_TEAM_DOMAIN?: string
