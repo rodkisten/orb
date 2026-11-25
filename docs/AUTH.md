@@ -14,7 +14,7 @@ Verification checks RS256 signature against the team's published JWKS, exact iss
 
 ## Ingestion
 
-- `POST /v1/webhooks/github` verifies the GitHub HMAC-SHA256 delivery signature against `GITHUB_WEBHOOK_SECRET` before parsing.
+- `POST /v1/webhooks/github` verifies the GitHub HMAC-SHA256 delivery signature against `ORB_WEBHOOK_SECRET` before parsing.
 - `POST /v1/events` retains the legacy `ORB_INGEST_TOKEN` bootstrap bearer gate. **Do not treat this as final integration authorization.**
 - `POST /v1/events/validate` is a public validation-only endpoint and does not persist data.
 
@@ -29,7 +29,7 @@ Actions on `main`. The workflow uses the `production` environment and deploys
 Configure these environment variables in GitHub:
 
 - `CLOUDFLARE_ACCOUNT_ID`, `CF_ACCESS_APP_ID`, `CF_ACCESS_AUD`, `CF_ACCESS_TEAM_DOMAIN`.
-- `GITHUB_CI_REPOSITORIES`, a comma-separated list of allowed repositories.
+- `ORB_CI_REPOSITORIES`, a comma-separated list of allowed repositories.
 
 Configure these environment secrets in GitHub:
 
@@ -37,7 +37,7 @@ Configure these environment secrets in GitHub:
   permissions to deploy the Worker, bind its domain and queues, and migrate D1.
 - `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` from a dedicated service
   token allowed by a Service Auth policy on the Orb API application.
-- `ORB_INGEST_TOKEN`, `GITHUB_WEBHOOK_SECRET`, and `GITHUB_CI_READ_TOKEN`.
+- `ORB_INGEST_TOKEN`, `ORB_WEBHOOK_SECRET`, and `ORB_CI_READ_TOKEN`.
   Limit the GitHub credential to the allowed repositories and read permissions
   for Pull requests, Actions, and Checks.
 

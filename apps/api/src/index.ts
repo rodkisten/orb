@@ -11,12 +11,9 @@ import { markReceived, markQueued, persistEvent, recoverOutbox } from './storage
 
 type Bindings = {
   ORB_INGEST_TOKEN?: string
-  GITHUB_WEBHOOK_SECRET?: string
-  GITHUB_APP_ID?: string
-  GITHUB_APP_PRIVATE_KEY?: string
-  GITHUB_APP_INSTALLATION_ID?: string
-  GITHUB_CI_READ_TOKEN?: string
-  GITHUB_CI_REPOSITORIES?: string
+  ORB_WEBHOOK_SECRET?: string
+  ORB_CI_READ_TOKEN?: string
+  ORB_CI_REPOSITORIES?: string
   CF_ACCESS_TEAM_DOMAIN?: string
   CF_ACCESS_AUD?: string
   ORB_DB: D1Database
@@ -440,11 +437,11 @@ export default {
       if (!(await accessIdentity(request, env))) {
         return respond({ error: 'Sessão do Orb necessária.' }, 401)
       }
-      const allowlist = env.GITHUB_CI_REPOSITORIES?.toLowerCase().split(',').map(value => value.trim())
+      const allowlist = env.ORB_CI_REPOSITORIES?.toLowerCase().split(',').map(value => value.trim())
       if (!allowlist?.includes(`${owner}/${repo}`.toLowerCase())) {
         return respond({ error: 'Repositório indisponível para este conector.' }, 404)
       }
-      if (!env.GITHUB_CI_READ_TOKEN) {
+      if (!env.ORB_CI_READ_TOKEN) {
         return respond({ error: 'Conector de CI do GitHub ainda não configurado.' }, 503)
       }
       const cacheKey = url
@@ -452,16 +449,16 @@ export default {
       try {
         if (wantsLog) {
           // Recheck the latest run before retrieving privileged log content.
-          const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
+          const status = await readPrFailure(owner, repo, number, env.ORB_CI_READ_TOKEN)
           const excerpt = status.failure
-            ? await readStepLog(owner, repo, status.failure, env.GITHUB_CI_READ_TOKEN).catch(() => null)
+            ? await readStepLog(owner, repo, status.failure, env.ORB_CI_READ_TOKEN).catch(() => null)
             : null
           return respond({ ...status, excerpt })
         }
         const edgeCache = await caches.open('orb-github-pr-ci-v2')
         const cached = await edgeCache.match(cacheKey.href)
         if (cached) return respond(await cached.json<Awaited<ReturnType<typeof readPrFailure>>>())
-        const status = await readPrFailure(owner, repo, number, env.GITHUB_CI_READ_TOKEN)
+        const status = await readPrFailure(owner, repo, number, env.ORB_CI_READ_TOKEN)
         await edgeCache.put(cacheKey.href, Response.json(status, {
           headers: { 'Cache-Control': 'max-age=15' },
         }))

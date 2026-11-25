@@ -41,8 +41,8 @@ Only deploy after provisioning and validating the bindings.
 # Diagnóstico de CI de pull requests
 
 `GET /v1/github/:owner/:repo/pulls/:number/ci` usa a sessão do Cloudflare Access. Configure
-`GITHUB_CI_REPOSITORIES` com os repositórios autorizados, separados por vírgula, e
-`GITHUB_CI_READ_TOKEN` como secret com permissões de leitura de pull requests, Actions e Checks.
+`ORB_CI_REPOSITORIES` com os repositórios autorizados, separados por vírgula, e
+`ORB_CI_READ_TOKEN` como secret com permissões de leitura de pull requests, Actions e Checks.
 
 A resposta guarda cache no edge por 15 segundos. Quando a execução mais recente do
 commit atual termina com falha, o endpoint devolve workflow, job, etapa, primeira
