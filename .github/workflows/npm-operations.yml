@@ -54,8 +54,8 @@ jobs:
         id: app-token
         uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
         with:
-          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID || secrets.ORB_GITHUB_APP_ID || vars.ORB_GITHUB_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY || secrets.ORB_GITHUB_APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
 
