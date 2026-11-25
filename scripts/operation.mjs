@@ -35,6 +35,7 @@ if (!git('status', '--porcelain')) {
 } else {
   run('git', ['config', 'user.name', 'ploocky[bot]'])
   run('git', ['config', 'user.email', 'ploocky[bot]@users.noreply.github.com'])
+  run('git', ['rm', '-r', '--cached', '--ignore-unmatch', '--', ':(glob)**/node_modules', ':(glob)**/node_modules/**', 'node_modules'])
   run('git', ['add', '-A'])
   const staged = run('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], true).split('\0').filter(Boolean)
   for (const path of staged) {
