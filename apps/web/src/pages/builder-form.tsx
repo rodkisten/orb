@@ -51,7 +51,7 @@ export function BuilderForm({
   const tabs = [
     { id: "workflow", label: "Workflow", Icon: Workflow },
     { id: "dispatch", label: "Inputs", Icon: Play },
-    ...(dispatchTarget ? [{id:"runner",label:"Run",Icon:Play}] : []),
+    ...(dispatchTarget ? [{ id: "runner", label: "Run", Icon: Play }] : []),
     { id: "job", label: "Job", Icon: Box },
     { id: "steps", label: "Steps", Icon: ListOrdered },
     { id: "add", label: "Add / Actions", Icon: Plus },
