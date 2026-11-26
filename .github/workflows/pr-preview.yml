@@ -14,7 +14,7 @@ permissions:
   actions: read
 concurrency:
   group: orb-preview-${{ github.event.pull_request.number || inputs.pr_number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   preview:
     if: github.event.action != 'closed' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)
@@ -61,7 +61,15 @@ jobs:
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
-          test "$(gh pr view "$PR" --json headRefOid --jq .headRefOid)" = "$(git rev-parse HEAD)"
+          current=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+          if [[ "$current" != "$(git rev-parse HEAD)" ]]; then
+            echo "::notice::Preview superseded by newer PR commit $current"
+            echo "superseded=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "::group::Generate preview configuration"
+          node --check scripts/preview-config.mjs
+          echo "::endgroup::"
           node scripts/preview-config.mjs "$PR"
           node scripts/preview-secrets.mjs /tmp/orb-preview-secrets.json
           trap 'rm -f /tmp/orb-preview-secrets.json' EXIT
@@ -73,16 +81,17 @@ jobs:
           grep -q 'id="root"' /tmp/orb-preview.html
           curl -fsS -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$url/v1/health" | jq -e '.status == "ok"'
       - name: Generate preview report
-        if: always() && steps.pr.outputs.sha != ''
+        if: always() && steps.pr.outputs.sha != '' && steps.deploy.outputs.superseded != 'true'
         env:
           SHA: ${{ steps.pr.outputs.sha }}
           OUTCOME: ${{ steps.deploy.outcome }}
+          SUPERSEDED: ${{ steps.deploy.outputs.superseded }}
         run: |
           status=failure
           if [[ "$OUTCOME" == success ]]; then status=success; fi
           jq -n --arg sha "$SHA" --arg status "$status" --arg url "https://pr$PR.orb.migos.club/api" '{title:"🪐 Orb preview",sha:$sha,status:$status,url:$url,description:"API Lab · real API through authenticated gateway",links:[{label:"API Lab",url:$url},{label:"API health",url:($url|sub("\\.orb\\.migos\\.club/api$";".api.orb.migos.club/v1/health"))}]}' > /tmp/orb-report.json
       - uses: rodkisten/github/preview-report@main
-        if: always() && steps.pr.outputs.sha != ''
+        if: always() && steps.pr.outputs.sha != '' && steps.deploy.outputs.superseded != 'true'
         with:
           github-token: ${{ github.token }}
           pr-number: ${{ env.PR }}

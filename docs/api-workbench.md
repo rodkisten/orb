@@ -39,3 +39,5 @@ Structured inspector fields use compact CodeMirror 6 editors with existing YAML 
 CI correction: Vite owns its shadcn control sources derived from the existing registry components, using native primitives and workspace-installed clsx/cva/tailwind-merge. The excluded Next app is not a runtime dependency. Consolidation into a shared package remains planned.
 
 Preview configuration accepts JSONC comments and trailing commas introduced by formatting, preserving quoted strings. Generated Wrangler preview files remain strict JSON.
+
+Preview concurrency cancels superseded runs. A stale SHA detected before deployment is reported as superseded and does not overwrite the current preview comment. Production environment approvals still apply.
