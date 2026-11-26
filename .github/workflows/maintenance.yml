@@ -6,8 +6,14 @@ on:
     inputs:
       operation:
         type: choice
-        options: [format, lockfile, update]
+        options: [format, lockfile, update, install, add, uninstall, custom]
         default: format
+      packages:
+        type: string
+        default: ''
+      custom_command:
+        type: string
+        default: ''
       commit_changes:
         type: boolean
         default: true
@@ -41,12 +47,19 @@ jobs:
       - name: Prepare dependencies
         env:
           OPERATION: ${{ inputs.operation || 'format' }}
+          PACKAGES: ${{ inputs.packages }}
+          CUSTOM_COMMAND: ${{ inputs.custom_command }}
         run: |
           case "$OPERATION" in
             format|lockfile) pnpm install --no-frozen-lockfile ;;
-            update) pnpm -r update --latest; pnpm install --frozen-lockfile ;;
+            update) if [[ -n "$PACKAGES" ]]; then read -r -a args <<< "$PACKAGES"; pnpm update "${args[@]}"; else pnpm -r update --latest; fi ;;
+            install) pnpm install --no-frozen-lockfile ;;
+            add|uninstall) read -r -a args <<< "$PACKAGES"; [[ ${#args[@]} -gt 0 ]]; if [[ "$OPERATION" == add ]]; then pnpm add "${args[@]}"; else pnpm remove "${args[@]}"; fi ;;
+            custom) [[ -n "$CUSTOM_COMMAND" ]] ;;
             *) exit 1 ;;
           esac
+          if [[ -n "$CUSTOM_COMMAND" ]]; then bash -e -o pipefail -c "$CUSTOM_COMMAND"; fi
+          pnpm install --frozen-lockfile
       - name: Format
         if: github.event_name == 'push' || inputs.operation == 'format'
         run: pnpm format

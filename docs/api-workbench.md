@@ -51,3 +51,5 @@ Formatting publishes through the Orb GitHub App installation token (contents/wor
 CI is consolidated into ci.yml with API, Web and workspace matrix checks. Production deploy.yml is manual, main-only, validates through reusable CI and orders API before Web. Existing production approval protections remain. Preview and maintenance workflows remain separate.
 
 Maintenance consolidates automatic formatting and manual pnpm lockfile refresh/update, verifies typecheck and builds before App-authenticated push. The npm-only repair workflow and separate pnpm refresh workflow are retired. npm-operations remains for explicit custom operations pending migration of its script. Existing branch protection check names may need updating.
+
+CI matrix includes the isolated official parser smoke. Maintenance accepts install/add/uninstall/custom and optional package arguments; custom commands are manual trusted-operator inputs. Only tracked changes and the pnpm lockfile are committed, so newly created custom files require explicit separate staging. Workflow YAML formatting is restored and requires App workflows permission. Old npm-operations and parser probe workflows are retired.

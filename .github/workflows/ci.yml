@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [api, web, workspace]
+        target: [api, web, workspace, parser]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,3 +46,15 @@ jobs:
         run: |
           pnpm --filter @orb/web build
           pnpm --filter @orb/web exec tsc --noEmit --strict --target ES2022 --lib ES2022,DOM worker.ts --skipLibCheck
+
+      - name: Install isolated probe dependencies
+        if: matrix.target == 'parser'
+        run: npm install --prefix .parser-probe --no-save --ignore-scripts @actions/workflow-parser@0.3.61 web-tree-sitter@0.27.2 esbuild@0.25.12
+      - name: Run official parser and WASM smoke
+        if: matrix.target == 'parser'
+        run: |
+          mkdir -p node_modules
+          ln -s ../.parser-probe/node_modules/@actions node_modules/@actions
+          ln -s ../.parser-probe/node_modules/web-tree-sitter node_modules/web-tree-sitter
+           .parser-probe/node_modules/.bin/esbuild scripts/workflow-parser-probe.mjs --bundle --platform=node --format=esm --banner:js='import {createRequire} from "node:module"; const require = createRequire(import.meta.url);' --external:web-tree-sitter --outfile=.parser-probe/probe.mjs
+          node .parser-probe/probe.mjs
