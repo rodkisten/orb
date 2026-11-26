@@ -1,3 +1,4 @@
+import { PanelNavigation } from "../components/shared/panel-navigation";
 import { DispatchRunner, type DispatchTarget } from "./dispatch-runner";
 import { DispatchEditor } from "./dispatch-editor";
 import { Play } from "lucide-react";
@@ -91,23 +92,7 @@ export function BuilderForm({
           {disabled ? "Read only" : "Review before applying"}
         </span>
       </div>
-      <nav
-        aria-label="Inspector sections"
-        className="mb-3 flex flex-wrap gap-1"
-      >
-        {tabs.map(({ id, label, Icon }) => (
-          <Button
-            key={id}
-            type="button"
-            aria-pressed={active === id}
-            onClick={() => updateRoute({ inspector: id })}
-            className="!flex !items-center !justify-center !gap-1 !rounded-md !px-2 !py-2 !text-xs aria-pressed:!bg-primary aria-pressed:!text-primary-foreground"
-          >
-            <Icon size={14} />
-            {label}
-          </Button>
-        ))}
-      </nav>
+      <PanelNavigation label="Inspector sections" items={tabs.map(({id,label,Icon})=>({id,label,icon:<Icon size={14}/> }))} value={active ?? "workflow"} onChange={id=>updateRoute({inspector:id})}/>
       <div hidden={active !== "add"}>
         <form
           onSubmit={(e) => {
