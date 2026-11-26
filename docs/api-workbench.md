@@ -45,3 +45,5 @@ Preview concurrency cancels superseded runs. A stale SHA detected before deploym
 Access authentication accepts the signed CF_Authorization application cookie when the assertion header is absent across the web service binding. Issuer, audience, expiry and RSA signature checks remain mandatory. This does not bypass Access.
 
 Workspace mode hides HTTP operations and response tabs, defaults to graph inspector, and uses compact source/inspector presentation. /api retains HTTP lab controls. Local draft URLs open Studio directly. Shared editing engine remains unchanged.
+
+Formatting publishes through the Orb GitHub App installation token (contents/workflows write), with the App bot identity. App credentials must be available to the format job at repository scope. GitHub Actions approval policies and production environment reviewers are separate settings; this change does not bypass them.
