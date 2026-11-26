@@ -41,3 +41,5 @@ CI correction: Vite owns its shadcn control sources derived from the existing re
 Preview configuration accepts JSONC comments and trailing commas introduced by formatting, preserving quoted strings. Generated Wrangler preview files remain strict JSON.
 
 Preview concurrency cancels superseded runs. A stale SHA detected before deployment is reported as superseded and does not overwrite the current preview comment. Production environment approvals still apply.
+
+Access authentication accepts the signed CF_Authorization application cookie when the assertion header is absent across the web service binding. Issuer, audience, expiry and RSA signature checks remain mandatory. This does not bypass Access.
