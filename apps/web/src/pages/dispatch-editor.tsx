@@ -1,3 +1,4 @@
+import { SchemaForm } from "../components/shared/schema-form";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -208,37 +209,7 @@ export function DispatchEditor({
       {error && <p role="alert">{error}</p>}
       <section className="rounded-lg border border-border p-3">
         <h4>Run form preview</h4>
-        {fields.map((f, i) => (
-          <label key={i}>
-            {f.id}
-            {f.required ? " *" : ""}
-            <small>{f.description}</small>
-            {f.type === "boolean" || f.type === "choice" ? (
-              <select
-                value={preview[f.id] ?? f.defaultValue}
-                onChange={(e) =>
-                  setPreview((v) => ({ ...v, [f.id]: e.target.value }))
-                }
-              >
-                <option value="">Select</option>
-                {(f.type === "boolean"
-                  ? ["true", "false"]
-                  : f.options.split("\n").filter(Boolean)
-                ).map((o, j) => (
-                  <option key={j}>{o}</option>
-                ))}
-              </select>
-            ) : (
-              <Input
-                type={f.type === "number" ? "number" : "text"}
-                value={preview[f.id] ?? f.defaultValue}
-                onChange={(e) =>
-                  setPreview((v) => ({ ...v, [f.id]: e.target.value }))
-                }
-              />
-            )}
-          </label>
-        ))}
+        <SchemaForm fields={fields.map(f=>({id:f.id,label:f.id,description:f.description,type:f.type,required:f.required,defaultValue:f.defaultValue,options:f.type==="choice"?f.options.split("\n").map(v=>v.trim()).filter(Boolean):undefined}))} values={preview} onChange={(id,value)=>setPreview(old=>({...old,[id]:value}))}/>
         <p>Preview only · no workflow is executed.</p>
       </section>
     </section>

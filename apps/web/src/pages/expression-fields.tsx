@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { StructuredEditor } from "./structured-editor";
+import { ExpressionInput } from "../components/shared/expression-input";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 type Step = {
@@ -235,12 +235,11 @@ export function ConditionField({
           Add condition
         </Button>
       </div>
-      <StructuredEditor
+      <ExpressionInput
         value={value}
         onChange={onChange}
         placeholder="Custom expression"
         suggestions={refs.map((r) => r.value)}
-        expression
       />
       <div className="orb-expression-row">
         {["success()", "failure()", "always()", "cancelled()"].map((v) => (
@@ -293,8 +292,7 @@ export function EnvField({
         onChange={(e) => setKey(e.target.value)}
         placeholder="ARTIFACT"
       />
-      <StructuredEditor
-        expression
+      <ExpressionInput
         suggestions={refs.map((r) => r.value)}
         value={val}
         onChange={setVal}

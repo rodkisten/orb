@@ -7,3 +7,5 @@ Initial candidates: inspector-fields and panel-navigation. Existing inspector-fi
 Validate formatting, typecheck and mobile behavior before registry publication.
 
 CodeEditor now owns the existing CodeMirror lifecycle; StructuredEditor adapts GitHub-specific labels. ExpressionInput and KeyValueEditor expose controlled generic interfaces. KeyValueEditor preserves stable row IDs and duplicate keys during editing; consumers validate before serializing. The latter two are candidates, not yet wired into all feature forms. Existing editor theme is retained; full theme token migration and schema form remain pending.
+
+SchemaForm renders controlled string, number, boolean, choice and environment fields with accessible labels and optional externally supplied validation errors. DispatchEditor uses it for the run-form preview; actual dispatch validation remains in the runner. ConditionField and EnvField now use ExpressionInput. KeyValueEditor integration is deferred until the env serialization adapter preserves incomplete and malformed rows without data loss.
