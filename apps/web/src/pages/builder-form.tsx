@@ -1,4 +1,4 @@
-import {DispatchRunner,type DispatchTarget} from "./dispatch-runner";
+import { DispatchRunner, type DispatchTarget } from "./dispatch-runner";
 import { DispatchEditor } from "./dispatch-editor";
 import { Play } from "lucide-react";
 import { StructuredEditor } from "./structured-editor";
@@ -225,7 +225,12 @@ export function BuilderForm({
           onEdit={onEdit}
         />
       )}
-      {active==="dispatch"&&dispatchTarget&&<DispatchRunner key={JSON.stringify(dispatchTarget)} target={dispatchTarget}/>}
+      {active === "dispatch" && dispatchTarget && (
+        <DispatchRunner
+          key={JSON.stringify(dispatchTarget)}
+          target={dispatchTarget}
+        />
+      )}
       <div hidden={active !== "workflow"}>
         <WorkflowInspector disabled={disabled} onEdit={onEdit} />
       </div>
