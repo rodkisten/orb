@@ -4,7 +4,7 @@ import {
   recordDispatch,
   type DispatchRecord,
 } from "./dispatch-history";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { inspectWorkflow } from "@orb/workflow-core";
 import { Button } from "../components/ui/button";
@@ -32,6 +32,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const [ref, setRef] = useState(target.ref);
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const dispatchLock=useRef(false);
+  const [review,setReview]=useState(false);
+  const [refDraft,setRefDraft]=useState(target.ref);
   const [message, setMessage] = useState("");
   const [runs, setRuns] = useState("");
   const [runId, setRunId] = useState<number | null>(null);
@@ -96,7 +99,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const names = raw?.data ?? [];
   const tagNames = tags.data?.data ?? [];
   function changeRef(v: string) {
-    setRef(v);
+    setRef(v);setRefDraft(v);setReview(false);
     setValues({});
     setConfirmed(false);
     setMessage("");
@@ -104,10 +107,10 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
     setRunId(null);
   }
   function change(k: string, v: string) {
-    setValues((s) => ({ ...s, [k]: v }));
+    setValues((s) => ({ ...s, [k]: v }));setReview(false);
     setConfirmed(false);
   }
-  const invalid = ports.some(([k, p]) => {
+  const invalidPorts = ports.filter(([k, p]) => {
     const v = values[k] ?? String(p.default ?? "");
     return (
       (!!p.required && !v.trim()) ||
@@ -117,11 +120,12 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
           (p.type === "choice" && !p.options?.includes(v))))
     );
   });
+  const invalid=invalidPorts.length>0;
   async function dispatch() {
     if (
       !production ||
       !confirmed ||
-      busy ||
+      busy || dispatchLock.current || !review ||
       !source.data ||
       confirmedSha !== source.data.sha ||
       !valid ||
@@ -139,6 +143,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       at: Date.now(),
       status: "unconfirmed",
     };
+    dispatchLock.current=true;
     setBusy(true);
     setHistoryError("");
     setConfirmed(false);
@@ -206,6 +211,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       void recordDispatch(attempt).catch(() =>
         setHistoryError("Dispatch result not saved locally"),
       );
+      dispatchLock.current=false;
       setBusy(false);
     }
   }
@@ -219,14 +225,16 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       </small>
       {!production && <p>Preview mode: execution disabled.</p>}
       <fieldset disabled={busy}>
+      <div className="orb-run-stage"><strong>1 · Published source</strong>
         <label>
           Branch or tag
           <Input
-            value={ref}
-            onChange={(e) => changeRef(e.target.value)}
+            value={refDraft}
+            onChange={(e) => {setRefDraft(e.target.value);setReview(false);setConfirmed(false);}}
             autoCapitalize="none"
           />
         </label>
+        <Button type="button" disabled={!refDraft.trim()||refDraft.trim()===ref} onClick={()=>changeRef(refDraft.trim())}>Load ref</Button>
         {(names.length > 0 || tagNames.length > 0) && (
           <select
             aria-label="Choose branch"
@@ -267,12 +275,15 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
         {source.data && !valid && (
           <p>No valid workflow_dispatch on this ref.</p>
         )}
+        </div><div className="orb-run-stage"><strong>2 · Inputs</strong>
+        {valid && ports.length===0 && <p>No inputs required.</p>}
         {valid &&
           ports.map(([k, p]) => (
             <label key={k}>
               {k}
               {p.required ? " *" : ""}
               <small>{p.description}</small>
+              {invalidPorts.some(([id])=>id===k)&&<small role="alert">Enter a valid {p.type??"string"} value.</small>}
               {p.type === "boolean" || p.type === "choice" ? (
                 <select
                   value={values[k] ?? String(p.default ?? "")}
@@ -288,7 +299,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
                 </select>
               ) : p.type === "environment" &&
                 envNames.length > 0 &&
-                !environments.data?.hasNext ? (
+                !environments.error && !environments.data?.hasNext ? (
                 <select
                   value={values[k] ?? String(p.default ?? "")}
                   onChange={(e) => change(k, e.target.value)}
@@ -319,7 +330,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
             not executed.
           </small>
         )}
-        <label>
+        </div><div className="orb-run-stage"><strong>3 · Review & execute</strong>
+        <Button type="button" disabled={!valid||invalid||source.isFetching||!!source.error||refDraft.trim()!==ref} onClick={()=>{setReview(true);setConfirmed(false);}}>Review execution</Button>
+        {review&&<><p>Published workflow on <code>{ref}</code> · {ports.length} input fields. Local edits are excluded.</p><label>
           <input
             type="checkbox"
             checked={confirmed && confirmedSha === source.data?.sha}
@@ -334,7 +347,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
         <Button
           type="button"
           disabled={
-            !production ||
+            !production || !review || refDraft.trim()!==ref ||
             !confirmed ||
             confirmedSha !== source.data?.sha ||
             !!source.error ||
@@ -347,8 +360,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
         >
           <Play size={14} />
           {busy ? "Dispatching…" : "Run workflow"}
-        </Button>
+        </Button></>}</div>
       </fieldset>
+      <div className="orb-run-stage"><strong>4 · Execution status</strong>
       {message && <p role="status">{message}</p>}
       {historyError && <p role="alert">{historyError}</p>}
       {runId !== null && <RunTracker repo={target.repo} id={runId} />}
@@ -363,7 +377,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
         <a href={runs} target="_blank" rel="noreferrer">
           Open workflow runs
         </a>
-      )}
+      )}</div>
     </section>
   );
 }
