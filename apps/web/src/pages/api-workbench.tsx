@@ -644,6 +644,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                   <div className="orb-builder-pane">
                     <BuilderForm
                       body={astBody}
+                      dispatchTarget={opened&&opened.repo!=="@local"?{repo:opened.repo,ref:opened.ref,path:opened.path}:undefined}
                       disabled={astStale || editBusy || proposal !== null}
                       onEdit={editJob}
                     />
