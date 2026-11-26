@@ -8,21 +8,32 @@ Configure `ORB_GITHUB_APP_ID`, `ORB_GITHUB_APP_INSTALLATION_ID` and secret `ORB_
 
 All paths below require a valid Cloudflare Access identity.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | /v1/github/repositories | Discover accessible repositories from ORB_CI_REPOSITORIES |
-| GET | /v1/github/gateway/metrics | Cache metrics and configured authentication mode |
-| GET | /v1/actions/search?q=... | Search public action repositories |
-| GET | /v1/actions/versions?owner=...&repo=... | List public action tags |
-| GET | /v1/actions/resolve?uses=... | Resolve public action manifest |
-| GET | /v1/github/:owner/:repo/pulls/:number/ci | Latest PR CI failure and optional log excerpt |
+| Method | Path                                     | Purpose                                                   |
+| ------ | ---------------------------------------- | --------------------------------------------------------- |
+| GET    | /v1/github/repositories                  | Discover accessible repositories from ORB_CI_REPOSITORIES |
+| GET    | /v1/github/gateway/metrics               | Cache metrics and configured authentication mode          |
+| GET    | /v1/actions/search?q=...                 | Search public action repositories                         |
+| GET    | /v1/actions/versions?owner=...&repo=...  | List public action tags                                   |
+| GET    | /v1/actions/resolve?uses=...             | Resolve public action manifest                            |
+| GET    | /v1/github/:owner/:repo/pulls/:number/ci | Latest PR CI failure and optional log excerpt             |
 
 Repository discovery normalizes and deduplicates the configured allowlist, limits it to 100 entries, caches metadata for 120 seconds and reports inaccessible repositories separately. It does not enumerate arbitrary private repositories or expand the allowlist. The response is not browser-cacheable. Missing credentials return 503; upstream initialization failure returns 502.
 
 Example response:
 
 ```json
-{"repositories":[{"nameWithOwner":"rodkisten/orb","description":null,"url":"https://github.com/rodkisten/orb","isPrivate":false,"defaultBranchRef":{"name":"main"}}],"unavailable":[]}
+{
+  "repositories": [
+    {
+      "nameWithOwner": "rodkisten/orb",
+      "description": null,
+      "url": "https://github.com/rodkisten/orb",
+      "isPrivate": false,
+      "defaultBranchRef": { "name": "main" }
+    }
+  ],
+  "unavailable": []
+}
 ```
 
 ## Verification

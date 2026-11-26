@@ -5,6 +5,7 @@
 The API's `GET /v1/events` and `GET /v1/events/:id` require a cryptographically verified Cloudflare Access JWT, supplied in the `Cf-Access-Jwt-Assertion` request header by a properly configured Cloudflare Access application.
 
 Required Worker environment variables:
+
 - `CF_ACCESS_TEAM_DOMAIN`: the team domain, e.g. `your-team.cloudflareaccess.com`.
 - `CF_ACCESS_AUD`: the Access application's AUD tag.
 

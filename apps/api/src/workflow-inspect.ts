@@ -1,1 +1,1 @@
-export {inspectWorkflow} from '@orb/workflow-core'
+export { inspectWorkflow } from "@orb/workflow-core";

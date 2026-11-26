@@ -3,10 +3,12 @@
 Updated: 2026-11-21
 
 ## Status legend
+
 - [ ] Planned / not verified
 - [x] Verified complete
 
 ## Foundation
+
 - [x] Create `rodkisten/orb` repository
 - [x] Document monorepo architecture and routing conventions
 - [x] Commit pnpm workspace skeleton (dependencies not yet installed)
@@ -14,6 +16,7 @@ Updated: 2026-11-21
 - [ ] Establish typecheck, lint, format, and build CI
 
 ## Web
+
 - [ ] Migrate uploaded Next.js 16 component catalog to `apps/web` with Vite + React 19
 - [ ] Verify shadcn/ui + Tailwind v4 styles and component compatibility
 - [ ] Install TanStack Router with file-based routes and typed search params
@@ -21,6 +24,7 @@ Updated: 2026-11-21
 - [ ] Verify responsive iOS Safari layouts and theme switching
 
 ## API and SDK
+
 - [x] Commit initial Elysia Worker routes and OpenAPI configuration (runtime validation pending)
 - [x] Commit Hey API SDK generator scaffold (generation and version compatibility pending)
 - [ ] Generate and verify actual SDK from exported OpenAPI JSON
@@ -28,6 +32,7 @@ Updated: 2026-11-21
 - [ ] SSE with replay / event IDs
 
 ## Automations
+
 - [ ] GitHub App webhook validation, deduplication, and TODO-to-Issue engine
 - [x] Commit D1 event ledger and Cloudflare Queue producer/consumer skeleton (provisioning and runtime verification pending)
 - [x] Commit scheduled outbox recovery sweep (runtime validation pending)
@@ -36,6 +41,7 @@ Updated: 2026-11-21
 - [ ] Manage and Relay integrations
 
 ## Jardim ingestion
+
 - [ ] Spotify OAuth, sync and historical import
 - [ ] TMDB / IMDb metadata connectors
 - [ ] YouTube imports and verified activity events
@@ -43,6 +49,7 @@ Updated: 2026-11-21
 - [ ] Backfill, provenance, consent, and retention policies
 
 ## Engineering decisions
+
 - pnpm workspaces, **no Turborepo** initially.
 - Strict Tailwind CSS v4 + shadcn/ui styling.
 - TanStack Router: shareable navigation state in URL; no secrets in URL.
