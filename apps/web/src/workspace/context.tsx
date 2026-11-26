@@ -1,4 +1,5 @@
-import {createContext,useContext,useState,type ReactNode} from 'react'
+import {sessionDB,useRouteState,updateRoute} from './state'
+import {createContext,useContext,useState,useEffect,type ReactNode} from 'react'
 const apps=['rodverse/rodverse','rodkisten/orb','rodkisten/photointel','rodkisten/userscripts-cf','rodkisten/shell','rodkisten/jardim','rodkisten/ast-explorer','rodkisten/ejc','rodkisten/github','rodkisten/rodtui','rodkisten/rodlog','rodkisten/zsh']
 const groups:Record<string,string[]>={all:apps,platform:apps.filter(r=>/rodverse|orb|github/.test(r)),tools:apps.filter(r=>/shell|userscripts|ast-explorer|rodtui|rodlog|zsh/.test(r)),personal:apps.filter(r=>/jardim|photointel|ejc/.test(r))}
 type Group={id:string;name:string;repos:string[]}
@@ -16,7 +17,10 @@ type State={selection:string;repos:string[];custom:Group[];choose:(v:string)=>vo
 const Context=createContext<State|null>(null)
 export function WorkspaceProvider({children}:{children:ReactNode}){
  const [state,setState]=useState(restore)
- function update(next:Stored){setState(next);try{localStorage.setItem(storageKey,JSON.stringify(next))}catch{}}
+ const route=useRouteState()
+ useEffect(()=>{let alive=true;void sessionDB.sessions.get('workspace').then(row=>{if(alive&&row){const saved=row.value as Stored;setState(old=>({...old,...saved,selection:route.context??saved.selection}))}}).catch(()=>{});return()=>{alive=false}},[])
+ useEffect(()=>{if(route.context&& (groups[route.context]||apps.includes(route.context)||state.custom.some(g=>g.id===route.context)))setState(old=>old.selection===route.context?old:{...old,selection:route.context})},[route.context,state.custom])
+ function update(next:Stored){setState(next);updateRoute({context:next.selection,repo:null,path:null,ref:null});void sessionDB.sessions.put({id:'workspace',value:next}).catch(console.error)}
  function choose(v:string){update({...state,selection:v})}
  function save(name:string,repos:string[],id?:string){
   const valid=[...new Set(repos.filter(r=>apps.includes(r)))]
