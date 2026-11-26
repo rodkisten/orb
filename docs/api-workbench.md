@@ -59,4 +59,5 @@ Shared local setup action pins Node/pnpm and optionally installs frozen dependen
 Live AST parsing and Builder patches now run locally using the same workflow-core as the API. API Lab Send still performs real HTTP requests; Studio local Parse does not. GitHub repository access remains authenticated. Inspector hides empty forms and resets native fieldset styling. Explicit Studio/API Lab links distinguish modes.
 
 ### Kitchen Sink demo
+
 Use Load demo to create a separate local draft with 10 jobs, matrix expansion, triggers, typed inputs, outputs, services, container, environments, expressions and reusable workflow syntax. The reusable target is intentionally illustrative and disabled. This fixture is not installed in .github/workflows and never dispatched by loading it.

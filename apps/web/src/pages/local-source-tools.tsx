@@ -60,7 +60,10 @@ export function LocalSourceTools({
         >
           New YAML
         </button>
-        <button disabled={disabled} onClick={() => open(kitchenSinkWorkflow, "kitchen-sink.yml")}>
+        <button
+          disabled={disabled}
+          onClick={() => open(kitchenSinkWorkflow, "kitchen-sink.yml")}
+        >
           Load demo
         </button>
         <button disabled={disabled} onClick={() => setPaste((v) => !v)}>
