@@ -1,5 +1,9 @@
-import {autocompletion,startCompletion,completionKeymap} from "@codemirror/autocomplete";
-import {keymap} from "@codemirror/view";
+import {
+  autocompletion,
+  startCompletion,
+  completionKeymap,
+} from "@codemirror/autocomplete";
+import { keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import {
   Annotation,
@@ -29,7 +33,8 @@ export function StructuredEditor({
   expression?: boolean;
   suggestions?: string[];
 }) {
-  const options=useRef(suggestions);options.current=suggestions;
+  const options = useRef(suggestions);
+  options.current = suggestions;
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const change = useRef(onChange);
@@ -45,12 +50,30 @@ export function StructuredEditor({
         extensions: [
           basicSetup,
           ...(script || expression ? [] : [yaml()]),
-          ...(expression ? [autocompletion({override:[context=>{
-            if(context.state.readOnly)return null;
-            const token=context.matchBefore(/[\w.-]+/);
-            if(!token&&!context.explicit)return null;
-            return {from:token?.from??context.pos,options:[...new Set(options.current)].map(label=>({label,type:"variable",detail:label.split(".")[0],info:"Workflow context reference"}))};
-          }],activateOnTyping:true}),keymap.of(completionKeymap)] : []),
+          ...(expression
+            ? [
+                autocompletion({
+                  override: [
+                    (context) => {
+                      if (context.state.readOnly) return null;
+                      const token = context.matchBefore(/[\w.-]+/);
+                      if (!token && !context.explicit) return null;
+                      return {
+                        from: token?.from ?? context.pos,
+                        options: [...new Set(options.current)].map((label) => ({
+                          label,
+                          type: "variable",
+                          detail: label.split(".")[0],
+                          info: "Workflow context reference",
+                        })),
+                      };
+                    },
+                  ],
+                  activateOnTyping: true,
+                }),
+                keymap.of(completionKeymap),
+              ]
+            : []),
           oneDark,
           EditorView.theme(
             {
@@ -69,7 +92,11 @@ export function StructuredEditor({
           ]),
           hints.current.of(hint(placeholder)),
           EditorView.contentAttributes.of({
-            "aria-label": script ? "Shell script" : expression ? "GitHub expression" : "Structured JSON value",
+            "aria-label": script
+              ? "Shell script"
+              : expression
+                ? "GitHub expression"
+                : "Structured JSON value",
             autocapitalize: "off",
             spellcheck: "false",
             autocorrect: "off",
@@ -120,10 +147,50 @@ export function StructuredEditor({
       effects: hints.current.reconfigure(hint(placeholder)),
     });
   }, [placeholder]);
-  return (<div>{expression && <button type="button" disabled={disabled} onClick={()=>{if(view.current){view.current.focus();startCompletion(view.current);}}}>Autocomplete</button>}{expression && suggestions.length>0 && <select aria-label="Complete expression" value="" onChange={e=>{const editor=view.current;if(!editor||disabled||!e.target.value)return;const pos=editor.state.selection.main.head;const prefix=editor.state.sliceDoc(0,pos).match(/[\w.]+$/)?.[0]??"";const insert=e.target.value;editor.dispatch({changes:{from:pos-prefix.length,to:pos,insert},selection:{anchor:pos-prefix.length+insert.length}});}} disabled={disabled}><option value="">Complete reference…</option>{suggestions.map(s=><option key={s}>{s}</option>)}</select>}
-    <div
-      ref={host}
-      className="min-w-0 overflow-hidden rounded-lg border border-border"
-    /></div>
+  return (
+    <div>
+      {expression && (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            if (view.current) {
+              view.current.focus();
+              startCompletion(view.current);
+            }
+          }}
+        >
+          Autocomplete
+        </button>
+      )}
+      {expression && suggestions.length > 0 && (
+        <select
+          aria-label="Complete expression"
+          value=""
+          onChange={(e) => {
+            const editor = view.current;
+            if (!editor || disabled || !e.target.value) return;
+            const pos = editor.state.selection.main.head;
+            const prefix =
+              editor.state.sliceDoc(0, pos).match(/[\w.]+$/)?.[0] ?? "";
+            const insert = e.target.value;
+            editor.dispatch({
+              changes: { from: pos - prefix.length, to: pos, insert },
+              selection: { anchor: pos - prefix.length + insert.length },
+            });
+          }}
+          disabled={disabled}
+        >
+          <option value="">Complete reference…</option>
+          {suggestions.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+      )}
+      <div
+        ref={host}
+        className="min-w-0 overflow-hidden rounded-lg border border-border"
+      />
+    </div>
   );
 }

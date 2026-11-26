@@ -1,4 +1,4 @@
-import {ConditionField,EnvField,useReferences} from "./expression-fields";
+import { ConditionField, EnvField, useReferences } from "./expression-fields";
 import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
 import { StructuredEditor } from "./structured-editor";
@@ -40,8 +40,8 @@ export function JobInspector({
     jobs = parsed.details ?? parsed.jobs ?? [];
   } catch {}
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
-  const refs=useReferences(body,current?.id??"");
-  const [env,setEnv]=useState("");
+  const refs = useReferences(body, current?.id ?? "");
+  const [env, setEnv] = useState("");
   return (
     <section>
       <form
@@ -69,7 +69,8 @@ export function JobInspector({
               value={current?.id ?? ""}
               onChange={(e) => {
                 updateRoute({ job: e.target.value, step: "0" });
-                setValues({});setEnv("");
+                setValues({});
+                setEnv("");
                 setError("");
               }}
             >
@@ -96,14 +97,53 @@ export function JobInspector({
             .map((f) => (
               <label key={f.key}>
                 {f.key}
-                {f.key==="if"?<ConditionField refs={refs} value={values.if?JSON.parse(values.if):""} onChange={v=>setValues(old=>({...old,if:v?JSON.stringify(v):""}))}/>:f.key==="env"?<EnvField refs={refs} value={env} onChange={v=>{setEnv(v);setValues(old=>({...old,env:v?JSON.stringify(Object.fromEntries(v.split("\n").filter(row=>/^[A-Za-z_][A-Za-z0-9_]*=/.test(row)).map(row=>[row.slice(0,row.indexOf("=")),row.slice(row.indexOf("=")+1)]))):""}))}}/>:<StructuredEditor
-                  disabled={disabled || !current}
-                  placeholder={f.example}
-                  value={values[f.key] ?? ""}
-                  onChange={(value) =>
-                    setValues((v) => ({ ...v, [f.key]: value }))
-                  }
-                />}
+                {f.key === "if" ? (
+                  <ConditionField
+                    refs={refs}
+                    value={values.if ? JSON.parse(values.if) : ""}
+                    onChange={(v) =>
+                      setValues((old) => ({
+                        ...old,
+                        if: v ? JSON.stringify(v) : "",
+                      }))
+                    }
+                  />
+                ) : f.key === "env" ? (
+                  <EnvField
+                    refs={refs}
+                    value={env}
+                    onChange={(v) => {
+                      setEnv(v);
+                      setValues((old) => ({
+                        ...old,
+                        env: v
+                          ? JSON.stringify(
+                              Object.fromEntries(
+                                v
+                                  .split("\n")
+                                  .filter((row) =>
+                                    /^[A-Za-z_][A-Za-z0-9_]*=/.test(row),
+                                  )
+                                  .map((row) => [
+                                    row.slice(0, row.indexOf("=")),
+                                    row.slice(row.indexOf("=") + 1),
+                                  ]),
+                              ),
+                            )
+                          : "",
+                      }));
+                    }}
+                  />
+                ) : (
+                  <StructuredEditor
+                    disabled={disabled || !current}
+                    placeholder={f.example}
+                    value={values[f.key] ?? ""}
+                    onChange={(value) =>
+                      setValues((v) => ({ ...v, [f.key]: value }))
+                    }
+                  />
+                )}
               </label>
             ))}
           <Button type="submit">Review job patch</Button>

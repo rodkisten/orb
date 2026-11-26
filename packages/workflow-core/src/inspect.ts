@@ -31,7 +31,7 @@ export function inspectWorkflow(source: string) {
             job = pair.value;
           if (!id || !isMap(job)) return [];
           const steps = job.get("steps", true);
-          const strategy:unknown=job.get("strategy",true);
+          const strategy: unknown = job.get("strategy", true);
           return [
             {
               id,
@@ -40,7 +40,11 @@ export function inspectWorkflow(source: string) {
               inputs: keys(job.get("with", true)),
               outputs: keys(job.get("outputs", true)),
               env: keys(job.get("env", true)),
-              matrix: isMap(strategy) ? keys(strategy.get("matrix",true)).filter(k=>k!=="include"&&k!=="exclude") : [],
+              matrix: isMap(strategy)
+                ? keys(strategy.get("matrix", true)).filter(
+                    (k) => k !== "include" && k !== "exclude",
+                  )
+                : [],
               steps: isSeq(steps)
                 ? steps.items.flatMap((step, index) =>
                     isMap(step)
@@ -56,8 +60,17 @@ export function inspectWorkflow(source: string) {
                                 ? "shell"
                                 : "unknown",
                             run: str(step.get("run", true)),
-                            condition: str(step.get("if",true)),
-                            outputHints: Array.from(new Set(Array.from((str(step.get("run",true))??"").matchAll(/(?:echo|printf)\s+[\x27\x22]?([A-Za-z_][\w-]*)=[^\n]*\$GITHUB_OUTPUT/g),m=>m[1]))),
+                            condition: str(step.get("if", true)),
+                            outputHints: Array.from(
+                              new Set(
+                                Array.from(
+                                  (str(step.get("run", true)) ?? "").matchAll(
+                                    /(?:echo|printf)\s+[\x27\x22]?([A-Za-z_][\w-]*)=[^\n]*\$GITHUB_OUTPUT/g,
+                                  ),
+                                  (m) => m[1],
+                                ),
+                              ),
+                            ),
                             shell: str(step.get("shell", true)),
                             inputs: keys(step.get("with", true)),
                             env: keys(step.get("env", true)),
@@ -73,7 +86,7 @@ export function inspectWorkflow(source: string) {
   return {
     ...validation,
     triggerNames,
-    env: keys(doc.get("env",true)),
+    env: keys(doc.get("env", true)),
     interface: {
       inputs: isMap(call) ? keys(call.get("inputs", true)) : [],
       outputs: isMap(call) ? keys(call.get("outputs", true)) : [],
