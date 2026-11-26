@@ -1,18 +1,23 @@
-name: 🪐 Deploy API
-
+name: 🪐 ORB · Production
 on:
   workflow_dispatch:
-
+    inputs:
+      target:
+        type: choice
+        options: [all, api, web]
+        default: all
 permissions:
   contents: read
-
 concurrency:
-  group: orb-api-production
+  group: orb-production
   cancel-in-progress: false
-
 jobs:
-  deploy:
+  verify:
     if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+  api:
+    needs: verify
+    if: inputs.target != 'web'
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 20
@@ -20,22 +25,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - uses: pnpm/action-setup@v4
         with:
           version: 12.22.0
-
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - name: Verify release build
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm --filter @orb/api typecheck
-          node --experimental-strip-types --test apps/api/tests/*.test.mjs
-          pnpm --filter @orb/api exec wrangler deploy --dry-run
-
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Verify Access, migrate D1, deploy and check health
         env:
           FORCE_COLOR: '1'
@@ -54,3 +51,32 @@ jobs:
           ORB_GITHUB_APP_INSTALLATION_ID: ${{ vars.ORB_GITHUB_APP_INSTALLATION_ID }}
           ORB_GITHUB_APP_PRIVATE_KEY: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY }}
         run: node scripts/api-deploy.mjs
+
+  web:
+    needs: [verify, api]
+    if: always() && needs.verify.result == 'success' && (needs.api.result == 'success' || needs.api.result == 'skipped') && inputs.target != 'api'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.22.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @orb/web build
+      - name: Deploy frontend
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm --fail-if-no-match --filter @orb/api exec wrangler deploy --config ../web/wrangler.jsonc
+      - name: Verify domain
+        run: |
+          curl --retry 8 --retry-all-errors --retry-max-time 180 --fail --silent --show-error https://orb.migos.club/ -o /tmp/orb-index.html
+          grep -q 'id="root"' /tmp/orb-index.html

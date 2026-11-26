@@ -1,0 +1,48 @@
+name: 🪐 ORB · CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: orb-ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: Verify · ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [api, web, workspace]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.22.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Workspace typecheck
+        if: matrix.target == 'workspace'
+        run: pnpm typecheck
+      - name: API verification
+        if: matrix.target == 'api'
+        run: |
+          pnpm --filter @orb/api typecheck
+          node --check scripts/api-deploy.mjs
+          node --experimental-strip-types --test apps/api/tests/*.test.mjs
+          pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
+      - name: Web verification
+        if: matrix.target == 'web'
+        run: |
+          pnpm --filter @orb/web build
+          pnpm --filter @orb/web exec tsc --noEmit --strict --target ES2022 --lib ES2022,DOM worker.ts --skipLibCheck
