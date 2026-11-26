@@ -9,7 +9,9 @@ export function WorkspaceStudio() {
       : undefined;
   const panel =
     route.panel ??
-    (location.pathname === "/api" || file || route.draft ? "studio" : "explorer");
+    (location.pathname === "/api" || file || route.draft
+      ? "studio"
+      : "explorer");
   const setPanel = (panel: string) => updateRoute({ panel });
   return (
     <section>

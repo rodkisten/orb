@@ -508,15 +508,58 @@ nav {
 }
 
 /* Studio presentation, independent from HTTP lab chrome. */
-.orb-studio .lab-layout { display: block; }
-.orb-studio .heading { margin-block: 8px; }
-.orb-studio .heading h1 { font-size: 1.25rem; margin: 4px 0; }
-.orb-studio .heading p { font-size: .75rem; margin: 4px 0; }
-.orb-studio .lab-address { padding: 8px; font-size: .75rem; overflow-wrap: anywhere; }
-.orb-studio .lab-panel { min-width: 0; padding: 10px; }
-.orb-studio .lab-tabs { gap: 4px; align-items: center; flex-wrap: wrap; }
-.orb-studio .lab-tabs button { font-size: .75rem; padding: 6px 9px; min-height: 32px; }
-.orb-studio input[type=checkbox] { accent-color: var(--orb-primary); }
-.orb-studio .cm-editor { background: var(--orb-card); }
-.orb-studio .cm-gutters { background: var(--orb-card); border-color: var(--orb-border); }
-@media(max-width: 700px) { .orb-studio .lab-columns { display: flex; flex-direction: column; gap: 8px; } .orb-studio .lab-panel input:not([type=checkbox]), .orb-studio .lab-panel select { font-size: 16px; padding: 6px 8px; } }
+.orb-studio .lab-layout {
+  display: block;
+}
+.orb-studio .heading {
+  margin-block: 8px;
+}
+.orb-studio .heading h1 {
+  font-size: 1.25rem;
+  margin: 4px 0;
+}
+.orb-studio .heading p {
+  font-size: 0.75rem;
+  margin: 4px 0;
+}
+.orb-studio .lab-address {
+  padding: 8px;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.orb-studio .lab-panel {
+  min-width: 0;
+  padding: 10px;
+}
+.orb-studio .lab-tabs {
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.orb-studio .lab-tabs button {
+  font-size: 0.75rem;
+  padding: 6px 9px;
+  min-height: 32px;
+}
+.orb-studio input[type="checkbox"] {
+  accent-color: var(--orb-primary);
+}
+.orb-studio .cm-editor {
+  background: var(--orb-card);
+}
+.orb-studio .cm-gutters {
+  background: var(--orb-card);
+  border-color: var(--orb-border);
+}
+@media (max-width: 700px) {
+  .orb-studio .lab-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .orb-studio .lab-panel input:not([type="checkbox"]),
+  .orb-studio .lab-panel select {
+    font-size: 16px;
+    padding: 6px 8px;
+  }
+}

@@ -70,7 +70,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"body" | "headers" | "ast" | "graph">(studio ? "graph" : "body");
+  const [tab, setTab] = useState<"body" | "headers" | "ast" | "graph">(
+    studio ? "graph" : "body",
+  );
   const editor = useRef<SourceEditorHandle>(null);
   const [parsedSource, setParsedSource] = useState("");
   const active = useRef<AbortController | null>(null);
@@ -290,7 +292,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
     <section className={studio ? "lab orb-studio" : "lab"}>
       <div className="heading">
         <div>
-          <p className="eyebrow">{studio ? "ORB / WORKSPACE" : "ORB / DEVELOPER TOOLS"}</p>
+          <p className="eyebrow">
+            {studio ? "ORB / WORKSPACE" : "ORB / DEVELOPER TOOLS"}
+          </p>
           <h1>{studio ? "Workflow Studio" : "API Lab"}</h1>
           <p>Open a repository workflow or work with your own YAML.</p>
         </div>
@@ -346,25 +350,36 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
         </small>
       )}
       <div className="lab-layout">
-        {!studio && <aside className="lab-collection">
-          <h3>
-            <FolderGit2 size={15} /> Operations
-          </h3>
-          {operations.map((op) => (
-            <button
-              key={op}
-              disabled={busy || (local && !parserOps.includes(op))}
-              className={op === operation ? "lab-selected" : ""}
-              onClick={() => setOperation(op)}
-            >
-              <small>{parserOps.includes(op) ? "POST" : "GET"}</small>
-              {op}
-            </button>
-          ))}
-        </aside>}
+        {!studio && (
+          <aside className="lab-collection">
+            <h3>
+              <FolderGit2 size={15} /> Operations
+            </h3>
+            {operations.map((op) => (
+              <button
+                key={op}
+                disabled={busy || (local && !parserOps.includes(op))}
+                className={op === operation ? "lab-selected" : ""}
+                onClick={() => setOperation(op)}
+              >
+                <small>{parserOps.includes(op) ? "POST" : "GET"}</small>
+                {op}
+              </button>
+            ))}
+          </aside>
+        )}
         <div className="lab-workspace">
           <div className="lab-address">
-            {studio ? <span>{opened?.path ?? "Open a workflow from Explorer or import YAML"}</span> : <><code>{post ? "POST" : "GET"}</code><code>{endpoint}</code></>}
+            {studio ? (
+              <span>
+                {opened?.path ?? "Open a workflow from Explorer or import YAML"}
+              </span>
+            ) : (
+              <>
+                <code>{post ? "POST" : "GET"}</code>
+                <code>{endpoint}</code>
+              </>
+            )}
             <button disabled={busy} onClick={send}>
               <Send size={14} /> {studio ? (local ? "Parse" : "Load") : "Send"}
             </button>
@@ -467,9 +482,24 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                 )}
               </h3>
               <div className="lab-tabs">
-                {!studio && <><button onClick={() => setTab("body")}>Body</button><button onClick={() => setTab("headers")}>Headers</button></>}
-                <button aria-pressed={tab === "ast"} onClick={() => setTab("ast")}>AST</button>
-                <button aria-pressed={tab === "graph"} onClick={() => setTab("graph")}>Graph</button>
+                {!studio && (
+                  <>
+                    <button onClick={() => setTab("body")}>Body</button>
+                    <button onClick={() => setTab("headers")}>Headers</button>
+                  </>
+                )}
+                <button
+                  aria-pressed={tab === "ast"}
+                  onClick={() => setTab("ast")}
+                >
+                  AST
+                </button>
+                <button
+                  aria-pressed={tab === "graph"}
+                  onClick={() => setTab("graph")}
+                >
+                  Graph
+                </button>
                 <label>
                   <input
                     type="checkbox"
