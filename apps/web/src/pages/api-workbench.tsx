@@ -91,9 +91,17 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const local = opened?.repo === "@local";
   function openLocal(source: string, filename: string) {
     if (busy || editBusy) return;
-    const d: Draft = {id: crypto.randomUUID(), repo:"@local",ref:"local",path:filename,yaml:source,original:source,updatedAt:Date.now()};
+    const d: Draft = {
+      id: crypto.randomUUID(),
+      repo: "@local",
+      ref: "local",
+      path: filename,
+      yaml: source,
+      original: source,
+      updatedAt: Date.now(),
+    };
     switchDocument(d);
-    void drafts.save(d).catch(e=>setDraftError(String(e)));
+    void drafts.save(d).catch((e) => setDraftError(String(e)));
   }
   const documentKey = documentId(repo, ref, path);
   function editYaml(value: string) {
@@ -137,7 +145,12 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   function switchDocument(d: Draft) {
     if (active.current || editBusy) return;
     setProposal(null);
-    if(d.repo === "@local"){setOperation("parse");updateRoute({draft:d.id});}else{updateRoute({draft:null});}
+    if (d.repo === "@local") {
+      setOperation("parse");
+      updateRoute({ draft: d.id });
+    } else {
+      updateRoute({ draft: null });
+    }
     setRepo(d.repo);
     setRef(d.ref);
     setPath(d.path);
@@ -151,7 +164,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   }
   function detach() {
     setProposal(null);
-    updateRoute({draft:null});
+    updateRoute({ draft: null });
     setOpened(null);
     setYaml("");
     setResult(null);
@@ -253,7 +266,17 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   }
   useEffect(() => {
     const localId = new URLSearchParams(location.search).get("draft");
-    if(localId && !autoLoaded.current){autoLoaded.current=true;void drafts.get(localId).then(d=>{if(d?.repo==="@local")switchDocument(d);else setDraftError("Local draft not found on this device");}).catch(e=>setDraftError(String(e)));return;}
+    if (localId && !autoLoaded.current) {
+      autoLoaded.current = true;
+      void drafts
+        .get(localId)
+        .then((d) => {
+          if (d?.repo === "@local") switchDocument(d);
+          else setDraftError("Local draft not found on this device");
+        })
+        .catch((e) => setDraftError(String(e)));
+      return;
+    }
     if (
       !autoLoaded.current &&
       (file || new URLSearchParams(location.search).has("path"))
@@ -271,21 +294,27 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
           <p>Open a repository workflow or work with your own YAML.</p>
         </div>
       </div>
-      <LocalSourceTools source={yaml} filename={opened?.path??"workflow.yml"} disabled={busy||editBusy} onOpen={openLocal}/>
+      <LocalSourceTools
+        source={yaml}
+        filename={opened?.path ?? "workflow.yml"}
+        disabled={busy || editBusy}
+        onOpen={openLocal}
+      />
       <div className="lab-tabs" aria-label="Open documents">
         {drafts.items.map((d) => (
           <span key={d.id} className="lab-document">
             <button
-              disabled={busy||editBusy}
+              disabled={busy || editBusy}
               aria-pressed={opened?.id === d.id}
               onClick={() => switchDocument(d)}
               title={d.repo + " @ " + d.ref + " / " + d.path}
             >
-              {d.repo==="@local"?"Local":d.repo.split("/").at(-1)} / {d.path.split("/").at(-1)}
+              {d.repo === "@local" ? "Local" : d.repo.split("/").at(-1)} /{" "}
+              {d.path.split("/").at(-1)}
               {d.yaml !== d.original ? " •" : ""}
             </button>
             <button
-              disabled={busy||editBusy}
+              disabled={busy || editBusy}
               aria-label={"Close " + d.path}
               onClick={() => {
                 if (
@@ -351,46 +380,49 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
           <div className="lab-columns">
             <section className="lab-panel">
               <h3>Request</h3>
-              {!local && <><label>
-                Repository
-                <select
-                  value={repo}
-                  disabled={busy}
-                  onChange={(e) => {
-                    detach();
-                    setRepo(e.target.value);
-                  }}
-                >
-                  {repos.map((r) => (
-                    <option key={r}>{r}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Ref
-                <input
-                  value={ref}
-                  disabled={busy}
-                  onChange={(e) => {
-                    detach();
-                    setRef(e.target.value);
-                  }}
-                  autoCapitalize="none"
-                />
-              </label>
-              <label>
-                Workflow path
-                <input
-                  value={path}
-                  disabled={busy}
-                  onChange={(e) => {
-                    detach();
-                    setPath(e.target.value);
-                  }}
-                  autoCapitalize="none"
-                />
-              </label>
-              </>}
+              {!local && (
+                <>
+                  <label>
+                    Repository
+                    <select
+                      value={repo}
+                      disabled={busy}
+                      onChange={(e) => {
+                        detach();
+                        setRepo(e.target.value);
+                      }}
+                    >
+                      {repos.map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Ref
+                    <input
+                      value={ref}
+                      disabled={busy}
+                      onChange={(e) => {
+                        detach();
+                        setRef(e.target.value);
+                      }}
+                      autoCapitalize="none"
+                    />
+                  </label>
+                  <label>
+                    Workflow path
+                    <input
+                      value={path}
+                      disabled={busy}
+                      onChange={(e) => {
+                        detach();
+                        setPath(e.target.value);
+                      }}
+                      autoCapitalize="none"
+                    />
+                  </label>
+                </>
+              )}
               <label>
                 YAML source
                 <SourceEditor

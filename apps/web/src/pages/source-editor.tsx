@@ -1,5 +1,10 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { Annotation, EditorState, StateEffect, StateField } from "@codemirror/state";
+import {
+  Annotation,
+  EditorState,
+  StateEffect,
+  StateField,
+} from "@codemirror/state";
 import { EditorView, Decoration, type DecorationSet } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 import { yaml } from "@codemirror/lang-yaml";
@@ -69,7 +74,11 @@ export const SourceEditor = forwardRef<
             ".cm-scroller": { maxHeight: "65vh", overflow: "auto" },
           }),
           EditorView.updateListener.of((u) => {
-            if (u.docChanged && !u.transactions.some(t=>t.annotation(externalUpdate))) change.current(u.state.doc.toString());
+            if (
+              u.docChanged &&
+              !u.transactions.some((t) => t.annotation(externalUpdate))
+            )
+              change.current(u.state.doc.toString());
             if (u.selectionSet || u.docChanged)
               cursor.current?.(u.state.selection.main.from);
           }),
