@@ -949,4 +949,19 @@ nav {
   outline: 1px solid var(--orb-primary);
 }
 
-.orb-script-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:space-between}.orb-script-panel{min-width:0;display:grid;gap:8px}.orb-script-expanded .cm-scroller{min-height:45dvh!important;max-height:65dvh!important}
+.orb-script-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.orb-script-panel {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.orb-script-expanded .cm-scroller {
+  min-height: 45dvh !important;
+  max-height: 65dvh !important;
+}

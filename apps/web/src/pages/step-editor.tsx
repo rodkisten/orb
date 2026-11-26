@@ -45,13 +45,23 @@ export function StepEditor({
     if (!current || !step) return;
     setError("");
     try {
-      if(kind==="configure-step" && timeout && (!Number.isInteger(Number(timeout)) || Number(timeout)<1 || Number(timeout)>360)) throw Error("Timeout must be an integer from 1 to 360");
+      if (
+        kind === "configure-step" &&
+        timeout &&
+        (!Number.isInteger(Number(timeout)) ||
+          Number(timeout) < 1 ||
+          Number(timeout) > 360)
+      )
+        throw Error("Timeout must be an integer from 1 to 360");
       const vars: Record<string, string> = Object.create(null);
-      for (const line of (kind==="configure-step" ? env : "").split("\n").filter(Boolean)) {
+      for (const line of (kind === "configure-step" ? env : "")
+        .split("\n")
+        .filter(Boolean)) {
         const at = line.indexOf("=");
         if (at < 1) throw Error("Use KEY=value");
-        const key=line.slice(0,at).trim();
-        if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) throw Error("Invalid environment variable: "+key);
+        const key = line.slice(0, at).trim();
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key))
+          throw Error("Invalid environment variable: " + key);
         vars[key] = line.slice(at + 1);
       }
       onEdit({
@@ -167,7 +177,11 @@ export function StepEditor({
         Environment (KEY=value)
         <Textarea value={env} onChange={(e) => setEnv(e.target.value)} />
       </label>
-      <Button type="button" disabled={!changed} onClick={() => submit("configure-step")}>
+      <Button
+        type="button"
+        disabled={!changed}
+        onClick={() => submit("configure-step")}
+      >
         Review configuration
       </Button>
       {error && <p role="alert">{error}</p>}
@@ -187,26 +201,55 @@ function ScriptPanel({
   onSave: (value: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
-  const [expanded,setExpanded]=useState(false);
-  const [copyError,setCopyError]=useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   return (
-    <section className={"orb-script-panel"+(expanded?" orb-script-expanded":"")}>
-      <div className="orb-script-toolbar"><h3>Script · {shell}</h3><Button type="button" onClick={()=>setExpanded(!expanded)}>{expanded?"Collapse":"Expand"}</Button></div>
-      <small>{draft.split("\n").length} lines · {draft===value?"Unchanged":"Unsaved changes"}</small>
+    <section
+      className={"orb-script-panel" + (expanded ? " orb-script-expanded" : "")}
+    >
+      <div className="orb-script-toolbar">
+        <h3>Script · {shell}</h3>
+        <Button type="button" onClick={() => setExpanded(!expanded)}>
+          {expanded ? "Collapse" : "Expand"}
+        </Button>
+      </div>
+      <small>
+        {draft.split("\n").length} lines ·{" "}
+        {draft === value ? "Unchanged" : "Unsaved changes"}
+      </small>
       <StructuredEditor
         script
         value={draft}
         onChange={setDraft}
         disabled={disabled}
       />
-      <div className="orb-script-toolbar"><Button type="button" disabled={disabled || draft===value} onClick={()=>setDraft(value)}>Reset</Button><Button type="button" onClick={()=>{void navigator.clipboard.writeText(draft).catch(()=>setCopyError(true));}}>Copy</Button>
-      <Button
-        type="button"
-        disabled={disabled || draft === value}
-        onClick={() => onSave(draft)}
-      >
-        Review script patch
-      </Button></div>{copyError && <p role="alert">Clipboard unavailable</p>}
+      <div className="orb-script-toolbar">
+        <Button
+          type="button"
+          disabled={disabled || draft === value}
+          onClick={() => setDraft(value)}
+        >
+          Reset
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            void navigator.clipboard
+              .writeText(draft)
+              .catch(() => setCopyError(true));
+          }}
+        >
+          Copy
+        </Button>
+        <Button
+          type="button"
+          disabled={disabled || draft === value}
+          onClick={() => onSave(draft)}
+        >
+          Review script patch
+        </Button>
+      </div>
+      {copyError && <p role="alert">Clipboard unavailable</p>}
     </section>
   );
 }

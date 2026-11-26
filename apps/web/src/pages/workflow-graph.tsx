@@ -200,7 +200,9 @@ export function WorkflowGraph({
               <Controls />
             </ReactFlow>
           </div>
-          <small className="text-muted-foreground">Connect jobs to edit dependencies.</small>
+          <small className="text-muted-foreground">
+            Connect jobs to edit dependencies.
+          </small>
           <small>
             {nodes.length} jobs · {edges.length} dependencies
             {model.jobs.length > 300 ? " · limited to 300 jobs" : ""}

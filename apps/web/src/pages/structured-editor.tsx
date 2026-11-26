@@ -39,7 +39,16 @@ export function StructuredEditor({
           basicSetup,
           ...(script ? [] : [yaml()]),
           oneDark,
-          EditorView.theme({"&":{backgroundColor:"#212121"},".cm-gutters":{backgroundColor:"#212121",color:"#999"},".cm-activeLine,.cm-activeLineGutter":{backgroundColor:"#303030"}} ,{dark:true}),
+          EditorView.theme(
+            {
+              "&": { backgroundColor: "#212121" },
+              ".cm-gutters": { backgroundColor: "#212121", color: "#999" },
+              ".cm-activeLine,.cm-activeLineGutter": {
+                backgroundColor: "#303030",
+              },
+            },
+            { dark: true },
+          ),
           EditorView.lineWrapping,
           access.current.of([
             EditorState.readOnly.of(disabled),
