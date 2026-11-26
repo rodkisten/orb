@@ -56,7 +56,9 @@ const diagnosticsField = StateField.define<DecorationSet>({
   },
   provide: (f) => EditorView.decorations.from(f),
 });
-export type SourceEditorHandle = { select: (from: number, to: number, reveal?: boolean) => void };
+export type SourceEditorHandle = {
+  select: (from: number, to: number, reveal?: boolean) => void;
+};
 export const SourceEditor = forwardRef<
   SourceEditorHandle,
   {
@@ -117,7 +119,10 @@ export const SourceEditor = forwardRef<
     if (e && e.state.doc.toString() !== value)
       e.dispatch({
         changes: { from: 0, to: e.state.doc.length, insert: value },
-        annotations: [externalUpdate.of(true), Transaction.addToHistory.of(false)],
+        annotations: [
+          externalUpdate.of(true),
+          Transaction.addToHistory.of(false),
+        ],
       });
   }, [value]);
   useEffect(() => {
@@ -132,7 +137,12 @@ export const SourceEditor = forwardRef<
         const e = view.current;
         if (!e || from < 0 || to < from || to > e.state.doc.length) return;
         e.dispatch({
-          effects: [selectionEffect.of({ from, to }), ...(reveal ? [EditorView.scrollIntoView(from,{y:"center"})] : [])],
+          effects: [
+            selectionEffect.of({ from, to }),
+            ...(reveal
+              ? [EditorView.scrollIntoView(from, { y: "center" })]
+              : []),
+          ],
         });
       },
     }),

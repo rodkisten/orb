@@ -213,40 +213,48 @@ export function WorkflowGraph({
       {detail && (
         <section className="orb-graph-detail">
           <h3>{detail.name ?? detail.id}</h3>
-          <p className="text-xs text-muted-foreground">Select a step to edit its configuration or script.</p>
+          <p className="text-xs text-muted-foreground">
+            Select a step to edit its configuration or script.
+          </p>
           {job && (
-            <details><summary>Dependencies ({job.needs.length})</summary><fieldset className="orb-dependencies" disabled={stale}>
-              <legend>Dependencies</legend>
-              {model.jobs
-                .filter((j) => j.id !== job.id)
-                .map((j) => (
-                  <label key={j.id}>
-                    <input
-                      type="checkbox"
-                      checked={job.needs.includes(j.id)}
-                      onChange={(e) =>
-                        onEditNeeds(
-                          job.id,
-                          e.target.checked
-                            ? [...job.needs, j.id]
-                            : job.needs.filter((n) => n !== j.id),
-                        )
-                      }
-                    />
-                    {j.id}
-                  </label>
-                ))}
-            </fieldset></details>
+            <details>
+              <summary>Dependencies ({job.needs.length})</summary>
+              <fieldset className="orb-dependencies" disabled={stale}>
+                <legend>Dependencies</legend>
+                {model.jobs
+                  .filter((j) => j.id !== job.id)
+                  .map((j) => (
+                    <label key={j.id}>
+                      <input
+                        type="checkbox"
+                        checked={job.needs.includes(j.id)}
+                        onChange={(e) =>
+                          onEditNeeds(
+                            job.id,
+                            e.target.checked
+                              ? [...job.needs, j.id]
+                              : job.needs.filter((n) => n !== j.id),
+                          )
+                        }
+                      />
+                      {j.id}
+                    </label>
+                  ))}
+              </fieldset>
+            </details>
           )}
-          <div className="orb-step-list">{detail.steps.map((step) => (
-            <button
-              key={step.index}
-              disabled={stale}
-              onClick={() => select(["jobs", detail.id, "steps", step.index])}
-            >
-              {step.index + 1}. {step.name ?? step.uses ?? step.kind} {step.kind === "run" ? " · Script" : ""}
-            </button>
-          ))}</div>
+          <div className="orb-step-list">
+            {detail.steps.map((step) => (
+              <button
+                key={step.index}
+                disabled={stale}
+                onClick={() => select(["jobs", detail.id, "steps", step.index])}
+              >
+                {step.index + 1}. {step.name ?? step.uses ?? step.kind}{" "}
+                {step.kind === "run" ? " · Script" : ""}
+              </button>
+            ))}
+          </div>
         </section>
       )}
     </div>

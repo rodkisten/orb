@@ -920,4 +920,31 @@ nav {
   }
 }
 
-.orb-step-list{display:grid;gap:4px;margin-top:8px}.orb-step-list button{text-align:left;white-space:normal;overflow-wrap:anywhere}.orb-dependencies{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px}.orb-dependencies label{display:flex!important;align-items:center;gap:6px}.orb-linked-range{background:color-mix(in srgb,var(--orb-primary) 45%,transparent)!important;outline:1px solid var(--orb-primary)}
+.orb-step-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+.orb-step-list button {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.orb-dependencies {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 4px;
+}
+.orb-dependencies label {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+}
+.orb-linked-range {
+  background: color-mix(
+    in srgb,
+    var(--orb-primary) 45%,
+    transparent
+  ) !important;
+  outline: 1px solid var(--orb-primary);
+}
