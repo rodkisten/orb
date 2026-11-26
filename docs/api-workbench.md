@@ -67,4 +67,5 @@ Graph/AST selection highlights source without focusing or scrolling the page. Gr
 Mobile workspace uses a compact two-row global header, File menu, scrollable document tabs and independent YAML/Graph/AST/Inspector panels. Graph step selection opens Inspector. Removed unsupported React Flow colorMode prop identified by CI. Desktop retains split panes.
 
 ### Mobile viewport
+
 The standalone Orb web app requests a fixed viewport scale. Touch-device form controls and all CodeMirror editing surfaces use a minimum computed font size of 16px to prevent Safari focus zoom. React Flow retains its own gestures. Safari may override viewport zoom restrictions for accessibility; embedded hosts own their viewport settings.
