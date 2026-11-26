@@ -4,6 +4,8 @@ type Environment = GitHubCredentials & { ORB_CI_REPOSITORIES?: string };
 type Resource =
   | "contents"
   | "branches"
+  | "environments"
+  | "tags"
   | "pulls"
   | "commits"
   | "actions/workflows"

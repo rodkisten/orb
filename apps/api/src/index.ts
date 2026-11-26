@@ -141,6 +141,18 @@ function createApp(env: Bindings) {
         detail: { tags: ["GitHub"] },
       },
     )
+    .get("/github/:owner/:repo/environments",async ({params,query,request,set})=>{
+      set.headers["cache-control"]="no-store";
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:"Unauthorized"};}
+      try{return await repositoryRead(env,params.owner,params.repo,"environments",query.page??1,query.limit??100);}
+      catch(error){set.status=error instanceof GatewayError?error.status:502;return {error:"Repository environments unavailable"};}
+    },{params:repositoryParams,query:paginationQuery,detail:{tags:["GitHub"]}})
+    .get("/github/:owner/:repo/tags",async ({params,query,request,set})=>{
+      set.headers["cache-control"]="no-store";
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:"Unauthorized"};}
+      try{return await repositoryRead(env,params.owner,params.repo,"tags",query.page??1,query.limit??100);}
+      catch(error){set.status=error instanceof GatewayError?error.status:502;return {error:"Repository tags unavailable"};}
+    },{params:repositoryParams,query:paginationQuery,detail:{tags:["GitHub"]}})
     .get(
       "/github/:owner/:repo/branches",
       async ({ params, query, request, set }) => {
