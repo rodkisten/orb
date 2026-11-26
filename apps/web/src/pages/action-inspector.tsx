@@ -1,3 +1,5 @@
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 type Port = {
@@ -73,23 +75,23 @@ export function ActionInspector({
       <h4>Action Inspector</h4>
       <label>
         Search GitHub
-        <input
+        <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoCapitalize="none"
         />
       </label>
-      <button
+      <Button
         type="button"
         disabled={search.trim().length < 2}
         onClick={() => setQuery(search.trim())}
       >
         Search
-      </button>
+      </Button>
       {results.data?.search.nodes
         .filter((n) => n?.nameWithOwner)
         .map((n) => (
-          <button
+          <Button
             type="button"
             key={n.nameWithOwner}
             onClick={() =>
@@ -99,7 +101,7 @@ export function ActionInspector({
             }
           >
             {n.nameWithOwner} · {n.description}
-          </button>
+          </Button>
         ))}
       {versions.data && (
         <label>
@@ -133,20 +135,20 @@ export function ActionInspector({
         <>
           <h4>{manifest.data.name}</h4>
           <p>{manifest.data.description}</p>
-          <button
+          <Button
             type="button"
             onClick={() =>
               onUses(uses.split("@")[0] + "@" + manifest.data!.commitSha)
             }
           >
             Pin commit SHA
-          </button>
+          </Button>
           {manifest.data.inputs.map((p) => (
             <label key={p.id}>
               {p.id}
               {p.required ? " (required)" : ""}
               <small>{p.description}</small>
-              <input
+              <Input
                 required={p.required && p.default === undefined}
                 placeholder={p.default ?? ""}
                 value={inputs[p.id] ?? ""}

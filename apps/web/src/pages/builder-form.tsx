@@ -1,3 +1,6 @@
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Textarea } from "../../../components/ui/textarea";
 import { WorkflowInspector } from "./workflow-inspector";
 import { JobInspector } from "./job-inspector";
 import { StepEditor } from "./step-editor";
@@ -75,7 +78,7 @@ export function BuilderForm({
         className="mb-3 grid grid-cols-2 gap-1 sm:grid-cols-4"
       >
         {tabs.map(({ id, label, Icon }) => (
-          <button
+          <Button
             key={id}
             type="button"
             aria-pressed={active === id}
@@ -84,7 +87,7 @@ export function BuilderForm({
           >
             <Icon size={14} />
             {label}
-          </button>
+          </Button>
         ))}
       </nav>
       <div hidden={active !== "add"}>
@@ -133,7 +136,7 @@ export function BuilderForm({
               <>
                 <label>
                   Name
-                  <input
+                  <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -150,7 +153,7 @@ export function BuilderForm({
                 </label>
                 <label>
                   {mode}
-                  <textarea
+                  <Textarea
                     required
                     value={value}
                     onChange={(e) => {
@@ -175,7 +178,7 @@ export function BuilderForm({
             ) : (
               <label>
                 New job ID
-                <input
+                <Input
                   required
                   pattern="[A-Za-z_][A-Za-z0-9_-]*"
                   value={id}
@@ -184,7 +187,7 @@ export function BuilderForm({
                 />
               </label>
             )}
-            <button type="submit">Review patch</button>
+            <Button type="submit">Review patch</Button>
           </fieldset>
         </form>
       </div>

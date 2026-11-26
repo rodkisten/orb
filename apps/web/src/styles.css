@@ -1,7 +1,13 @@
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
+@source "../../components/ui";
 @theme inline {
+  --color-input: var(--orb-input);
+  --color-muted: var(--orb-muted-surface);
+  --color-destructive: var(--orb-destructive);
+  --color-secondary: var(--orb-muted-surface);
+  --color-secondary-foreground: var(--orb-foreground);
   --color-background: var(--orb-background);
   --color-foreground: var(--orb-foreground);
   --color-card: var(--orb-card);
@@ -494,3 +500,5 @@ nav {
   background: #14532d44;
   color: #86efac;
 }
+
+:root { --orb-input: #24242c; --orb-muted-surface: #202027; --orb-destructive: #ef4444; }

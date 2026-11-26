@@ -31,3 +31,5 @@ Job Inspector supports reviewed JSON-valued field patches for runner, strategy/m
 Workflow Inspector: root-level reviewed patches for name, run-name, on, permissions, concurrency, env and defaults. Trigger presets cover push, pull_request, schedule, workflow_dispatch and workflow_call. Presets replace the draft trigger JSON, not the source until review. Existing block collections require manual editing; missing fields and simple scalars are supported.
 
 Midnight migration: Tailwind v4 Vite plugin enabled without global preflight; semantic Orb tokens and URL-driven inspector navigation (`inspector=workflow|job|steps|add`). Existing forms remain mounted to preserve drafts. Shared shadcn/Base UI migration is a subsequent step.
+
+Inspector forms now import the existing shared shadcn Button, Input and Textarea directly from apps/components/ui. Native selects remain until their value/event adapters are migrated. Tailwind explicitly scans the shared component directory. The existing apps workspace must be installed for shared Base UI and cn dependencies.

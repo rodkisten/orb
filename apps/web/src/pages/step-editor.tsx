@@ -1,3 +1,6 @@
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Textarea } from "../../../components/ui/textarea";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
 type Job = {
@@ -90,37 +93,37 @@ export function StepEditor({
           ))}
         </select>
       </label>
-      <button
+      <Button
         type="button"
         disabled={!step || step.index === 0}
         onClick={() => submit("move-step", -1)}
       >
         Move up
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         disabled={!step || step.index === (current?.steps.length ?? 0) - 1}
         onClick={() => submit("move-step", 1)}
       >
         Move down
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         disabled={(current?.steps.length ?? 0) < 2}
         onClick={() => submit("remove-step")}
       >
         Review removal
-      </button>
+      </Button>
       <label>
         if
-        <input
+        <Input
           value={condition}
           onChange={(e) => setCondition(e.target.value)}
         />
       </label>
       <label>
         Timeout minutes
-        <input
+        <Input
           type="number"
           min="1"
           max="360"
@@ -129,7 +132,7 @@ export function StepEditor({
         />
       </label>
       <label>
-        <input
+        <Input
           type="checkbox"
           checked={allow}
           onChange={(e) => setAllow(e.target.checked)}
@@ -138,11 +141,11 @@ export function StepEditor({
       </label>
       <label>
         Environment (KEY=value)
-        <textarea value={env} onChange={(e) => setEnv(e.target.value)} />
+        <Textarea value={env} onChange={(e) => setEnv(e.target.value)} />
       </label>
-      <button type="button" onClick={() => submit("configure-step")}>
+      <Button type="button" onClick={() => submit("configure-step")}>
         Review configuration
-      </button>
+      </Button>
       {error && <p role="alert">{error}</p>}
     </fieldset>
   );

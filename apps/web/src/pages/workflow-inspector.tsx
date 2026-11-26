@@ -1,3 +1,5 @@
+import { Button } from "../../../components/ui/button";
+import { Textarea } from "../../../components/ui/textarea";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
 const presets = {
@@ -91,7 +93,7 @@ export function WorkflowInspector({
           {fields.map(([key, example]) => (
             <label key={key}>
               {key}
-              <textarea
+              <Textarea
                 rows={key === "on" ? 8 : 2}
                 spellCheck={false}
                 autoCapitalize="none"
@@ -103,8 +105,8 @@ export function WorkflowInspector({
               />
             </label>
           ))}
-          <button type="submit">Review workflow patch</button>
-          <button
+          <Button type="submit">Review workflow patch</Button>
+          <Button
             type="button"
             onClick={() => {
               setValues({});
@@ -112,7 +114,7 @@ export function WorkflowInspector({
             }}
           >
             Clear
-          </button>
+          </Button>
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>

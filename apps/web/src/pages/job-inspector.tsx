@@ -1,3 +1,5 @@
+import { Button } from "../../../components/ui/button";
+import { Textarea } from "../../../components/ui/textarea";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
 const fields = [
@@ -90,7 +92,7 @@ export function JobInspector({
             .map((f) => (
               <label key={f.key}>
                 {f.key}
-                <textarea
+                <Textarea
                   rows={2}
                   autoCapitalize="none"
                   spellCheck={false}
@@ -102,7 +104,7 @@ export function JobInspector({
                 />
               </label>
             ))}
-          <button type="submit">Review job patch</button>
+          <Button type="submit">Review job patch</Button>
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>
