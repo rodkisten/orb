@@ -1,0 +1,70 @@
+name: 🪐 ORB · Maintenance
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [format, lockfile, update]
+        default: format
+      commit_changes:
+        type: boolean
+        default: true
+permissions:
+  contents: write
+concurrency:
+  group: orb-maintenance-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  format:
+    if: github.event_name == 'workflow_dispatch' || (github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[format]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rodkisten/github/app-token@main
+        id: app
+        with:
+          app-id: ${{ vars.ORB_GITHUB_APP_ID || vars.BOT_APP_ID || secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY || secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ steps.app.outputs.token }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.22.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare dependencies
+        env:
+          OPERATION: ${{ inputs.operation || 'format' }}
+        run: |
+          case "$OPERATION" in
+            format|lockfile) pnpm install --no-frozen-lockfile ;;
+            update) pnpm -r update --latest; pnpm install --frozen-lockfile ;;
+            *) exit 1 ;;
+          esac
+      - name: Format
+        if: github.event_name == 'push' || inputs.operation == 'format'
+        run: pnpm format
+      - run: pnpm typecheck
+      - run: pnpm --filter @orb/web build
+      - run: pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
+      - name: Commit maintenance changes
+        if: github.event_name == 'push' || inputs.commit_changes
+        env:
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          bot="$APP_SLUG[bot]"
+          id=$(gh api "users/$bot" --jq .id)
+          git config user.name "$bot"
+          git config user.email "$id+$bot@users.noreply.github.com"
+          git add -u
+          git add pnpm-lock.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore: maintain workspace [format] [deploy]'
+          git push

@@ -33,7 +33,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Workspace typecheck
         if: matrix.target == 'workspace'
-        run: pnpm typecheck
+        run: pnpm -r --if-present typecheck
       - name: API verification
         if: matrix.target == 'api'
         run: |

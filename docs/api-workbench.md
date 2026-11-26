@@ -49,3 +49,5 @@ Workspace mode hides HTTP operations and response tabs, defaults to graph inspec
 Formatting publishes through the Orb GitHub App installation token (contents/workflows write), with the App bot identity. App credentials must be available to the format job at repository scope. GitHub Actions approval policies and production environment reviewers are separate settings; this change does not bypass them.
 
 CI is consolidated into ci.yml with API, Web and workspace matrix checks. Production deploy.yml is manual, main-only, validates through reusable CI and orders API before Web. Existing production approval protections remain. Preview and maintenance workflows remain separate.
+
+Maintenance consolidates automatic formatting and manual pnpm lockfile refresh/update, verifies typecheck and builds before App-authenticated push. The npm-only repair workflow and separate pnpm refresh workflow are retired. npm-operations remains for explicit custom operations pending migration of its script. Existing branch protection check names may need updating.
