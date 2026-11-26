@@ -209,7 +209,27 @@ export function DispatchEditor({
       {error && <p role="alert">{error}</p>}
       <section className="rounded-lg border border-border p-3">
         <h4>Run form preview</h4>
-        <SchemaForm fields={fields.map(f=>({id:f.id,label:f.id,description:f.description,type:f.type,required:f.required,defaultValue:f.defaultValue,options:f.type==="choice"?f.options.split("\n").map(v=>v.trim()).filter(Boolean):undefined}))} values={preview} onChange={(id,value)=>setPreview(old=>({...old,[id]:value}))}/>
+        <SchemaForm
+          fields={fields.map((f) => ({
+            id: f.id,
+            label: f.id,
+            description: f.description,
+            type: f.type,
+            required: f.required,
+            defaultValue: f.defaultValue,
+            options:
+              f.type === "choice"
+                ? f.options
+                    .split("\n")
+                    .map((v) => v.trim())
+                    .filter(Boolean)
+                : undefined,
+          }))}
+          values={preview}
+          onChange={(id, value) =>
+            setPreview((old) => ({ ...old, [id]: value }))
+          }
+        />
         <p>Preview only · no workflow is executed.</p>
       </section>
     </section>
