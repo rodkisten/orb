@@ -15,3 +15,5 @@
 .workspace-unified{display:grid;grid-template-columns:minmax(0,1fr)}.workspace-secondary{display:none}@media(min-width:1200px){.workspace-unified{grid-template-columns:minmax(260px,1fr) minmax(0,3fr);gap:16px}.workspace-secondary{display:block;min-width:0}.workspace-visible{min-width:0}}
 
 .orb-graph-canvas{height:420px;min-width:0;background:#17131f}.orb-graph-job{width:190px;min-height:65px;display:grid;gap:4px;padding:12px;border:1px solid #655080;border-radius:8px;background:#242033;color:#eee}.orb-graph-job small{overflow-wrap:anywhere}.orb-graph-active{outline:3px solid #a78bfa}.orb-graph-canvas .react-flow__controls button{color:#222}
+
+.orb-patch-review{max-height:280px;overflow:auto;white-space:pre}.orb-patch-removed{background:#7f1d1d44;color:#fca5a5}.orb-patch-added{background:#14532d44;color:#86efac}
