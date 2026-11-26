@@ -1,3 +1,4 @@
+import { WorkflowInspector } from "./workflow-inspector";
 import { JobInspector } from "./job-inspector";
 import { StepEditor } from "./step-editor";
 import { ActionInspector } from "./action-inspector";
@@ -10,7 +11,8 @@ export type BuilderEdit = {
     | "remove-step"
     | "move-step"
     | "configure-step"
-    | "configure-job";
+    | "configure-job"
+    | "configure-workflow";
   job: string;
   id?: string;
   name?: string;
@@ -140,6 +142,7 @@ export function BuilderForm({
           <button type="submit">Review patch</button>
         </fieldset>
       </form>
+      <WorkflowInspector disabled={disabled} onEdit={onEdit} />
       <JobInspector body={body} disabled={disabled} onEdit={onEdit} />
       <StepEditor body={body} disabled={disabled} onEdit={onEdit} />
     </details>

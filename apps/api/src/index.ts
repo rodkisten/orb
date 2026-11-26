@@ -454,6 +454,7 @@ function createApp(env: Bindings) {
               t.Literal("move-step"),
               t.Literal("configure-step"),
               t.Literal("configure-job"),
+              t.Literal("configure-workflow"),
             ]),
             job: t.String({ maxLength: 255 }),
             id: t.Optional(t.String({ maxLength: 255 })),
