@@ -7,7 +7,7 @@ import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
 import { workflowSource, validateWorkflow } from './workflow-builder'
-import { inspectWorkflow, parseWorkflow, replaceScalar } from '@orb/workflow-core'
+import { inspectWorkflow, parseWorkflow, replaceScalar, editJobNeeds } from '@orb/workflow-core'
 import { repositoryRead, GatewayError } from './repository-read'
 import { githubToken, githubAuthMode } from './github-auth'
 import { readPrFailure } from './github-pr-ci'
@@ -106,6 +106,11 @@ function createApp(env: Bindings) {
       try{return replaceScalar(body.yaml,body.path,body.value)}
       catch{set.status=422;return {error:'Unsupported scalar transformation'}}
     },{body:t.Object({yaml:t.String({maxLength:262144}),path:t.Array(t.Union([t.String({maxLength:255}),t.Integer({minimum:0})]),{minItems:1,maxItems:100}),value:t.String({maxLength:65536})}),detail:{tags:['Workflow Builder']}})
+    .post('/workflows/edit-needs',async ({body,request,set})=>{
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      try{return editJobNeeds(body.yaml,body.job,body.needs)}
+      catch(error){set.status=422;return {error:error instanceof Error?error.message:'Unsupported dependency edit'}}
+    },{body:t.Object({yaml:t.String({maxLength:262144}),job:t.String({maxLength:255}),needs:t.Array(t.String({maxLength:255}),{maxItems:300})}),detail:{tags:['Workflow Builder']}})
     .post('/workflows/inspect',async ({body,request,set})=>{
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
       return inspectWorkflow(body.yaml)

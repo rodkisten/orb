@@ -41,3 +41,31 @@ export function replaceScalar(source:string,path:(string|number)[],value:string)
 }
 
 export * from './adapters.ts'
+
+export function editJobNeeds(source:string,id:string,needs:string[]){
+ const doc=parseDocument(source,{version:'1.2',uniqueKeys:true,keepSourceTokens:true})
+ if(doc.errors.length)throw Error('Invalid source YAML')
+ const job=doc.getIn(['jobs',id],true)
+ if(!isMap(job)||job.flow||job.anchor||job.tag)throw Error('Only plain block jobs are supported')
+ const existing=job.get('needs',true)
+ const unique=[...new Set(needs)]
+ if(unique.includes(id)||unique.some(n=>!isMap(doc.getIn(['jobs',n],true))))throw Error('Invalid dependency')
+ const insert=JSON.stringify(unique)
+ let patch:SourcePatch
+ if(existing!==undefined){
+  if((!isScalar(existing)&&!isSeq(existing))||!existing.range||existing.anchor||existing.tag||existing.comment||existing.commentBefore||isSeq(existing)&&(!existing.flow||existing.items.some(n=>!isScalar(n)||n.comment||n.commentBefore||n.anchor||n.tag)))throw Error('Complex needs syntax requires manual editing')
+  patch={from:existing.range[0],to:existing.range[1],insert}
+ }else{
+  const first=job.items[0]?.key
+  if(!isScalar(first)||!first.range)throw Error('Job has no insertion point')
+  const from=first.range[0]
+  const lineStart=source.lastIndexOf('\n',from-1)+1
+  const indent=source.slice(lineStart,from)
+  if(!/^ +$/.test(indent))throw Error('Unsupported indentation')
+  patch={from,to:from,insert:'needs: '+insert+(source.includes('\r\n')?'\r\n':'\n')+indent}
+ }
+ const yaml=applySourcePatches(source,[patch])
+ const result=parseWorkflow(yaml)
+ if(!result.valid)throw Error('Dependency edit would produce invalid workflow')
+ return {yaml,patches:[patch],...result}
+}

@@ -15,7 +15,7 @@ const nodeTypes={job:JobCard}
 function read(body:string){
  try{const d=JSON.parse(body);return {jobs:(Array.isArray(d.jobs)?d.jobs:[]) as Job[],details:(Array.isArray(d.details)?d.details:[]) as Detail[],ranges:(Array.isArray(d.nodes)?d.nodes:[]) as Range[]}}catch{return {jobs:[],details:[],ranges:[]}}
 }
-export function WorkflowGraph({body,stale,cursor,onSelect}:{body:string;stale:boolean;cursor:number|null;onSelect:(path:Path,from:number,to:number)=>void}){
+export function WorkflowGraph({body,stale,cursor,onSelect,onEditNeeds}:{body:string;stale:boolean;cursor:number|null;onSelect:(path:Path,from:number,to:number)=>void;onEditNeeds:(job:string,needs:string[])=>void}){
  const model=useMemo(()=>read(body),[body])
  const [selected,setSelected]=useState<string|null>(null)
  const active=stale||cursor===null?undefined:model.ranges.filter(n=>n.path.length===2&&n.path[0]==='jobs'&&n.range&&n.range.from<=cursor&&cursor<n.range.to)[0]?.path[1]
@@ -31,5 +31,6 @@ export function WorkflowGraph({body,stale,cursor,onSelect}:{body:string;stale:bo
  },[model,active])
  function select(path:Path){if(stale)return;const n=model.ranges.find(n=>JSON.stringify(n.path)===JSON.stringify(path));if(n?.range)onSelect(path,n.range.from,n.range.to)}
  const detail=model.details.find(d=>d.id===(active??selected))
- return <div>{stale&&<p role="status">Waiting for current source parse…</p>}{!nodes.length?<p>No jobs to display. Open or parse a workflow.</p>:<><div className="orb-graph-canvas"><ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView nodesConnectable={false} nodesDraggable={false} onNodeClick={(_,node)=>{setSelected(node.id);select(['jobs',node.id])}}><Background/><Controls/><MiniMap pannable zoomable/></ReactFlow></div><small>{nodes.length} jobs · {edges.length} dependencies{model.jobs.length>300?' · limited to 300 jobs':''}</small></>}{detail&&<section><h3>{detail.name??detail.id}</h3>{detail.steps.map(step=><button key={step.index} disabled={stale} onClick={()=>select(['jobs',detail.id,'steps',step.index])}>{step.index+1}. {step.name??step.uses??step.kind}</button>)}</section>}</div>
+ const job=model.jobs.find(j=>j.id===detail?.id)
+ return <div>{stale&&<p role="status">Waiting for current source parse…</p>}{!nodes.length?<p>No jobs to display. Open or parse a workflow.</p>:<><div className="orb-graph-canvas"><ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView nodesConnectable={false} nodesDraggable={false} onNodeClick={(_,node)=>{setSelected(node.id);select(['jobs',node.id])}}><Background/><Controls/><MiniMap pannable zoomable/></ReactFlow></div><small>{nodes.length} jobs · {edges.length} dependencies{model.jobs.length>300?' · limited to 300 jobs':''}</small></>}{detail&&<section><h3>{detail.name??detail.id}</h3>{job&&<fieldset disabled={stale}><legend>Dependencies</legend>{model.jobs.filter(j=>j.id!==job.id).map(j=><label key={j.id}><input type="checkbox" checked={job.needs.includes(j.id)} onChange={e=>onEditNeeds(job.id,e.target.checked?[...job.needs,j.id]:job.needs.filter(n=>n!==j.id))}/>{j.id}</label>)}</fieldset>}{detail.steps.map(step=><button key={step.index} disabled={stale} onClick={()=>select(['jobs',detail.id,'steps',step.index])}>{step.index+1}. {step.name??step.uses??step.kind}</button>)}</section>}</div>
 }
