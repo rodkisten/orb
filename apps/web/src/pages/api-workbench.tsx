@@ -454,7 +454,10 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               />
             </div>
           )}
-          <WorkbenchLayout className="lab-columns" activePane={studio ? pane : undefined}>
+          <WorkbenchLayout
+            className="lab-columns"
+            activePane={studio ? pane : undefined}
+          >
             <section className="lab-panel orb-source-pane">
               <h3>{studio ? "Source" : "Request"}</h3>
               {!local && (!studio || !opened) && (
