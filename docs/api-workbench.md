@@ -65,3 +65,6 @@ Use Load demo to create a separate local draft with 10 jobs, matrix expansion, t
 Graph/AST selection highlights source without focusing or scrolling the page. Graph step clicks select the step inspector via URL. Existing run scalars and new shell steps have CodeMirror script editing; existing edits use reviewed source patches and reject comments/anchors/tags. Script editor currently uses plain text rather than a shell grammar. Graph fits topology changes, caps initial zoom, removes minimap and compacts dependencies.
 
 Mobile workspace uses a compact two-row global header, File menu, scrollable document tabs and independent YAML/Graph/AST/Inspector panels. Graph step selection opens Inspector. Removed unsupported React Flow colorMode prop identified by CI. Desktop retains split panes.
+
+### Mobile viewport
+The standalone Orb web app requests a fixed viewport scale. Touch-device form controls and all CodeMirror editing surfaces use a minimum computed font size of 16px to prevent Safari focus zoom. React Flow retains its own gestures. Safari may override viewport zoom restrictions for accessibility; embedded hosts own their viewport settings.

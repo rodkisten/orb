@@ -858,3 +858,26 @@ nav {
     margin: 0;
   }
 }
+
+/* iOS focus zoom: WebKit uses the computed editable font size, not the
+   surrounding label. Keep all editors and form controls at least 16px. */
+@media (hover: none) and (pointer: coarse) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  [contenteditable="true"],
+  .cm-editor,
+  .cm-editor .cm-scroller,
+  .cm-editor .cm-content {
+    font-size: max(16px, 1em) !important;
+  }
+  /* React Flow owns its own pinch/pan gestures. */
+  .react-flow__pane {
+    touch-action: none;
+  }
+}
