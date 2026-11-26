@@ -1,3 +1,4 @@
+import { StructuredEditor } from "./structured-editor";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
@@ -159,7 +160,7 @@ export function BuilderForm({
                 </label>
                 <label>
                   {mode}
-                  <Textarea
+                  {mode === "run" ? <StructuredEditor script value={value} onChange={setValue} disabled={disabled}/> : <Textarea
                     required
                     value={value}
                     onChange={(e) => {
@@ -167,7 +168,7 @@ export function BuilderForm({
                       setInputs({});
                     }}
                     autoCapitalize="none"
-                  />
+                  />}
                 </label>
                 {mode === "uses" && (
                   <ActionInspector

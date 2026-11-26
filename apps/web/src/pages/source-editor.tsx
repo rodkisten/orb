@@ -11,6 +11,19 @@ import { yaml } from "@codemirror/lang-yaml";
 import { oneDark } from "@codemirror/theme-one-dark";
 import type { ParserDiagnostic } from "./live-parser";
 const externalUpdate = Annotation.define<boolean>();
+const selectionEffect = StateEffect.define<{from:number;to:number}>();
+const selectionField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(value,tr) {
+    if (tr.docChanged || tr.selection) value = Decoration.none;
+    for (const effect of tr.effects) if (effect.is(selectionEffect)) {
+      const {from,to}=effect.value;
+      value=from<to ? Decoration.set([Decoration.mark({class:"orb-linked-range"}).range(from,to)]) : Decoration.none;
+    }
+    return value;
+  },
+  provide: f=>EditorView.decorations.from(f),
+});
 const diagnosticsEffect = StateEffect.define<ParserDiagnostic[]>();
 const diagnosticsField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
@@ -60,6 +73,7 @@ export const SourceEditor = forwardRef<
         doc: value,
         extensions: [
           diagnosticsField,
+          selectionField,
           basicSetup,
           yaml(),
           oneDark,
@@ -111,10 +125,9 @@ export const SourceEditor = forwardRef<
         const e = view.current;
         if (!e || from < 0 || to < from || to > e.state.doc.length) return;
         e.dispatch({
-          selection: { anchor: from, head: to },
-          effects: EditorView.scrollIntoView(from, { y: "center" }),
+          effects: selectionEffect.of({from,to}),
         });
-        e.focus();
+
       },
     }),
     [],

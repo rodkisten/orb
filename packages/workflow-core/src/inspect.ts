@@ -52,6 +52,8 @@ export function inspectWorkflow(source: string) {
                               : step.has("run")
                                 ? "shell"
                                 : "unknown",
+                            run: str(step.get("run", true)),
+                            shell: str(step.get("shell", true)),
                             inputs: keys(step.get("with", true)),
                             env: keys(step.get("env", true)),
                           },

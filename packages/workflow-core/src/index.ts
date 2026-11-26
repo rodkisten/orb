@@ -424,6 +424,11 @@ export function editWorkflow(source: string, edit: BuilderEdit) {
           to: right,
           insert: second + (second.endsWith("\n") ? "" : newline) + first,
         };
+      } else if (edit.run !== undefined) {
+        const run = item.get("run", true);
+        if (!isScalar(run) || !run.range || typeof run.value !== "string" || run.anchor || run.tag || run.comment || run.commentBefore) throw Error("Script requires a plain scalar without comments or anchors");
+        const [start,end] = run.range;
+        patch = {from:start,to:end,insert:JSON.stringify(edit.run)+(source[end-1]==="\n"?newline:"")};
       } else {
         const fields: Record<string, unknown> = {};
         if (edit.condition !== undefined) fields.if = edit.condition;

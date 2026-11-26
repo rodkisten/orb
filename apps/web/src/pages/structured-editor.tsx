@@ -15,11 +15,13 @@ export function StructuredEditor({
   onChange,
   disabled = false,
   placeholder = "",
+  script = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  script?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -35,7 +37,7 @@ export function StructuredEditor({
         doc: value,
         extensions: [
           basicSetup,
-          yaml(),
+          ...(script ? [] : [yaml()]),
           oneDark,
           EditorView.lineWrapping,
           access.current.of([
@@ -44,15 +46,15 @@ export function StructuredEditor({
           ]),
           hints.current.of(hint(placeholder)),
           EditorView.contentAttributes.of({
-            "aria-label": "Structured JSON value",
+            "aria-label": script ? "Shell script" : "Structured JSON value",
             autocapitalize: "off",
             spellcheck: "false",
           }),
           EditorView.theme({
             "&": { fontSize: "12px", borderRadius: "8px", overflow: "hidden" },
             ".cm-scroller": {
-              minHeight: "48px",
-              maxHeight: "220px",
+              minHeight: script ? "160px" : "48px",
+              maxHeight: script ? "45vh" : "220px",
               overflow: "auto",
             },
             ".cm-content": { padding: "6px 0" },

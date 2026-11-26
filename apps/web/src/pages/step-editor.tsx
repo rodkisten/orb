@@ -1,3 +1,5 @@
+import { StructuredEditor } from "./structured-editor";
+import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
@@ -10,6 +12,8 @@ type Job = {
     name: string | null;
     uses: string | null;
     kind: string;
+    run?: string | null;
+    shell?: string | null;
   }[];
 };
 export function StepEditor({
@@ -21,9 +25,10 @@ export function StepEditor({
   disabled: boolean;
   onEdit: (edit: BuilderEdit) => void;
 }) {
-  const [job, setJob] = useState(""),
-    [index, setIndex] = useState(0),
-    [condition, setCondition] = useState(""),
+  const route = useRouteState();
+  const job = route.job ?? "";
+  const index = Number(route.step ?? 0);
+  const [condition, setCondition] = useState(""),
     [timeout, setTimeoutValue] = useState(""),
     [allow, setAllow] = useState(false),
     [env, setEnv] = useState("");
@@ -71,8 +76,7 @@ export function StepEditor({
         <select
           value={current?.id ?? ""}
           onChange={(e) => {
-            setJob(e.target.value);
-            setIndex(0);
+            updateRoute({job:e.target.value,step:"0"});
           }}
         >
           {jobs.map((j) => (
@@ -84,7 +88,7 @@ export function StepEditor({
         Step
         <select
           value={step?.index ?? 0}
-          onChange={(e) => setIndex(Number(e.target.value))}
+          onChange={(e) => updateRoute({step:e.target.value})}
         >
           {current?.steps.map((s) => (
             <option key={s.index} value={s.index}>
@@ -93,6 +97,7 @@ export function StepEditor({
           ))}
         </select>
       </label>
+      {current && step && typeof step.run === "string" && <ScriptPanel key={JSON.stringify([current.id,step.index,step.run])} value={step.run} shell={step.shell ?? "default shell"} disabled={disabled} onSave={run=>onEdit({kind:"configure-step",job:current.id,index:step.index,run})}/>}
       <Button
         type="button"
         disabled={!step || step.index === 0}
@@ -149,4 +154,9 @@ export function StepEditor({
       {error && <p role="alert">{error}</p>}
     </fieldset>
   );
+}
+
+function ScriptPanel({value,shell,disabled,onSave}:{value:string;shell:string;disabled:boolean;onSave:(value:string)=>void}) {
+ const [draft,setDraft]=useState(value);
+ return <section className="orb-script-panel"><h3>Script · {shell}</h3><StructuredEditor script value={draft} onChange={setDraft} disabled={disabled}/><Button type="button" disabled={disabled||draft===value} onClick={()=>onSave(draft)}>Review script patch</Button></section>;
 }

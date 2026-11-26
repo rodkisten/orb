@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   Handle,
   Position,
   type Node,
@@ -135,7 +134,7 @@ export function WorkflowGraph({
     if (target && !target.needs.includes(c.source))
       onEditNeeds(target.id, [...target.needs, c.source]);
   }
-  const detail = model.details.find((d) => d.id === (active ?? selected));
+  const detail = model.details.find((d) => d.id === (selected ?? active));
   const job = model.jobs.find((j) => j.id === detail?.id);
   return (
     <div>
@@ -149,7 +148,12 @@ export function WorkflowGraph({
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
+              key={JSON.stringify(nodes.map(n=>[n.id,n.position]))}
               fitView
+              fitViewOptions={{padding:0.15,maxZoom:1}}
+              minZoom={0.05}
+              maxZoom={1.5}
+              colorMode="dark"
               nodesConnectable={!stale}
               onConnect={connect}
               isValidConnection={(c) =>
@@ -168,7 +172,7 @@ export function WorkflowGraph({
             >
               <Background />
               <Controls />
-              <MiniMap pannable zoomable />
+
             </ReactFlow>
           </div>
           <p>
@@ -182,10 +186,10 @@ export function WorkflowGraph({
         </>
       )}
       {detail && (
-        <section>
+        <section className="orb-graph-detail">
           <h3>{detail.name ?? detail.id}</h3>
           {job && (
-            <fieldset disabled={stale}>
+            <fieldset className="orb-dependencies" disabled={stale}>
               <legend>Dependencies</legend>
               {model.jobs
                 .filter((j) => j.id !== job.id)

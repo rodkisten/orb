@@ -605,6 +605,8 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                     cursor={sync ? cursor : null}
                     onSelect={(path, from, to) => {
                       setNodePath(JSON.stringify(path));
+                      setCursor(from);
+                      if (path[0] === "jobs" && typeof path[1] === "string") updateRoute({job:path[1],step:typeof path[3]==="number"?String(path[3]):"0",inspector:path[2]==="steps"?"steps":"job"});
                       if (sync) editor.current?.select(from, to);
                     }}
                   />

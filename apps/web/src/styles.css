@@ -614,3 +614,17 @@ nav {
   min-height: 32px;
   padding: 6px 9px;
 }
+
+/* Mobile graph and source selection. */
+.orb-studio,.orb-studio .lab-layout,.orb-studio .lab-workspace,.orb-studio .lab-columns,.orb-studio .lab-panel,.orb-studio .orb-inspector {min-width:0;max-width:100%;box-sizing:border-box;}
+.orb-studio .lab-panel {overflow-wrap:anywhere;}
+.orb-linked-range {background:#7c3aed55;outline:1px solid #a78bfa;}
+.lab .orb-graph-canvas {height:clamp(240px,48vh,500px);min-width:0;overflow:hidden;border-radius:8px;}
+.lab .react-flow__controls-button {padding:5px;min-height:28px;width:28px;height:28px;background:var(--orb-card);color:var(--orb-foreground);border-color:var(--orb-border);}
+.lab .react-flow__controls-button svg {fill:currentColor;max-width:14px;max-height:14px;}
+.lab .orb-dependencies {border:0;margin:8px 0;padding:0;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;}
+.lab .orb-dependencies label,.lab .lab-tabs label {display:flex;align-items:center;gap:6px;margin:0;font-size:12px;}
+.lab .orb-dependencies input {flex:none;}
+.lab .orb-graph-detail {min-width:0;}
+.lab .orb-script-panel {display:grid;gap:8px;margin:12px 0;}
+@media(max-width:700px){.orb-studio .lab-columns{display:flex;flex-direction:column;}.orb-studio .lab-panel{width:100%;}.orb-studio .orb-inspector nav button{width:100%;}}
