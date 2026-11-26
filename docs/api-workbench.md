@@ -37,3 +37,5 @@ Inspector forms now import the existing shared shadcn Button, Input and Textarea
 Structured inspector fields use compact CodeMirror 6 editors with existing YAML grammar (JSON-compatible flow syntax), One Dark, controlled synchronization, read-only compartments and external updates excluded from undo history. JSON.parse remains the submission validator. Shell-specific syntax is not yet implemented.
 
 CI correction: Vite owns its shadcn control sources derived from the existing registry components, using native primitives and workspace-installed clsx/cva/tailwind-merge. The excluded Next app is not a runtime dependency. Consolidation into a shared package remains planned.
+
+Preview configuration accepts JSONC comments and trailing commas introduced by formatting, preserving quoted strings. Generated Wrangler preview files remain strict JSON.
