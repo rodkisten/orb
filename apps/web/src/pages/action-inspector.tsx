@@ -71,7 +71,7 @@ export function ActionInspector({
     queryFn: ({ signal }) => load<Manifest>("resolve", { uses }, signal),
   });
   return (
-    <section>
+    <section className="orb-action-inspector">
       <h4>Action Inspector</h4>
       <label>
         Search GitHub
@@ -88,7 +88,7 @@ export function ActionInspector({
       >
         Search
       </Button>
-      {results.data?.search.nodes
+      <div className="orb-action-results">{results.data?.search.nodes
         .filter((n) => n?.nameWithOwner)
         .map((n) => (
           <Button
@@ -100,9 +100,9 @@ export function ActionInspector({
               )
             }
           >
-            {n.nameWithOwner} · {n.description}
+            <strong>{n.nameWithOwner}</strong><small>{n.description}</small>
           </Button>
-        ))}
+        ))}</div>
       {versions.data && (
         <label>
           Version
@@ -143,7 +143,7 @@ export function ActionInspector({
           >
             Pin commit SHA
           </Button>
-          {manifest.data.inputs.map((p) => (
+          <details open><summary>Inputs ({manifest.data.inputs.length})</summary>{manifest.data.inputs.map((p) => (
             <label key={p.id}>
               {p.id}
               {p.required ? " (required)" : ""}
@@ -161,13 +161,13 @@ export function ActionInspector({
                 autoCapitalize="none"
               />
             </label>
-          ))}
-          <h4>Outputs</h4>
+          ))}</details>
+          <details><summary>Outputs ({manifest.data.outputs.length})</summary>
           {manifest.data.outputs.map((p) => (
             <p key={p.id}>
               {p.id} · {p.description}
             </p>
-          ))}
+          ))}</details>
         </>
       )}
     </section>

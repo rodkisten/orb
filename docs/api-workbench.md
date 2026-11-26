@@ -103,3 +103,5 @@ UX polish: separate published Runner from dispatch input design using URL-backed
 Session recovery: GET /v1/session verifies Access identity without contacting GitHub, returns 503 for missing Access bindings and 401 for unverified identity. The app shell displays one session banner with retry and Access logout link. No authentication bypass or token storage. Preview routing must allow this read endpoint.
 
 Inspector polish: workflow/job fields are grouped into collapsible contextual sections; pending field counts remain visible and values persist when sections collapse. Review is disabled until a field changes. Clear resets pending edits. Inspector tabs scroll horizontally rather than wrapping. JSON-based patch semantics remain unchanged.
+
+Step inspector: movement/removal actions and advanced configuration are collapsible; pending advanced edits remain visible and can be cleared. Existing action references are shown separately from scripts. Action search results are compact and scrollable, with inputs and outputs grouped. Existing patch restrictions remain; navigating to another step can still reset pending form edits.

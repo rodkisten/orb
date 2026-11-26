@@ -1052,3 +1052,11 @@ nav {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
+
+.orb-step-actions,.orb-step-advanced,.orb-action-inspector details {border-bottom:1px solid var(--orb-border);padding:10px 0;min-width:0;}
+.orb-step-actions summary,.orb-step-advanced summary,.orb-action-inspector summary {cursor:pointer;font-size:13px;font-weight:600;}
+.orb-step-advanced[open] summary,.orb-action-inspector details[open] summary {margin-bottom:10px;}
+.orb-action-reference {display:grid;gap:6px;padding:10px;border:1px solid var(--orb-border);border-radius:8px;overflow-wrap:anywhere;}
+.orb-action-results {display:grid;gap:4px;margin:8px 0;max-height:240px;overflow:auto;}
+.lab .orb-action-results button {display:grid;gap:4px;text-align:left;white-space:normal;height:auto;justify-content:start;}
+.orb-action-results small {color:var(--orb-muted);font-weight:normal;}

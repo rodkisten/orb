@@ -85,7 +85,7 @@ export function StepEditor({
   }
   return (
     <fieldset disabled={disabled || !step}>
-      <legend>Existing steps</legend>
+      <legend>Step configuration</legend>
       <label>
         Job
         <select
@@ -128,6 +128,7 @@ export function StepEditor({
           }
         />
       )}
+      <details className="orb-step-actions"><summary>Step actions</summary><div className="orb-form-actions">
       <Button
         type="button"
         disabled={!step || step.index === 0}
@@ -148,7 +149,9 @@ export function StepEditor({
         onClick={() => submit("remove-step")}
       >
         Review removal
-      </Button>
+      </Button></div></details>
+      {step?.uses && <div className="orb-action-reference"><strong>Action</strong><code>{step.uses}</code></div>}
+      <details className="orb-step-advanced"><summary>Advanced configuration {changed && <small>· Pending edits</small>}</summary>
       <ConditionField value={condition} onChange={setCondition} refs={refs} />
       <label>
         Timeout minutes
@@ -169,13 +172,14 @@ export function StepEditor({
         Continue on error
       </label>
       <EnvField value={env} onChange={setEnv} refs={refs} />
+      </details><div className="orb-form-actions"><Button type="button" variant="ghost" disabled={!changed} onClick={()=>{setCondition("");setTimeoutValue("");setAllow(false);setEnv("");setError("");}}>Clear</Button>
       <Button
         type="button"
         disabled={!changed}
         onClick={() => submit("configure-step")}
       >
         Review configuration
-      </Button>
+      </Button></div>
       {error && <p role="alert">{error}</p>}
     </fieldset>
   );
@@ -226,6 +230,7 @@ function ScriptPanel({
         <Button
           type="button"
           onClick={() => {
+            setCopyError(false);
             void navigator.clipboard
               .writeText(draft)
               .catch(() => setCopyError(true));
