@@ -29,3 +29,5 @@ Local source tools support new YAML, pasted text, .yml/.yaml import up to 256 Ki
 Job Inspector supports reviewed JSON-valued field patches for runner, strategy/matrix, permissions, concurrency, outputs, conditions, timeout, environment and existing reusable jobs. Missing fields and simple existing scalars are supported; complex existing YAML collections remain manual to preserve comments and anchors. No conversion between executable and reusable jobs.
 
 Workflow Inspector: root-level reviewed patches for name, run-name, on, permissions, concurrency, env and defaults. Trigger presets cover push, pull_request, schedule, workflow_dispatch and workflow_call. Presets replace the draft trigger JSON, not the source until review. Existing block collections require manual editing; missing fields and simple scalars are supported.
+
+Midnight migration: Tailwind v4 Vite plugin enabled without global preflight; semantic Orb tokens and URL-driven inspector navigation (`inspector=workflow|job|steps|add`). Existing forms remain mounted to preserve drafts. Shared shadcn/Base UI migration is a subsequent step.

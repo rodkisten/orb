@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   // The separate Next.js project in apps/ has its own Tailwind PostCSS config.
   css: { postcss: { plugins: [] } },
   server: {
