@@ -1,10 +1,11 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { EditorState, StateEffect, StateField } from "@codemirror/state";
+import { Annotation, EditorState, StateEffect, StateField } from "@codemirror/state";
 import { EditorView, Decoration, type DecorationSet } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 import { yaml } from "@codemirror/lang-yaml";
 import { oneDark } from "@codemirror/theme-one-dark";
 import type { ParserDiagnostic } from "./live-parser";
+const externalUpdate = Annotation.define<boolean>();
 const diagnosticsEffect = StateEffect.define<ParserDiagnostic[]>();
 const diagnosticsField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
@@ -68,7 +69,7 @@ export const SourceEditor = forwardRef<
             ".cm-scroller": { maxHeight: "65vh", overflow: "auto" },
           }),
           EditorView.updateListener.of((u) => {
-            if (u.docChanged) change.current(u.state.doc.toString());
+            if (u.docChanged && !u.transactions.some(t=>t.annotation(externalUpdate))) change.current(u.state.doc.toString());
             if (u.selectionSet || u.docChanged)
               cursor.current?.(u.state.selection.main.from);
           }),
@@ -86,6 +87,7 @@ export const SourceEditor = forwardRef<
     if (e && e.state.doc.toString() !== value)
       e.dispatch({
         changes: { from: 0, to: e.state.doc.length, insert: value },
+        annotations: externalUpdate.of(true),
       });
   }, [value]);
   useEffect(() => {

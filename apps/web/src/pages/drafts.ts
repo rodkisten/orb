@@ -25,7 +25,7 @@ export function useDrafts(repos: string[]) {
   const items = useLiveQuery(
     async () => {
       try {
-        return (await db.drafts.where("repo").anyOf(repos).toArray()).sort(
+        return (await db.drafts.where("repo").anyOf([...repos,"@local"]).toArray()).sort(
           (a, b) => b.updatedAt - a.updatedAt,
         );
       } catch (e) {

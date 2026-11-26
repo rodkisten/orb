@@ -23,3 +23,5 @@ Job & Step Editor proposes add-job (ubuntu-latest placeholder), duplicate-job an
 Action Inspector uses cached TanStack queries against existing authenticated GitHub gateway: search public actions, choose tags, resolve manifests, pin SHA, configure inputs and inspect outputs. Inputs are emitted as quoted YAML with fields in the reviewed patch. Required input validation applies when manifest is loaded. State type narrowing and formatter lockfile staging corrected.
 
 Existing step editor proposes removal, adjacent movement, and insertion of missing if, timeout-minutes, continue-on-error and env fields. Existing configuration fields and ambiguous comment boundaries are rejected rather than overwritten. Formatter excludes workflow files until a workflow-write-capable App token is configured.
+
+Local source tools support new YAML, pasted text, .yml/.yaml import up to 256 KiB and download. Local drafts use @local namespace and UUIDs in Dexie, available across repository contexts. The draft query parameter is device-local, not a shareable snapshot. Parsing and edits still use authenticated API. External CodeMirror updates do not trigger draft writes.
