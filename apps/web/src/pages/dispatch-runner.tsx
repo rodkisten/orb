@@ -29,7 +29,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const [message, setMessage] = useState("");
   const [runs, setRuns] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const [confirmedSha,setConfirmedSha]=useState("");
+  const [confirmedSha, setConfirmedSha] = useState("");
   const base =
     "/v1/github/" + target.repo.split("/").map(encodeURIComponent).join("/");
   const production = location.origin === "https://orb.migos.club";
@@ -51,18 +51,42 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
     staleTime: 0,
     retry: false,
   });
-  const model=useMemo(()=>source.data?inspectWorkflow(source.data.yaml):null,[source.data]);
-  const tags=useQuery({queryKey:["dispatch-tags",target.repo],queryFn:({signal})=>read<{data:{name:string}[];hasNext:boolean}>(base+"/tags?limit=100",signal)});
-  const environments=useQuery({queryKey:["dispatch-environments",target.repo],enabled:!!model&&Object.values(model.dispatchSchema??{}).some(p=>(p as Port)?.type==="environment"),queryFn:({signal})=>read<{data:{environments:{name:string}[]};hasNext:boolean}>(base+"/environments?limit=100",signal),retry:false});
-  const envNames=environments.data?.data.environments??[];
+  const model = useMemo(
+    () => (source.data ? inspectWorkflow(source.data.yaml) : null),
+    [source.data],
+  );
+  const tags = useQuery({
+    queryKey: ["dispatch-tags", target.repo],
+    queryFn: ({ signal }) =>
+      read<{ data: { name: string }[]; hasNext: boolean }>(
+        base + "/tags?limit=100",
+        signal,
+      ),
+  });
+  const environments = useQuery({
+    queryKey: ["dispatch-environments", target.repo],
+    enabled:
+      !!model &&
+      Object.values(model.dispatchSchema ?? {}).some(
+        (p) => (p as Port)?.type === "environment",
+      ),
+    queryFn: ({ signal }) =>
+      read<{ data: { environments: { name: string }[] }; hasNext: boolean }>(
+        base + "/environments?limit=100",
+        signal,
+      ),
+    retry: false,
+  });
+  const envNames = environments.data?.data.environments ?? [];
   const ports = Object.entries(
     (model?.dispatchSchema ?? {}) as Record<string, Port>,
   );
   const valid =
     !!model?.valid && model.triggerNames.includes("workflow_dispatch");
-  const raw=branches.data as {data?:{name:string}[];hasNext?:boolean}|undefined;
-  const names=raw?.data??[];
-  const tagNames=tags.data?.data??[];
+  const raw = branches.data as
+    { data?: { name: string }[]; hasNext?: boolean } | undefined;
+  const names = raw?.data ?? [];
+  const tagNames = tags.data?.data ?? [];
   function changeRef(v: string) {
     setRef(v);
     setValues({});
@@ -85,7 +109,17 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
     );
   });
   async function dispatch() {
-    if (!production || !confirmed || busy || !source.data || confirmedSha!==source.data.sha || !valid || invalid || source.isFetching || !!source.error)
+    if (
+      !production ||
+      !confirmed ||
+      busy ||
+      !source.data ||
+      confirmedSha !== source.data.sha ||
+      !valid ||
+      invalid ||
+      source.isFetching ||
+      !!source.error
+    )
       return;
     setBusy(true);
     setConfirmed(false);
@@ -97,7 +131,13 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
           const v =
             values[k] ??
             (p.default === undefined ? undefined : String(p.default));
-          return v === undefined || (v===""&&["boolean","number","choice","environment"].includes(p.type??"")) ? [] : [[k, v]];
+          return v === undefined ||
+            (v === "" &&
+              ["boolean", "number", "choice", "environment"].includes(
+                p.type ?? "",
+              ))
+            ? []
+            : [[k, v]];
         }),
       );
       const res = await fetch(base + "/actions/dispatch", {
@@ -152,18 +192,32 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
             autoCapitalize="none"
           />
         </label>
-        {(names.length > 0 || tagNames.length>0) && (
+        {(names.length > 0 || tagNames.length > 0) && (
           <select
             aria-label="Choose branch"
             value=""
             onChange={(e) => changeRef(e.target.value)}
           >
             <option value="">Choose branch</option>
-            <optgroup label="Branches">{names.map(n=><option key={n.name} value={n.name}>{n.name}</option>)}</optgroup>
-            <optgroup label="Tags">{tagNames.map(n=><option key={n.name} value={n.name}>{n.name}</option>)}</optgroup>
+            <optgroup label="Branches">
+              {names.map((n) => (
+                <option key={n.name} value={n.name}>
+                  {n.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Tags">
+              {tagNames.map((n) => (
+                <option key={n.name} value={n.name}>
+                  {n.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
         )}
-        {(raw?.hasNext||tags.data?.hasNext)&&<small>First 100 refs shown; enter other refs manually.</small>}
+        {(raw?.hasNext || tags.data?.hasNext) && (
+          <small>First 100 refs shown; enter other refs manually.</small>
+        )}
         <Button
           type="button"
           onClick={() => {
@@ -197,8 +251,18 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
                     <option key={o}>{o}</option>
                   ))}
                 </select>
-              ) : p.type==="environment"&&envNames.length>0&&!environments.data?.hasNext ? (
-                <select value={values[k]??String(p.default??"")} onChange={e=>change(k,e.target.value)}><option value="">Select environment</option>{envNames.map(n=><option key={n.name}>{n.name}</option>)}</select>
+              ) : p.type === "environment" &&
+                envNames.length > 0 &&
+                !environments.data?.hasNext ? (
+                <select
+                  value={values[k] ?? String(p.default ?? "")}
+                  onChange={(e) => change(k, e.target.value)}
+                >
+                  <option value="">Select environment</option>
+                  {envNames.map((n) => (
+                    <option key={n.name}>{n.name}</option>
+                  ))}
+                </select>
               ) : (
                 <Input
                   type={p.type === "number" ? "number" : "text"}
@@ -208,8 +272,12 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
               )}
             </label>
           ))}
-        {environments.error&&<small>Environment lookup unavailable; enter name manually.</small>}
-        {environments.data?.hasNext&&<small>Environment list incomplete; enter name manually.</small>}
+        {environments.error && (
+          <small>Environment lookup unavailable; enter name manually.</small>
+        )}
+        {environments.data?.hasNext && (
+          <small>Environment list incomplete; enter name manually.</small>
+        )}
         {valid && (
           <small>
             Published blob: {source.data?.sha.slice(0, 12)} · local edits are
@@ -219,9 +287,12 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
         <label>
           <input
             type="checkbox"
-            checked={confirmed&&confirmedSha===source.data?.sha}
+            checked={confirmed && confirmedSha === source.data?.sha}
             disabled={!production || !valid || invalid || source.isFetching}
-            onChange={(e) => {setConfirmed(e.target.checked);setConfirmedSha(source.data?.sha??"")}}
+            onChange={(e) => {
+              setConfirmed(e.target.checked);
+              setConfirmedSha(source.data?.sha ?? "");
+            }}
           />{" "}
           Confirm execution on {ref}
         </label>
@@ -229,7 +300,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
           type="button"
           disabled={
             !production ||
-            !confirmed || confirmedSha!==source.data?.sha || !!source.error ||
+            !confirmed ||
+            confirmedSha !== source.data?.sha ||
+            !!source.error ||
             !valid ||
             invalid ||
             busy ||
