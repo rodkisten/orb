@@ -10,7 +10,9 @@ export function WorkspaceStudio() {
       ? { repo: route.repo, path: route.path, ref: route.ref }
       : undefined;
   const panel =
-    (route.panel==="explorer"||route.panel==="studio"?route.panel:undefined) ??
+    (route.panel === "explorer" || route.panel === "studio"
+      ? route.panel
+      : undefined) ??
     (location.pathname === "/api" || file || route.draft
       ? "studio"
       : "explorer");
@@ -18,19 +20,44 @@ export function WorkspaceStudio() {
   return (
     <section className="orb-workspace">
       <div className="orb-workspace-nav">
-        <Button type="button" variant="ghost"
+        <Button
+          type="button"
+          variant="ghost"
           aria-pressed={panel === "explorer"}
           onClick={() => setPanel("explorer")}
         >
-          <FolderGit2 size={14}/> Explorer
+          <FolderGit2 size={14} /> Explorer
         </Button>
-        <Button type="button" variant="ghost"
-          aria-pressed={panel === "studio" && route.inspector!=="runner"}
-          onClick={() => updateRoute({panel:"studio",inspector:route.inspector==="runner"?null:route.inspector??null})}
+        <Button
+          type="button"
+          variant="ghost"
+          aria-pressed={panel === "studio" && route.inspector !== "runner"}
+          onClick={() =>
+            updateRoute({
+              panel: "studio",
+              inspector:
+                route.inspector === "runner" ? null : (route.inspector ?? null),
+            })
+          }
         >
-          <Workflow size={14}/> Builder
+          <Workflow size={14} /> Builder
         </Button>
-        {file&&<Button type="button" variant="ghost" aria-pressed={panel==="studio"&&route.inspector==="runner"} onClick={()=>updateRoute({panel:"studio",pane:"inspector",inspector:"runner"})}><Play size={14}/> Runner</Button>}
+        {file && (
+          <Button
+            type="button"
+            variant="ghost"
+            aria-pressed={panel === "studio" && route.inspector === "runner"}
+            onClick={() =>
+              updateRoute({
+                panel: "studio",
+                pane: "inspector",
+                inspector: "runner",
+              })
+            }
+          >
+            <Play size={14} /> Runner
+          </Button>
+        )}
         <a
           href={
             (location.pathname === "/api" ? "/workspace" : "/api") +
@@ -54,7 +81,10 @@ export function WorkspaceStudio() {
                 ref: next.ref ?? null,
                 panel: "studio",
                 draft: null,
-                pane:"source",job:null,step:null,inspector:null,
+                pane: "source",
+                job: null,
+                step: null,
+                inspector: null,
               });
             }}
           />

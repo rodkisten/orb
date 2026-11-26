@@ -47,9 +47,14 @@ export function ApiWorkbench({ file }: { file?: OpenWorkflow } = {}) {
 }
 function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const studio = location.pathname !== "/api";
-  const routePane=useRouteState(s=>s.pane);
-  const pane=routePane==="graph"||routePane==="ast"||routePane==="inspector"?routePane:"source";
-  function setPane(next:"source"|"graph"|"ast"|"inspector"){updateRoute({pane:next});}
+  const routePane = useRouteState((s) => s.pane);
+  const pane =
+    routePane === "graph" || routePane === "ast" || routePane === "inspector"
+      ? routePane
+      : "source";
+  function setPane(next: "source" | "graph" | "ast" | "inspector") {
+    updateRoute({ pane: next });
+  }
   const [operation, setOperation] = useState<Operation>("workflow-source");
   const [repo, setRepo] = useState(() => {
     const r = file?.repo ?? new URLSearchParams(location.search).get("repo");
@@ -77,7 +82,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const [tab, setTab] = useState<"body" | "headers" | "ast" | "graph">(
     studio ? "graph" : "body",
   );
-  useEffect(()=>{if(studio)setTab(pane==="ast"?"ast":"graph");},[studio,pane]);
+  useEffect(() => {
+    if (studio) setTab(pane === "ast" ? "ast" : "graph");
+  }, [studio, pane]);
   const editor = useRef<SourceEditorHandle>(null);
   const [parsedSource, setParsedSource] = useState("");
   const active = useRef<AbortController | null>(null);
@@ -430,7 +437,6 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                   aria-pressed={pane === p}
                   onClick={() => {
                     setPane(p);
-
                   }}
                 >
                   {p === "source"

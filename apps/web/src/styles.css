@@ -1114,6 +1114,18 @@ nav {
   justify-self: start;
 }
 
-.orb-workspace-nav {overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin;}
-.orb-workspace-nav button {flex:none;display:inline-flex;align-items:center;gap:5px;}
-.orb-workspace-nav a {white-space:nowrap;flex:none;}
+.orb-workspace-nav {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+.orb-workspace-nav button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.orb-workspace-nav a {
+  white-space: nowrap;
+  flex: none;
+}
