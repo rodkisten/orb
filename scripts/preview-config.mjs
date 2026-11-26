@@ -2,8 +2,14 @@ import { readFileSync, writeFileSync } from "node:fs";
 // Strip JSONC comments and trailing commas outside quoted strings.
 function parseJsonc(source) {
   const tokens = /"(?:\\[\s\S]|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g;
-  const clean = source.replace(tokens, token => token.startsWith('"') ? token : token.replace(/[^\r\n]/g, " "));
-  return JSON.parse(clean.replace(/"(?:\\[\s\S]|[^"\\])*"|,(?=\s*[}\]])/g, token => token === "," ? "" : token));
+  const clean = source.replace(tokens, (token) =>
+    token.startsWith('"') ? token : token.replace(/[^\r\n]/g, " "),
+  );
+  return JSON.parse(
+    clean.replace(/"(?:\\[\s\S]|[^"\\])*"|,(?=\s*[}\]])/g, (token) =>
+      token === "," ? "" : token,
+    ),
+  );
 }
 const pr = process.argv[2];
 if (!/^[1-9][0-9]*$/.test(pr ?? "")) throw Error("Invalid PR number");
