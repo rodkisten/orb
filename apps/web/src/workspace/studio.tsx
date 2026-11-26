@@ -14,10 +14,8 @@ export function WorkspaceStudio() {
       : "explorer");
   const setPanel = (panel: string) => updateRoute({ panel });
   return (
-    <section>
-      <div className="lab-tabs">
-        <a href={"/workspace" + location.search}>Studio</a>
-        <a href={"/api" + location.search}>API Lab</a>
+    <section className="orb-workspace">
+      <div className="orb-workspace-nav">
         <button
           aria-pressed={panel === "explorer"}
           onClick={() => setPanel("explorer")}
@@ -28,8 +26,9 @@ export function WorkspaceStudio() {
           aria-pressed={panel === "studio"}
           onClick={() => setPanel("studio")}
         >
-          Workflow Studio
+          Studio
         </button>
+        <a href={(location.pathname === "/api" ? "/workspace" : "/api") + location.search}>{location.pathname === "/api" ? "Studio" : "API Lab"}</a>
       </div>
       <div className="workspace-unified">
         <div
@@ -44,6 +43,7 @@ export function WorkspaceStudio() {
                 path: next.path,
                 ref: next.ref ?? null,
                 panel: "studio",
+                draft: null,
               });
             }}
           />

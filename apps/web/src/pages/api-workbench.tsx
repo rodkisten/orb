@@ -47,6 +47,7 @@ export function ApiWorkbench({ file }: { file?: OpenWorkflow } = {}) {
 }
 function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const studio = location.pathname !== "/api";
+  const [pane,setPane]=useState<"source"|"graph"|"ast"|"inspector">("source");
   const [operation, setOperation] = useState<Operation>("workflow-source");
   const [repo, setRepo] = useState(() => {
     const r = file?.repo ?? new URLSearchParams(location.search).get("repo");
@@ -300,7 +301,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   }, []);
   return (
     <section className={studio ? "lab orb-studio" : "lab"}>
-      <div className="heading">
+      <div className="heading" hidden={studio}>
         <div>
           <p className="eyebrow">
             {studio ? "ORB / WORKSPACE" : "ORB / DEVELOPER TOOLS"}
@@ -315,7 +316,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
         disabled={busy || editBusy}
         onOpen={openLocal}
       />
-      <div className="lab-tabs" aria-label="Open documents">
+      <div className="lab-tabs orb-documents" aria-label="Open documents">
         {drafts.items.map((d) => (
           <span key={d.id} className="lab-document">
             <button
@@ -353,7 +354,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
       {(draftError || drafts.error) && (
         <p role="alert">{draftError || drafts.error}</p>
       )}
-      {opened && (
+      {opened && !studio && (
         <small>
           {opened.repo} @ {opened.ref} ·{" "}
           {opened.yaml === opened.original ? "Original" : "Local draft"}
@@ -402,8 +403,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               </button>
             )}
           </div>
-          <div className="lab-columns">
-            <section className="lab-panel">
+          {studio && <nav className="orb-pane-nav" aria-label="Studio panels">{(["source","graph","ast","inspector"] as const).map(p=><button key={p} aria-pressed={pane===p} onClick={()=>{setPane(p);if(p==="ast"||p==="graph")setTab(p);if(p==="inspector")setTab("graph");}}>{p==="source"?"YAML":p==="ast"?"AST":p==="graph"?"Graph":"Inspector"}</button>)}</nav>}
+          <div className="lab-columns" data-pane={studio?pane:undefined}>
+            <section className="lab-panel orb-source-pane">
               <h3>{studio ? "Source" : "Request"}</h3>
               {!local && (!studio || !opened) && (
                 <>
@@ -482,7 +484,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                 </>
               )}
             </section>
-            <section className="lab-panel">
+            <section className="lab-panel orb-inspect-pane">
               <h3>
                 {studio ? "Inspector" : "Response"}{" "}
                 {result && (
@@ -593,12 +595,12 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               )}
               {tab === "graph" ? (
                 <>
-                  <BuilderForm
+                  <div className="orb-builder-pane"><BuilderForm
                     body={astBody}
                     disabled={astStale || editBusy || proposal !== null}
                     onEdit={editJob}
-                  />
-                  <WorkflowGraph
+                  /></div>
+                  <div className="orb-flow-pane"><WorkflowGraph
                     onEditNeeds={editNeeds}
                     body={astBody}
                     stale={astStale || editBusy || proposal !== null}
@@ -606,10 +608,11 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                     onSelect={(path, from, to) => {
                       setNodePath(JSON.stringify(path));
                       setCursor(from);
+                      if (path[2] === "steps" && studio) setPane("inspector");
                       if (path[0] === "jobs" && typeof path[1] === "string") updateRoute({job:path[1],step:typeof path[3]==="number"?String(path[3]):"0",inspector:path[2]==="steps"?"steps":"job"});
                       if (sync) editor.current?.select(from, to);
                     }}
-                  />
+                  /></div>
                 </>
               ) : tab === "ast" ? (
                 <AstExplorer

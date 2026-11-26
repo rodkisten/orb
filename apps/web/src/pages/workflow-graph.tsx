@@ -153,7 +153,6 @@ export function WorkflowGraph({
               fitViewOptions={{padding:0.15,maxZoom:1}}
               minZoom={0.05}
               maxZoom={1.5}
-              colorMode="dark"
               nodesConnectable={!stale}
               onConnect={connect}
               isValidConnection={(c) =>

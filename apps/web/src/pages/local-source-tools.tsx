@@ -13,6 +13,7 @@ export function LocalSourceTools({
   onOpen: (source: string, filename: string) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const [menu,setMenu]=useState(false);
   const [paste, setPaste] = useState(false),
     [text, setText] = useState(""),
     [error, setError] = useState("");
@@ -24,6 +25,7 @@ export function LocalSourceTools({
     setError("");
     onOpen(value, name);
     setPaste(false);
+    setMenu(false);
     setText("");
   }
   async function read(file: File) {
@@ -48,7 +50,7 @@ export function LocalSourceTools({
   }
   return (
     <section aria-label="Local YAML">
-      <div className="lab-tabs">
+      <div className="orb-file-menu"><button type="button" aria-expanded={menu} onClick={()=>setMenu(v=>!v)}>File ▾</button><div className="orb-file-actions" hidden={!menu}>
         <button
           disabled={disabled}
           onClick={() =>
@@ -86,6 +88,7 @@ export function LocalSourceTools({
         <button disabled={!source} onClick={download}>
           Download YAML
         </button>
+      </div>
       </div>
       {paste && (
         <div>
