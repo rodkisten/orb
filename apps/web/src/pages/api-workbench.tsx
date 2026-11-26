@@ -45,6 +45,7 @@ export function ApiWorkbench({ file }: { file?: OpenWorkflow } = {}) {
   );
 }
 function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
+  const studio = location.pathname !== "/api";
   const [operation, setOperation] = useState<Operation>("workflow-source");
   const [repo, setRepo] = useState(() => {
     const r = file?.repo ?? new URLSearchParams(location.search).get("repo");
@@ -69,7 +70,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"body" | "headers" | "ast" | "graph">("body");
+  const [tab, setTab] = useState<"body" | "headers" | "ast" | "graph">(studio ? "graph" : "body");
   const editor = useRef<SourceEditorHandle>(null);
   const [parsedSource, setParsedSource] = useState("");
   const active = useRef<AbortController | null>(null);
@@ -160,7 +161,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
     setTransformed(null);
     setParsedSource("");
     setCursor(0);
-    setTab("ast");
+    setTab(studio ? "graph" : "ast");
   }
   function detach() {
     setProposal(null);
@@ -286,11 +287,11 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
     }
   }, []);
   return (
-    <section className="lab">
+    <section className={studio ? "lab orb-studio" : "lab"}>
       <div className="heading">
         <div>
-          <p className="eyebrow">ORB / DEVELOPER TOOLS</p>
-          <h1>Workflow Studio</h1>
+          <p className="eyebrow">{studio ? "ORB / WORKSPACE" : "ORB / DEVELOPER TOOLS"}</p>
+          <h1>{studio ? "Workflow Studio" : "API Lab"}</h1>
           <p>Open a repository workflow or work with your own YAML.</p>
         </div>
       </div>
@@ -345,7 +346,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
         </small>
       )}
       <div className="lab-layout">
-        <aside className="lab-collection">
+        {!studio && <aside className="lab-collection">
           <h3>
             <FolderGit2 size={15} /> Operations
           </h3>
@@ -360,13 +361,12 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               {op}
             </button>
           ))}
-        </aside>
+        </aside>}
         <div className="lab-workspace">
           <div className="lab-address">
-            <code>{post ? "POST" : "GET"}</code>
-            <code>{endpoint}</code>
+            {studio ? <span>{opened?.path ?? "Open a workflow from Explorer or import YAML"}</span> : <><code>{post ? "POST" : "GET"}</code><code>{endpoint}</code></>}
             <button disabled={busy} onClick={send}>
-              <Send size={14} /> Send
+              <Send size={14} /> {studio ? (local ? "Parse" : "Load") : "Send"}
             </button>
             {busy && (
               <button
@@ -379,8 +379,8 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
           </div>
           <div className="lab-columns">
             <section className="lab-panel">
-              <h3>Request</h3>
-              {!local && (
+              <h3>{studio ? "Source" : "Request"}</h3>
+              {!local && (!studio || !opened) && (
                 <>
                   <label>
                     Repository
@@ -459,7 +459,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
             </section>
             <section className="lab-panel">
               <h3>
-                Response{" "}
+                {studio ? "Inspector" : "Response"}{" "}
                 {result && (
                   <small>
                     {result.status} · {result.ms} ms · {result.bytes} B
@@ -467,10 +467,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                 )}
               </h3>
               <div className="lab-tabs">
-                <button onClick={() => setTab("body")}>Body</button>
-                <button onClick={() => setTab("headers")}>Headers</button>
-                <button onClick={() => setTab("ast")}>AST</button>
-                <button onClick={() => setTab("graph")}>Graph</button>
+                {!studio && <><button onClick={() => setTab("body")}>Body</button><button onClick={() => setTab("headers")}>Headers</button></>}
+                <button aria-pressed={tab === "ast"} onClick={() => setTab("ast")}>AST</button>
+                <button aria-pressed={tab === "graph"} onClick={() => setTab("graph")}>Graph</button>
                 <label>
                   <input
                     type="checkbox"

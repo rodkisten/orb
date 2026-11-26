@@ -43,3 +43,5 @@ Preview configuration accepts JSONC comments and trailing commas introduced by f
 Preview concurrency cancels superseded runs. A stale SHA detected before deployment is reported as superseded and does not overwrite the current preview comment. Production environment approvals still apply.
 
 Access authentication accepts the signed CF_Authorization application cookie when the assertion header is absent across the web service binding. Issuer, audience, expiry and RSA signature checks remain mandatory. This does not bypass Access.
+
+Workspace mode hides HTTP operations and response tabs, defaults to graph inspector, and uses compact source/inspector presentation. /api retains HTTP lab controls. Local draft URLs open Studio directly. Shared editing engine remains unchanged.
