@@ -87,3 +87,5 @@ Main YAML editor offers native expression completions inside open expression del
 Dispatch inspector supports typed input definitions, required/default/choices and a non-executing run form preview. Adding dispatch to a plain block trigger map preserves other events. Existing dispatch mappings and actual execution are not yet supported by this editor; use YAML or GitHub for those operations.
 
 Dispatch patches now replace an existing plain dispatch subtree, preserving sibling triggers, and merge scalar/list trigger declarations into a mapping. Comments, aliases, anchors and tagged dispatch subtrees are rejected rather than silently discarded. Flow-style trigger maps remain unsupported. Execution is still preview-only.
+
+Production dispatch endpoint requires verified Access identity, production Studio origin, configured GitHub App, repository allowlist and published workflow blob SHA. Inputs are checked against the published schema. Preview POST allowlist excludes dispatch. A successful response means accepted, not completed; no automatic retry or inferred run ID. GitHub App Actions write permission is required. UI integration pending.
