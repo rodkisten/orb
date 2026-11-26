@@ -400,6 +400,18 @@ function createApp(env: Bindings) {
         detail: { tags: ["Workflow Builder"] },
       },
     )
+    .get("/github/:owner/:repo/actions/runs/:runId",async ({params,request,set})=>{
+      set.headers["cache-control"]="no-store";
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:"Unauthorized"};}
+      try{return await repositoryRead(env,params.owner,params.repo,`actions/runs/${params.runId}`,1,1);}
+      catch(e){set.status=e instanceof GatewayError?e.status:502;return {error:"Run unavailable"};}
+    },{params:t.Object({...repositoryParams.properties,runId:t.Numeric({minimum:1,maximum:Number.MAX_SAFE_INTEGER,multipleOf:1})})})
+    .get("/github/:owner/:repo/actions/runs/:runId/jobs",async ({params,query,request,set})=>{
+      set.headers["cache-control"]="no-store";
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:"Unauthorized"};}
+      try{return await repositoryRead(env,params.owner,params.repo,`actions/runs/${params.runId}/jobs`,query.page??1,query.limit??100);}
+      catch(e){set.status=e instanceof GatewayError?e.status:502;return {error:"Jobs unavailable"};}
+    },{params:t.Object({...repositoryParams.properties,runId:t.Numeric({minimum:1,maximum:Number.MAX_SAFE_INTEGER,multipleOf:1})}),query:paginationQuery})
     .post(
       "/github/:owner/:repo/actions/dispatch",
       async ({ params, body, request, set }) => {
@@ -492,7 +504,7 @@ function createApp(env: Bindings) {
                 Accept: "application/vnd.github+json",
                 "Content-Type": "application/json",
                 "User-Agent": "orb-api",
-                "X-GitHub-Api-Version": "2022-11-28",
+                "X-GitHub-Api-Version": "2026-03-10",
               },
               body: JSON.stringify({ ref: body.ref, inputs }),
               redirect: "error",
@@ -510,9 +522,12 @@ function createApp(env: Bindings) {
               error: "GitHub rejected dispatch (" + response.status + ")",
             };
           }
+          const details=await response.json<{workflow_run_id?:number}>().catch(()=>null);
+          const runId=details?.workflow_run_id;
           set.status = 202;
           return {
             accepted: true,
+            runId:Number.isSafeInteger(runId)&&runId!>0?runId:undefined,
             runsUrl:
               "https://github.com/" +
               params.owner +

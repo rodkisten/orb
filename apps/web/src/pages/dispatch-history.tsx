@@ -12,6 +12,7 @@ export type DispatchRecord = {
   at: number;
   status: "accepted" | "unconfirmed";
   runsUrl?: string;
+  runId?: number;
 };
 const key = (repo: string, path: string) =>
   "dispatch-history:" + JSON.stringify([repo, path]);
@@ -81,7 +82,7 @@ export function DispatchHistory({
             {row.runsUrl?.startsWith(
               "https://github.com/" + repo + "/actions/workflows/",
             ) && (
-              <a href={row.runsUrl} target="_blank" rel="noreferrer">
+              <a href={row.runId?"https://github.com/"+repo+"/actions/runs/"+row.runId:row.runsUrl} target="_blank" rel="noreferrer">
                 View runs
               </a>
             )}

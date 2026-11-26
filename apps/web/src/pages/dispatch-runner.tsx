@@ -1,3 +1,4 @@
+import {RunTracker} from "./run-tracker";
 import {
   DispatchHistory,
   recordDispatch,
@@ -33,6 +34,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [runs, setRuns] = useState("");
+  const [runId,setRunId]=useState<number|null>(null);
   const [historyError, setHistoryError] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [confirmedSha, setConfirmedSha] = useState("");
@@ -99,6 +101,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
     setConfirmed(false);
     setMessage("");
     setRuns("");
+    setRunId(null);
   }
   function change(k: string, v: string) {
     setValues((s) => ({ ...s, [k]: v }));
@@ -141,6 +144,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
     setConfirmed(false);
     setMessage("");
     setRuns("");
+    setRunId(null);
     try {
       const inputs = Object.fromEntries(
         ports.flatMap(([k, p]) => {
@@ -170,12 +174,14 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       });
       const data = (await res.json()) as {
         accepted?: boolean;
+        runId?: number;
         error?: string;
         runsUrl?: string;
       };
       if (!res.ok || !data.accepted)
         throw Error(data.error ?? "Dispatch not confirmed");
       attempt.status = "accepted";
+      if(typeof data.runId==="number"&&Number.isSafeInteger(data.runId)&&data.runId>0){attempt.runId=data.runId;setRunId(data.runId);}
       setMessage(
         "GitHub accepted the dispatch. Check runs for execution status.",
       );
@@ -338,6 +344,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       </fieldset>
       {message && <p role="status">{message}</p>}
       {historyError && <p role="alert">{historyError}</p>}
+      {runId!==null&&<RunTracker repo={target.repo} id={runId}/>}
       <DispatchHistory
         repo={target.repo}
         path={target.path}

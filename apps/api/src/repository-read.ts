@@ -9,7 +9,9 @@ type Resource =
   | "pulls"
   | "commits"
   | "actions/workflows"
-  | "actions/runs";
+  | "actions/runs"
+  | `actions/runs/${number}`
+  | `actions/runs/${number}/jobs`;
 export class GatewayError extends Error {
   constructor(
     public readonly status: 404 | 503 | 502 | 429,
