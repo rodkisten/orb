@@ -38,6 +38,7 @@ Only deploy after provisioning and validating the bindings.
 - A shared bearer token is only a bootstrap credential. Per-connector credentials, GitHub HMAC verification, authorization scopes, rate limiting, and retention are future work.
 - Never put tokens in URL query parameters or log raw secrets.
 - This milestone has not been runtime-verified against Cloudflare. Validate the build, migration, queue and OpenAPI before production deployment.
+
 # Diagnóstico de CI de pull requests
 
 `GET /v1/github/:owner/:repo/pulls/:number/ci` usa a sessão do Cloudflare Access. Configure

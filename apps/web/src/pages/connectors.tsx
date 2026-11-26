@@ -1,11 +1,184 @@
-import {useState} from 'react'
-import {useQuery,useMutation,useQueryClient} from '@tanstack/react-query'
-import {Link} from '@tanstack/react-router'
-import {RefreshCw,Inbox,AlertCircle,CheckCircle2,Clock} from 'lucide-react'
-type Delivery={event_id:string;state:'pending'|'sending'|'delivered'|'failed';attempts:number;last_error:string|null;next_attempt_at:number;updated_at:number}
-type Result={enabled:boolean;items:Delivery[]}
-async function load():Promise<Result>{const r=await fetch('/v1/connectors/jardim/deliveries',{credentials:'include'});if(!r.ok)throw Error('Unable to load deliveries ('+r.status+')');return r.json()}
-export function Connectors(){const client=useQueryClient();const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState('');const q=useQuery({queryKey:['jardim-deliveries'],queryFn:load,refetchInterval:15000});const replay=useMutation({mutationFn:async(id:string)=>{const r=await fetch('/v1/connectors/jardim/deliveries/'+encodeURIComponent(id)+'/replay',{method:'POST',credentials:'include'});if(!r.ok)throw Error('Replay failed ('+r.status+')')},onSuccess:()=>client.invalidateQueries({queryKey:['jardim-deliveries']})});const items=q.data?.items??[];const visible=items.filter(x=>(filter==='all'||x.state===filter)&&x.event_id.toLowerCase().includes(search.toLowerCase()));const detail=items.find(x=>x.event_id===selected);
-return <section className="explorer"><div className="heading"><div><p className="eyebrow">CONNECTOR OPERATIONS</p><h1>Jardim deliveries</h1><p>Inspect delivery receipts and recover failed captures.</p></div><button disabled={q.isFetching} onClick={()=>void q.refetch()}><RefreshCw size={14}/> Refresh</button></div>
-{q.isError&&<p role="alert" className="error">{q.error.message}</p>}{q.data&&<><p><Inbox size={16}/> Connector {q.data.enabled?'enabled':'disabled'} · Latest {items.length} deliveries</p><div className="toolbar">{(['pending','sending','delivered','failed'] as const).map(state=><button key={state} onClick={()=>setFilter(state)} aria-pressed={filter===state}>{state==='delivered'?<CheckCircle2 size={16}/>:state==='failed'?<AlertCircle size={16}/>:<Clock size={16}/>} {state}: {items.filter(x=>x.state===state).length}</button>)}</div><div className="toolbar"><label>Status<select value={filter} onChange={e=>setFilter(e.target.value)}>{['all','pending','sending','delivered','failed'].map(s=><option key={s}>{s}</option>)}</select></label><label>Event ID<input value={search} onChange={e=>setSearch(e.target.value)} autoCapitalize="none" autoCorrect="off"/></label></div><div className="results">{visible.length===0?<p>No matching deliveries.</p>:visible.map(x=><button key={x.event_id} className="event" onClick={()=>setSelected(x.event_id)}><span>{x.event_id}</span><span>{x.state}</span><span>{x.attempts} attempts</span><span>{new Date(x.updated_at).toLocaleString()}</span></button>)}</div></>}{q.isPending&&<p>Loading deliveries…</p>}
-{detail&&<aside className="detail"><div className="detail-heading"><h2>Delivery details</h2><button onClick={()=>setSelected('')}>Close</button></div><p>{detail.state} · {detail.attempts} attempts</p><p>{detail.last_error??'No recorded error'}</p>{detail.state==='pending'&&<p>Next eligible attempt: {new Date(detail.next_attempt_at).toLocaleString()}</p>}<Link to="/events" search={{selected:detail.event_id,panel:'open'}}>Inspect event</Link>{detail.state==='failed'&&<button disabled={replay.isPending} onClick={()=>{if(confirm('Replay this delivery?'))replay.mutate(detail.event_id)}}>Replay delivery</button>}{replay.isError&&<p role="alert">{replay.error.message}</p>}</aside>}</section>}
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import {
+  RefreshCw,
+  Inbox,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
+type Delivery = {
+  event_id: string;
+  state: "pending" | "sending" | "delivered" | "failed";
+  attempts: number;
+  last_error: string | null;
+  next_attempt_at: number;
+  updated_at: number;
+};
+type Result = { enabled: boolean; items: Delivery[] };
+async function load(): Promise<Result> {
+  const r = await fetch("/v1/connectors/jardim/deliveries", {
+    credentials: "include",
+  });
+  if (!r.ok) throw Error("Unable to load deliveries (" + r.status + ")");
+  return r.json();
+}
+export function Connectors() {
+  const client = useQueryClient();
+  const [filter, setFilter] = useState("all"),
+    [search, setSearch] = useState(""),
+    [selected, setSelected] = useState("");
+  const q = useQuery({
+    queryKey: ["jardim-deliveries"],
+    queryFn: load,
+    refetchInterval: 15000,
+  });
+  const replay = useMutation({
+    mutationFn: async (id: string) => {
+      const r = await fetch(
+        "/v1/connectors/jardim/deliveries/" +
+          encodeURIComponent(id) +
+          "/replay",
+        { method: "POST", credentials: "include" },
+      );
+      if (!r.ok) throw Error("Replay failed (" + r.status + ")");
+    },
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["jardim-deliveries"] }),
+  });
+  const items = q.data?.items ?? [];
+  const visible = items.filter(
+    (x) =>
+      (filter === "all" || x.state === filter) &&
+      x.event_id.toLowerCase().includes(search.toLowerCase()),
+  );
+  const detail = items.find((x) => x.event_id === selected);
+  return (
+    <section className="explorer">
+      <div className="heading">
+        <div>
+          <p className="eyebrow">CONNECTOR OPERATIONS</p>
+          <h1>Jardim deliveries</h1>
+          <p>Inspect delivery receipts and recover failed captures.</p>
+        </div>
+        <button disabled={q.isFetching} onClick={() => void q.refetch()}>
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
+      {q.isError && (
+        <p role="alert" className="error">
+          {q.error.message}
+        </p>
+      )}
+      {q.data && (
+        <>
+          <p>
+            <Inbox size={16} /> Connector{" "}
+            {q.data.enabled ? "enabled" : "disabled"} · Latest {items.length}{" "}
+            deliveries
+          </p>
+          <div className="toolbar">
+            {(["pending", "sending", "delivered", "failed"] as const).map(
+              (state) => (
+                <button
+                  key={state}
+                  onClick={() => setFilter(state)}
+                  aria-pressed={filter === state}
+                >
+                  {state === "delivered" ? (
+                    <CheckCircle2 size={16} />
+                  ) : state === "failed" ? (
+                    <AlertCircle size={16} />
+                  ) : (
+                    <Clock size={16} />
+                  )}{" "}
+                  {state}: {items.filter((x) => x.state === state).length}
+                </button>
+              ),
+            )}
+          </div>
+          <div className="toolbar">
+            <label>
+              Status
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                {["all", "pending", "sending", "delivered", "failed"].map(
+                  (s) => (
+                    <option key={s}>{s}</option>
+                  ),
+                )}
+              </select>
+            </label>
+            <label>
+              Event ID
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+              />
+            </label>
+          </div>
+          <div className="results">
+            {visible.length === 0 ? (
+              <p>No matching deliveries.</p>
+            ) : (
+              visible.map((x) => (
+                <button
+                  key={x.event_id}
+                  className="event"
+                  onClick={() => setSelected(x.event_id)}
+                >
+                  <span>{x.event_id}</span>
+                  <span>{x.state}</span>
+                  <span>{x.attempts} attempts</span>
+                  <span>{new Date(x.updated_at).toLocaleString()}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </>
+      )}
+      {q.isPending && <p>Loading deliveries…</p>}
+      {detail && (
+        <aside className="detail">
+          <div className="detail-heading">
+            <h2>Delivery details</h2>
+            <button onClick={() => setSelected("")}>Close</button>
+          </div>
+          <p>
+            {detail.state} · {detail.attempts} attempts
+          </p>
+          <p>{detail.last_error ?? "No recorded error"}</p>
+          {detail.state === "pending" && (
+            <p>
+              Next eligible attempt:{" "}
+              {new Date(detail.next_attempt_at).toLocaleString()}
+            </p>
+          )}
+          <Link
+            to="/events"
+            search={{ selected: detail.event_id, panel: "open" }}
+          >
+            Inspect event
+          </Link>
+          {detail.state === "failed" && (
+            <button
+              disabled={replay.isPending}
+              onClick={() => {
+                if (confirm("Replay this delivery?"))
+                  replay.mutate(detail.event_id);
+              }}
+            >
+              Replay delivery
+            </button>
+          )}
+          {replay.isError && <p role="alert">{replay.error.message}</p>}
+        </aside>
+      )}
+    </section>
+  );
+}

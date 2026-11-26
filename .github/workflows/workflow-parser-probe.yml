@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/workflow-core/**'
-      - 'scripts/workflow-parser-probe.mjs'
-      - '.github/workflows/workflow-parser-probe.yml'
+      - "packages/workflow-core/**"
+      - "scripts/workflow-parser-probe.mjs"
+      - ".github/workflows/workflow-parser-probe.yml"
 permissions:
   contents: read
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Install isolated probe dependencies
         run: npm install --prefix .parser-probe --no-save --ignore-scripts @actions/workflow-parser@0.3.61 web-tree-sitter@0.27.2 esbuild@0.25.12
       - name: Run official parser and WASM smoke

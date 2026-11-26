@@ -10,19 +10,26 @@
   "observability": {
     "enabled": true,
     "logs": { "enabled": true },
-    "traces": { "enabled": true, "head_sampling_rate": 0.01 }
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 },
   },
   "d1_databases": [
     {
       "binding": "ORB_DB",
       "database_name": "orb-events",
       "database_id": "103adc47-28f5-4774-972a-002a7ffcd9a8",
-      "migrations_dir": "migrations"
-    }
+      "migrations_dir": "migrations",
+    },
   ],
   "triggers": { "crons": ["*/5 * * * *"] },
   "queues": {
     "producers": [{ "binding": "ORB_EVENTS", "queue": "orb-events" }],
-    "consumers": [{ "queue": "orb-events", "max_batch_size": 10, "max_retries": 5, "dead_letter_queue": "orb-events-dlq" }]
-  }
+    "consumers": [
+      {
+        "queue": "orb-events",
+        "max_batch_size": 10,
+        "max_retries": 5,
+        "dead_letter_queue": "orb-events-dlq",
+      },
+    ],
+  },
 }
