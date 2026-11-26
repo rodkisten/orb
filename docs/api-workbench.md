@@ -101,3 +101,5 @@ Dispatch uses GitHub REST API 2026-03-10 to receive workflow_run_id directly. Ex
 UX polish: separate published Runner from dispatch input design using URL-backed inspector tabs. Authentication diagnostics and full layout redesign remain pending.
 
 Session recovery: GET /v1/session verifies Access identity without contacting GitHub, returns 503 for missing Access bindings and 401 for unverified identity. The app shell displays one session banner with retry and Access logout link. No authentication bypass or token storage. Preview routing must allow this read endpoint.
+
+Inspector polish: workflow/job fields are grouped into collapsible contextual sections; pending field counts remain visible and values persist when sections collapse. Review is disabled until a field changes. Clear resets pending edits. Inspector tabs scroll horizontally rather than wrapping. JSON-based patch semantics remain unchanged.

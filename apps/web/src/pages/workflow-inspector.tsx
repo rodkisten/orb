@@ -1,3 +1,4 @@
+import {InspectorFields} from "./inspector-fields";
 import { Button } from "../components/ui/button";
 import { StructuredEditor } from "./structured-editor";
 import { useState } from "react";
@@ -89,7 +90,7 @@ export function WorkflowInspector({
               ))}
             </select>
           </label>
-          {fields.map(([key, example]) => (
+          <InspectorFields values={values} groups={[{title:"General",keys:["name","run-name"]},{title:"Triggers",keys:["on"]},{title:"Execution",keys:["concurrency","defaults"]},{title:"Permissions & environment",keys:["permissions","env"]}]} render={key=>{const example=fields.find(f=>f[0]===key)?.[1];return (
             <label key={key}>
               {key}
               <StructuredEditor
@@ -99,8 +100,8 @@ export function WorkflowInspector({
                 onChange={(value) => setValues((v) => ({ ...v, [key]: value }))}
               />
             </label>
-          ))}
-          <Button type="submit">Review workflow patch</Button>
+          );}} />
+          <div className="orb-form-actions"><Button type="submit" disabled={!Object.values(values).some(v=>v.trim())}>Review workflow patch</Button>
           <Button
             type="button"
             onClick={() => {
@@ -109,7 +110,7 @@ export function WorkflowInspector({
             }}
           >
             Clear
-          </Button>
+          </Button></div>
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>

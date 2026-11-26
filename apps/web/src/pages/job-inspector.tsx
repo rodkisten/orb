@@ -1,3 +1,4 @@
+import {InspectorFields} from "./inspector-fields";
 import { ConditionField, EnvField, useReferences } from "./expression-fields";
 import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
@@ -42,6 +43,7 @@ export function JobInspector({
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
   const refs = useReferences(body, current?.id ?? "");
   const [env, setEnv] = useState("");
+  const groups=[{title:"General",keys:current?.uses?["name","uses"]:["name","runs-on","timeout-minutes"]},{title:"Conditions & concurrency",keys:["if","concurrency"]},{title:"Inputs & environment",keys:current?.uses?["with","secrets"]:["env","strategy","outputs"]},{title:"Permissions",keys:["permissions"]}];
   return (
     <section>
       <form
@@ -82,21 +84,8 @@ export function JobInspector({
           <p>
             Enter JSON values for fields to change. Leave other fields empty.
           </p>
-          {fields
-            .filter((f) =>
-              current?.uses
-                ? ![
-                    "runs-on",
-                    "strategy",
-                    "outputs",
-                    "timeout-minutes",
-                    "env",
-                  ].includes(f.key)
-                : !["uses", "with", "secrets"].includes(f.key),
-            )
-            .map((f) => (
-              <label key={f.key}>
-                {f.key}
+          <InspectorFields groups={groups} values={values} render={key=>{const f=fields.find(field=>field.key===key)!;return (
+              <div className="orb-field" key={f.key}><span className="orb-field-label">{f.key}</span>
                 {f.key === "if" ? (
                   <ConditionField
                     refs={refs}
@@ -144,9 +133,9 @@ export function JobInspector({
                     }
                   />
                 )}
-              </label>
-            ))}
-          <Button type="submit">Review job patch</Button>
+              </div>
+            );}} />
+          <div className="orb-form-actions"><Button type="submit" disabled={!Object.values(values).some(v=>v.trim())}>Review job patch</Button><Button type="button" variant="ghost" onClick={()=>{setValues({});setEnv("");setError("");}}>Clear</Button></div>
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>
