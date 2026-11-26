@@ -82,7 +82,18 @@ export function DispatchHistory({
             {row.runsUrl?.startsWith(
               "https://github.com/" + repo + "/actions/workflows/",
             ) && (
-              <a href={row.runId?"https://github.com/"+repo+"/actions/runs/"+row.runId:row.runsUrl} target="_blank" rel="noreferrer">
+              <a
+                href={
+                  row.runId
+                    ? "https://github.com/" +
+                      repo +
+                      "/actions/runs/" +
+                      row.runId
+                    : row.runsUrl
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
                 View runs
               </a>
             )}
