@@ -1,7 +1,7 @@
 name: 🪐 ORB · Maintenance
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   workflow_dispatch:
     inputs:
       operation:
@@ -10,10 +10,10 @@ on:
         default: format
       packages:
         type: string
-        default: ''
+        default: ""
       custom_command:
         type: string
-        default: ''
+        default: ""
       commit_changes:
         type: boolean
         default: true
@@ -49,7 +49,7 @@ jobs:
           token: ${{ steps.app.outputs.token }}
       - uses: ./.github/actions/setup
         with:
-          install: 'false'
+          install: "false"
       - name: Prepare dependencies
         env:
           OPERATION: ${{ inputs.operation || 'format' }}

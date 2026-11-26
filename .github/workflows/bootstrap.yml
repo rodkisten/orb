@@ -23,7 +23,7 @@ jobs:
 
       - uses: ./.github/actions/setup
         with:
-          install: 'false'
+          install: "false"
 
       - name: Verify release build
         run: |
@@ -34,8 +34,8 @@ jobs:
 
       - name: Verify Access, migrate D1, deploy and check health
         env:
-          FORCE_COLOR: '1'
-          ORB_BOOTSTRAP: '1'
+          FORCE_COLOR: "1"
+          ORB_BOOTSTRAP: "1"
           GH_TOKEN: ${{ secrets.ORB_BOOTSTRAP_GITHUB_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
