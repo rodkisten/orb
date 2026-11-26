@@ -991,14 +991,64 @@ nav {
 }
 
 /* Contextual inspector groups; override legacy grid only within inspector. */
-.lab .orb-inspector nav {display:flex;flex-wrap:nowrap;overflow-x:auto;gap:4px;scrollbar-width:thin;}
-.lab .orb-inspector nav button {flex:none;width:auto;white-space:nowrap;}
-.orb-field-groups {display:grid;gap:0;min-width:0;}
-.orb-field-group {border-bottom:1px solid var(--orb-border);min-width:0;}
-.lab .orb-field-group > button {display:flex;width:100%;justify-content:space-between;align-items:center;background:transparent;border:0;padding:10px 4px;text-align:left;}
-.orb-field-group > button span {flex:1;}
-.orb-field-group > button[aria-expanded=true] svg {transform:rotate(180deg);}
-.orb-field-content {display:grid;gap:8px;padding:0 4px 12px;min-width:0;}
-.orb-field-label {font-size:12px;color:var(--orb-muted);display:block;margin-bottom:5px;}
-.orb-form-actions {display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:12px;}
-.lab .orb-inspector [role=alert] {color:#fca5a5;font-size:12px;overflow-wrap:anywhere;}
+.lab .orb-inspector nav {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+.lab .orb-inspector nav button {
+  flex: none;
+  width: auto;
+  white-space: nowrap;
+}
+.orb-field-groups {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+.orb-field-group {
+  border-bottom: 1px solid var(--orb-border);
+  min-width: 0;
+}
+.lab .orb-field-group > button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  padding: 10px 4px;
+  text-align: left;
+}
+.orb-field-group > button span {
+  flex: 1;
+}
+.orb-field-group > button[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.orb-field-content {
+  display: grid;
+  gap: 8px;
+  padding: 0 4px 12px;
+  min-width: 0;
+}
+.orb-field-label {
+  font-size: 12px;
+  color: var(--orb-muted);
+  display: block;
+  margin-bottom: 5px;
+}
+.orb-form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 12px;
+}
+.lab .orb-inspector [role="alert"] {
+  color: #fca5a5;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

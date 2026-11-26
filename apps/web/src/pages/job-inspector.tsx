@@ -1,4 +1,4 @@
-import {InspectorFields} from "./inspector-fields";
+import { InspectorFields } from "./inspector-fields";
 import { ConditionField, EnvField, useReferences } from "./expression-fields";
 import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
@@ -43,7 +43,22 @@ export function JobInspector({
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
   const refs = useReferences(body, current?.id ?? "");
   const [env, setEnv] = useState("");
-  const groups=[{title:"General",keys:current?.uses?["name","uses"]:["name","runs-on","timeout-minutes"]},{title:"Conditions & concurrency",keys:["if","concurrency"]},{title:"Inputs & environment",keys:current?.uses?["with","secrets"]:["env","strategy","outputs"]},{title:"Permissions",keys:["permissions"]}];
+  const groups = [
+    {
+      title: "General",
+      keys: current?.uses
+        ? ["name", "uses"]
+        : ["name", "runs-on", "timeout-minutes"],
+    },
+    { title: "Conditions & concurrency", keys: ["if", "concurrency"] },
+    {
+      title: "Inputs & environment",
+      keys: current?.uses
+        ? ["with", "secrets"]
+        : ["env", "strategy", "outputs"],
+    },
+    { title: "Permissions", keys: ["permissions"] },
+  ];
   return (
     <section>
       <form
@@ -84,58 +99,84 @@ export function JobInspector({
           <p>
             Enter JSON values for fields to change. Leave other fields empty.
           </p>
-          <InspectorFields groups={groups} values={values} render={key=>{const f=fields.find(field=>field.key===key)!;return (
-              <div className="orb-field" key={f.key}><span className="orb-field-label">{f.key}</span>
-                {f.key === "if" ? (
-                  <ConditionField
-                    refs={refs}
-                    value={values.if ? JSON.parse(values.if) : ""}
-                    onChange={(v) =>
-                      setValues((old) => ({
-                        ...old,
-                        if: v ? JSON.stringify(v) : "",
-                      }))
-                    }
-                  />
-                ) : f.key === "env" ? (
-                  <EnvField
-                    refs={refs}
-                    value={env}
-                    onChange={(v) => {
-                      setEnv(v);
-                      setValues((old) => ({
-                        ...old,
-                        env: v
-                          ? JSON.stringify(
-                              Object.fromEntries(
-                                v
-                                  .split("\n")
-                                  .filter((row) =>
-                                    /^[A-Za-z_][A-Za-z0-9_]*=/.test(row),
-                                  )
-                                  .map((row) => [
-                                    row.slice(0, row.indexOf("=")),
-                                    row.slice(row.indexOf("=") + 1),
-                                  ]),
-                              ),
-                            )
-                          : "",
-                      }));
-                    }}
-                  />
-                ) : (
-                  <StructuredEditor
-                    disabled={disabled || !current}
-                    placeholder={f.example}
-                    value={values[f.key] ?? ""}
-                    onChange={(value) =>
-                      setValues((v) => ({ ...v, [f.key]: value }))
-                    }
-                  />
-                )}
-              </div>
-            );}} />
-          <div className="orb-form-actions"><Button type="submit" disabled={!Object.values(values).some(v=>v.trim())}>Review job patch</Button><Button type="button" variant="ghost" onClick={()=>{setValues({});setEnv("");setError("");}}>Clear</Button></div>
+          <InspectorFields
+            groups={groups}
+            values={values}
+            render={(key) => {
+              const f = fields.find((field) => field.key === key)!;
+              return (
+                <div className="orb-field" key={f.key}>
+                  <span className="orb-field-label">{f.key}</span>
+                  {f.key === "if" ? (
+                    <ConditionField
+                      refs={refs}
+                      value={values.if ? JSON.parse(values.if) : ""}
+                      onChange={(v) =>
+                        setValues((old) => ({
+                          ...old,
+                          if: v ? JSON.stringify(v) : "",
+                        }))
+                      }
+                    />
+                  ) : f.key === "env" ? (
+                    <EnvField
+                      refs={refs}
+                      value={env}
+                      onChange={(v) => {
+                        setEnv(v);
+                        setValues((old) => ({
+                          ...old,
+                          env: v
+                            ? JSON.stringify(
+                                Object.fromEntries(
+                                  v
+                                    .split("\n")
+                                    .filter((row) =>
+                                      /^[A-Za-z_][A-Za-z0-9_]*=/.test(row),
+                                    )
+                                    .map((row) => [
+                                      row.slice(0, row.indexOf("=")),
+                                      row.slice(row.indexOf("=") + 1),
+                                    ]),
+                                ),
+                              )
+                            : "",
+                        }));
+                      }}
+                    />
+                  ) : (
+                    <StructuredEditor
+                      disabled={disabled || !current}
+                      placeholder={f.example}
+                      value={values[f.key] ?? ""}
+                      onChange={(value) =>
+                        setValues((v) => ({ ...v, [f.key]: value }))
+                      }
+                    />
+                  )}
+                </div>
+              );
+            }}
+          />
+          <div className="orb-form-actions">
+            <Button
+              type="submit"
+              disabled={!Object.values(values).some((v) => v.trim())}
+            >
+              Review job patch
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setValues({});
+                setEnv("");
+                setError("");
+              }}
+            >
+              Clear
+            </Button>
+          </div>
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>
