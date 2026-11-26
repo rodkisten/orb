@@ -15,7 +15,9 @@ export function WorkspaceStudio() {
   const setPanel = (panel: string) => updateRoute({ panel });
   return (
     <section>
-      <div className="lab-tabs"><a href={"/workspace"+location.search}>Studio</a><a href={"/api"+location.search}>API Lab</a>
+      <div className="lab-tabs">
+        <a href={"/workspace" + location.search}>Studio</a>
+        <a href={"/api" + location.search}>API Lab</a>
         <button
           aria-pressed={panel === "explorer"}
           onClick={() => setPanel("explorer")}

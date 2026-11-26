@@ -65,7 +65,12 @@ export function BuilderForm({
       jobs = data.jobs.map((j: { id: string }) => j.id);
   } catch {}
   const selected = jobs.includes(job) ? job : (jobs[0] ?? "");
-  if (!jobs.length) return <p className="text-sm text-muted-foreground">Open or create a valid workflow to enable the inspector.</p>;
+  if (!jobs.length)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Open or create a valid workflow to enable the inspector.
+      </p>
+    );
   return (
     <section className="orb-inspector rounded-xl border border-border bg-card p-3 text-card-foreground">
       <div className="mb-2 flex items-center justify-between">

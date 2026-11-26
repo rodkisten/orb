@@ -182,7 +182,21 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   async function send() {
     if (active.current) return;
     if (studio && local) {
-      try { const data = parseWorkflow(yaml); setResult({status: 200, ms: 0, bytes: new TextEncoder().encode(JSON.stringify(data)).length, body: JSON.stringify(data), headers: ""}); setParsedSource(yaml); setTab("graph"); setError(""); } catch (e) { setError(String(e)); }
+      try {
+        const data = parseWorkflow(yaml);
+        setResult({
+          status: 200,
+          ms: 0,
+          bytes: new TextEncoder().encode(JSON.stringify(data)).length,
+          body: JSON.stringify(data),
+          headers: "",
+        });
+        setParsedSource(yaml);
+        setTab("graph");
+        setError("");
+      } catch (e) {
+        setError(String(e));
+      }
       return;
     }
     const controller = new AbortController();
