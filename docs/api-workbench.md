@@ -57,3 +57,6 @@ CI matrix includes the isolated official parser smoke. Maintenance accepts insta
 Shared local setup action pins Node/pnpm and optionally installs frozen dependencies. Parser matrix skips workspace installation. CI publishes a SHA-scoped web artifact reused by production in the same workflow run. Maintenance preflights repository-scoped App credentials without logging them. Preview retains independent build because it resolves the PR head separately.
 
 Live AST parsing and Builder patches now run locally using the same workflow-core as the API. API Lab Send still performs real HTTP requests; Studio local Parse does not. GitHub repository access remains authenticated. Inspector hides empty forms and resets native fieldset styling. Explicit Studio/API Lab links distinguish modes.
+
+### Kitchen Sink demo
+Use Load demo to create a separate local draft with 10 jobs, matrix expansion, triggers, typed inputs, outputs, services, container, environments, expressions and reusable workflow syntax. The reusable target is intentionally illustrative and disabled. This fixture is not installed in .github/workflows and never dispatched by loading it.

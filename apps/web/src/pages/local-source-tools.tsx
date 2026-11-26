@@ -1,3 +1,4 @@
+import { kitchenSinkWorkflow } from "./workflow-example";
 import { useRef, useState } from "react";
 const max = 262144;
 export function LocalSourceTools({
@@ -58,6 +59,9 @@ export function LocalSourceTools({
           }
         >
           New YAML
+        </button>
+        <button disabled={disabled} onClick={() => open(kitchenSinkWorkflow, "kitchen-sink.yml")}>
+          Load demo
         </button>
         <button disabled={disabled} onClick={() => setPaste((v) => !v)}>
           Paste YAML
