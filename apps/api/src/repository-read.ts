@@ -2,7 +2,16 @@ import { githubToken, type GitHubCredentials } from "./github-auth";
 
 type Environment = GitHubCredentials & { ORB_CI_REPOSITORIES?: string };
 type Resource =
-  "branches" | "pulls" | "commits" | "actions/workflows" | "actions/runs";
+  | "contents"
+  | "branches"
+  | "environments"
+  | "tags"
+  | "pulls"
+  | "commits"
+  | "actions/workflows"
+  | "actions/runs"
+  | `actions/runs/${number}`
+  | `actions/runs/${number}/jobs`;
 export class GatewayError extends Error {
   constructor(
     public readonly status: 404 | 503 | 502 | 429,
@@ -18,6 +27,7 @@ export async function repositoryRead(
   resource: Resource,
   page: number,
   limit: number,
+  options?: { path?: string; ref?: string },
 ) {
   const allowed = (env.ORB_CI_REPOSITORIES ?? "")
     .split(",")
@@ -34,6 +44,22 @@ export async function repositoryRead(
       "/" +
       resource,
   );
+  if (resource === "contents") {
+    const path = options?.path ?? "";
+    if (
+      path.length > 1024 ||
+      path
+        .split("/")
+        .some(
+          (s) =>
+            s === "." || s === ".." || s.includes("\\") || s.includes("\u0000"),
+        )
+    )
+      throw new GatewayError(404, "Invalid path");
+    if (path)
+      url.pathname += "/" + path.split("/").map(encodeURIComponent).join("/");
+    if (options?.ref) url.searchParams.set("ref", options.ref);
+  }
   url.searchParams.set("page", String(page));
   url.searchParams.set("per_page", String(limit));
   if (resource === "pulls") url.searchParams.set("state", "all");

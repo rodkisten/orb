@@ -1,0 +1,71 @@
+name: 🪐 ORB · CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: orb-ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: Verify · ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [api, web, workspace, parser]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          install: ${{ matrix.target != 'parser' }}
+      - name: Workspace typecheck
+        if: matrix.target == 'workspace'
+        run: pnpm -r --if-present typecheck
+      - name: API verification
+        if: matrix.target == 'api'
+        run: |
+          pnpm --filter @orb/api typecheck
+          node --check scripts/api-deploy.mjs
+          node --experimental-strip-types --test apps/api/tests/*.test.mjs
+          pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
+      - name: Web verification
+        if: matrix.target == 'web'
+        run: |
+          pnpm --filter @orb/web build
+          pnpm --filter @orb/web exec tsc --noEmit --strict --target ES2022 --lib ES2022,DOM worker.ts --skipLibCheck
+
+      - name: Install isolated probe dependencies
+        if: matrix.target == 'parser'
+        run: npm install --prefix .parser-probe --no-save --ignore-scripts @actions/workflow-parser@0.3.61 web-tree-sitter@0.27.2 esbuild@0.25.12
+      - name: Run official parser and WASM smoke
+        if: matrix.target == 'parser'
+        run: |
+          mkdir -p node_modules
+          ln -s ../.parser-probe/node_modules/@actions node_modules/@actions
+          ln -s ../.parser-probe/node_modules/web-tree-sitter node_modules/web-tree-sitter
+           .parser-probe/node_modules/.bin/esbuild scripts/workflow-parser-probe.mjs --bundle --platform=node --format=esm --banner:js='import {createRequire} from "node:module"; const require = createRequire(import.meta.url);' --external:web-tree-sitter --outfile=.parser-probe/probe.mjs
+          node .parser-probe/probe.mjs
+      - name: Upload verified web bundle
+        if: matrix.target == 'web'
+        uses: actions/upload-artifact@v4
+        with:
+          name: orb-web-${{ github.sha }}
+          path: apps/web/dist
+          if-no-files-found: error
+          retention-days: 2
+      - name: Verification summary
+        if: always()
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          STATUS: ${{ job.status }}
+        run: |
+          printf '### 🪐 Orb · %s\n\n| Target | Result |\n| --- | --- |\n| %s | %s |\n' "$TARGET" "$TARGET" "$STATUS" >> "$GITHUB_STEP_SUMMARY"

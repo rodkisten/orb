@@ -1,0 +1,3 @@
+# PR previews
+
+Frontend prN.orb.migos.club and API prN.api.orb.migos.club. Workers orb-web-pr-N and orb-api-pr-N. Frontend service binding points to matching API revision. Preview API allows GitHub read operations and parser POST only; no webhook, scheduled jobs, queue consumers or event mutations. D1 remains shared for GitHub cache; not a fully isolated data environment. Access must cover both wildcard levels with the existing audience. TLS for nested domains and deployment remain to be verified. Cleanup deletes both Workers. Shared preview-report action updates a persistent comment. Previous numeric-only domain is obsolete and may require removal if provisioned. No fork deploys.

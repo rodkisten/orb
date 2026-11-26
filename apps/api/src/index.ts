@@ -11,6 +11,8 @@ import {
   inspectWorkflow,
   parseWorkflow,
   replaceScalar,
+  editJobNeeds,
+  editWorkflow,
 } from "@orb/workflow-core";
 import { repositoryRead, GatewayError } from "./repository-read";
 import { githubToken, githubAuthMode } from "./github-auth";
@@ -98,6 +100,101 @@ function createApp(env: Bindings) {
           tags: ["System"],
           summary: "Discover accessible configured repositories",
         },
+      },
+    )
+    .get(
+      "/github/:owner/:repo/files",
+      async ({ params, query, request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return await repositoryRead(
+            env,
+            params.owner,
+            params.repo,
+            "contents",
+            query.page ?? 1,
+            query.limit ?? 30,
+            { path: query.path, ref: query.ref },
+          );
+        } catch (error) {
+          set.status = error instanceof GatewayError ? error.status : 502;
+          return {
+            error:
+              error instanceof GatewayError
+                ? error.message
+                : "GitHub request failed",
+          };
+        }
+      },
+      {
+        params: repositoryParams,
+        query: t.Object({
+          page: t.Optional(t.Numeric({ minimum: 1, maximum: 1000 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+          path: t.Optional(t.String({ maxLength: 1024 })),
+          ref: t.Optional(t.String({ maxLength: 256 })),
+        }),
+        detail: { tags: ["GitHub"] },
+      },
+    )
+    .get(
+      "/github/:owner/:repo/environments",
+      async ({ params, query, request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return await repositoryRead(
+            env,
+            params.owner,
+            params.repo,
+            "environments",
+            query.page ?? 1,
+            query.limit ?? 100,
+          );
+        } catch (error) {
+          set.status = error instanceof GatewayError ? error.status : 502;
+          return { error: "Repository environments unavailable" };
+        }
+      },
+      {
+        params: repositoryParams,
+        query: paginationQuery,
+        detail: { tags: ["GitHub"] },
+      },
+    )
+    .get(
+      "/github/:owner/:repo/tags",
+      async ({ params, query, request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return await repositoryRead(
+            env,
+            params.owner,
+            params.repo,
+            "tags",
+            query.page ?? 1,
+            query.limit ?? 100,
+          );
+        } catch (error) {
+          set.status = error instanceof GatewayError ? error.status : 502;
+          return { error: "Repository tags unavailable" };
+        }
+      },
+      {
+        params: repositoryParams,
+        query: paginationQuery,
+        detail: { tags: ["GitHub"] },
       },
     )
     .get(
@@ -303,6 +400,227 @@ function createApp(env: Bindings) {
         detail: { tags: ["Workflow Builder"] },
       },
     )
+    .get(
+      "/github/:owner/:repo/actions/runs/:runId",
+      async ({ params, request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return await repositoryRead(
+            env,
+            params.owner,
+            params.repo,
+            `actions/runs/${params.runId}`,
+            1,
+            1,
+          );
+        } catch (e) {
+          set.status = e instanceof GatewayError ? e.status : 502;
+          return { error: "Run unavailable" };
+        }
+      },
+      {
+        params: t.Object({
+          ...repositoryParams.properties,
+          runId: t.Numeric({
+            minimum: 1,
+            maximum: Number.MAX_SAFE_INTEGER,
+            multipleOf: 1,
+          }),
+        }),
+      },
+    )
+    .get(
+      "/github/:owner/:repo/actions/runs/:runId/jobs",
+      async ({ params, query, request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return await repositoryRead(
+            env,
+            params.owner,
+            params.repo,
+            `actions/runs/${params.runId}/jobs`,
+            query.page ?? 1,
+            query.limit ?? 100,
+          );
+        } catch (e) {
+          set.status = e instanceof GatewayError ? e.status : 502;
+          return { error: "Jobs unavailable" };
+        }
+      },
+      {
+        params: t.Object({
+          ...repositoryParams.properties,
+          runId: t.Numeric({
+            minimum: 1,
+            maximum: Number.MAX_SAFE_INTEGER,
+            multipleOf: 1,
+          }),
+        }),
+        query: paginationQuery,
+      },
+    )
+    .post(
+      "/github/:owner/:repo/actions/dispatch",
+      async ({ params, body, request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        if (request.headers.get("origin") !== "https://orb.migos.club") {
+          set.status = 403;
+          return { error: "Dispatch requires production Studio origin" };
+        }
+        if (githubAuthMode(env) !== "app") {
+          set.status = 503;
+          return { error: "GitHub App required for dispatch" };
+        }
+        try {
+          const source = await workflowSource(
+            env,
+            params.owner,
+            params.repo,
+            body.path,
+            body.ref,
+          );
+          if (source.sha !== body.sha) {
+            set.status = 409;
+            return { error: "Published workflow changed; reload the form" };
+          }
+          const model = inspectWorkflow(source.yaml);
+          if (
+            !model.valid ||
+            !model.triggerNames.includes("workflow_dispatch")
+          ) {
+            set.status = 422;
+            return { error: "Workflow has no valid manual trigger" };
+          }
+          const schema = model.dispatchSchema as Record<
+            string,
+            {
+              type?: string;
+              required?: boolean;
+              default?: unknown;
+              options?: string[];
+            }
+          >;
+          const inputs = body.inputs;
+          if (
+            Object.keys(inputs).length > 25 ||
+            JSON.stringify(inputs).length > 65535 ||
+            Object.keys(inputs).some((k) => !Object.hasOwn(schema, k))
+          ) {
+            set.status = 422;
+            return { error: "Invalid input names or payload size" };
+          }
+          for (const [key, field] of Object.entries(schema)) {
+            const v = Object.hasOwn(inputs, key) ? inputs[key] : undefined;
+            if (v === undefined) {
+              if (field.required && field.default === undefined) {
+                set.status = 422;
+                return { error: "Missing required input: " + key };
+              }
+              continue;
+            }
+            if (
+              (field.required && !v.trim()) ||
+              (field.type === "boolean" && !["true", "false"].includes(v)) ||
+              (field.type === "number" &&
+                (!v.trim() || !Number.isFinite(Number(v)))) ||
+              (field.type === "choice" && !field.options?.includes(v))
+            ) {
+              set.status = 422;
+              return { error: "Invalid input: " + key };
+            }
+          }
+          const token = await githubToken(env);
+          const repoUrl =
+            "https://api.github.com/repos/" +
+            encodeURIComponent(params.owner) +
+            "/" +
+            encodeURIComponent(params.repo);
+          const response = await fetch(
+            repoUrl +
+              "/actions/workflows/" +
+              encodeURIComponent(body.path.split("/").pop()!) +
+              "/dispatches",
+            {
+              method: "POST",
+              headers: {
+                Authorization: "Bearer " + token,
+                Accept: "application/vnd.github+json",
+                "Content-Type": "application/json",
+                "User-Agent": "orb-api",
+                "X-GitHub-Api-Version": "2026-03-10",
+              },
+              body: JSON.stringify({ ref: body.ref, inputs }),
+              redirect: "error",
+              signal: AbortSignal.timeout(15000),
+            },
+          );
+          if (!response.ok) {
+            set.status =
+              response.status === 403
+                ? 403
+                : response.status === 422
+                  ? 422
+                  : 502;
+            return {
+              error: "GitHub rejected dispatch (" + response.status + ")",
+            };
+          }
+          const details = await response
+            .json<{ workflow_run_id?: number }>()
+            .catch(() => null);
+          const runId = details?.workflow_run_id;
+          set.status = 202;
+          return {
+            accepted: true,
+            runId:
+              Number.isSafeInteger(runId) && runId! > 0 ? runId : undefined,
+            runsUrl:
+              "https://github.com/" +
+              params.owner +
+              "/" +
+              params.repo +
+              "/actions/workflows/" +
+              encodeURIComponent(body.path.split("/").pop()!),
+          };
+        } catch (error) {
+          set.status = error instanceof GatewayError ? error.status : 502;
+          return {
+            error: "Dispatch not confirmed; check GitHub before retrying",
+          };
+        }
+      },
+      {
+        params: repositoryParams,
+        body: t.Object({
+          path: t.String({
+            pattern: "^\\.github/workflows/[A-Za-z0-9_.-]+\\.ya?ml$",
+            maxLength: 255,
+          }),
+          ref: t.String({ minLength: 1, maxLength: 255 }),
+          sha: t.String({ pattern: "^[a-f0-9]{40}$" }),
+          inputs: t.Record(
+            t.String({ maxLength: 255 }),
+            t.String({ maxLength: 65535 }),
+          ),
+        }),
+        detail: {
+          tags: ["Workflow Builder"],
+          summary: "Dispatch a published workflow",
+        },
+      },
+    )
     .post(
       "/workflows/validate",
       async ({ body, request, set }) => {
@@ -353,6 +671,97 @@ function createApp(env: Bindings) {
             { minItems: 1, maxItems: 100 },
           ),
           value: t.String({ maxLength: 65536 }),
+        }),
+        detail: { tags: ["Workflow Builder"] },
+      },
+    )
+    .post(
+      "/workflows/edit-needs",
+      async ({ body, request, set }) => {
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return editJobNeeds(body.yaml, body.job, body.needs);
+        } catch (error) {
+          set.status = 422;
+          return {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unsupported dependency edit",
+          };
+        }
+      },
+      {
+        body: t.Object({
+          yaml: t.String({ maxLength: 262144 }),
+          job: t.String({ maxLength: 255 }),
+          needs: t.Array(t.String({ maxLength: 255 }), { maxItems: 300 }),
+        }),
+        detail: { tags: ["Workflow Builder"] },
+      },
+    )
+    .post(
+      "/workflows/edit",
+      async ({ body, request, set }) => {
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        try {
+          return editWorkflow(body.yaml, body.edit);
+        } catch (error) {
+          set.status = 422;
+          return {
+            error: error instanceof Error ? error.message : "Unsupported edit",
+          };
+        }
+      },
+      {
+        body: t.Object({
+          yaml: t.String({ maxLength: 262144 }),
+          edit: t.Object({
+            kind: t.Union([
+              t.Literal("add-job"),
+              t.Literal("duplicate-job"),
+              t.Literal("add-step"),
+              t.Literal("remove-step"),
+              t.Literal("move-step"),
+              t.Literal("configure-step"),
+              t.Literal("configure-job"),
+              t.Literal("configure-workflow"),
+            ]),
+            job: t.String({ maxLength: 255 }),
+            id: t.Optional(t.String({ maxLength: 255 })),
+            name: t.Optional(t.String({ maxLength: 255 })),
+            run: t.Optional(t.String({ maxLength: 65536 })),
+            uses: t.Optional(t.String({ maxLength: 255 })),
+            inputs: t.Optional(
+              t.Record(
+                t.String({ maxLength: 255 }),
+                t.String({ maxLength: 65536 }),
+              ),
+            ),
+            jobFields: t.Optional(
+              t.Record(
+                t.String({ maxLength: 64 }),
+                t.String({ maxLength: 65536 }),
+              ),
+            ),
+            index: t.Optional(t.Integer({ minimum: 0 })),
+            direction: t.Optional(t.Union([t.Literal(-1), t.Literal(1)])),
+            condition: t.Optional(t.String({ maxLength: 65536 })),
+            timeout: t.Optional(t.Integer({ minimum: 1, maximum: 360 })),
+            continueOnError: t.Optional(t.Boolean()),
+            env: t.Optional(
+              t.Record(
+                t.String({ maxLength: 255 }),
+                t.String({ maxLength: 65536 }),
+              ),
+            ),
+          }),
         }),
         detail: { tags: ["Workflow Builder"] },
       },

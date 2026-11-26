@@ -1,3 +1,32 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "../../components/ui";
+@theme inline {
+  --color-input: var(--orb-input);
+  --color-muted: var(--orb-muted-surface);
+  --color-destructive: var(--orb-destructive);
+  --color-secondary: var(--orb-muted-surface);
+  --color-secondary-foreground: var(--orb-foreground);
+  --color-background: var(--orb-background);
+  --color-foreground: var(--orb-foreground);
+  --color-card: var(--orb-card);
+  --color-card-foreground: var(--orb-foreground);
+  --color-border: var(--orb-border);
+  --color-primary: var(--orb-primary);
+  --color-primary-foreground: var(--orb-primary-foreground);
+  --color-muted-foreground: var(--orb-muted);
+  --color-ring: var(--orb-primary);
+}
+:root {
+  --orb-background: #09090b;
+  --orb-foreground: #fafafa;
+  --orb-card: #101014;
+  --orb-border: #29292e;
+  --orb-primary: #7c3aed;
+  --orb-primary-foreground: #fff;
+  --orb-muted: #a1a1aa;
+}
 :root {
   color-scheme: dark;
   font-family:
@@ -351,4 +380,612 @@ nav {
 }
 .lab-ast-list small {
   color: var(--lab-muted);
+}
+
+.workspace-context {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.workspace-dialog {
+  position: fixed;
+  inset: 15% 12% auto;
+  z-index: 50;
+  background: var(--lab-surface, #18181b);
+  border: 1px solid var(--lab-border, #3f3f46);
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 70dvh;
+  overflow: auto;
+  box-shadow: 0 0 0 100vmax #0008;
+}
+.workspace-apps {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.workspace-apps label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.workspace-apps input {
+  width: auto;
+}
+
+.lab-ast-list button.lab-ast-active {
+  background: var(--lab-accent, #7c3aed);
+  color: white;
+  outline: 2px solid currentColor;
+}
+.lab-ast-list button.lab-ast-active small {
+  color: inherit;
+}
+
+.orb-diagnostic-error {
+  text-decoration: underline wavy #f87171;
+  text-decoration-thickness: 2px;
+}
+.orb-diagnostic-warning {
+  text-decoration: underline wavy #fbbf24;
+  text-decoration-thickness: 2px;
+}
+
+.lab-document {
+  display: inline-flex;
+  white-space: nowrap;
+  align-items: center;
+}
+.lab-document button[aria-pressed="true"] {
+  border-color: var(--lab-accent);
+}
+
+.workspace-unified {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace-secondary {
+  display: none;
+}
+@media (min-width: 1200px) {
+  .workspace-unified {
+    grid-template-columns: minmax(260px, 1fr) minmax(0, 3fr);
+    gap: 16px;
+  }
+  .workspace-secondary {
+    display: block;
+    min-width: 0;
+  }
+  .workspace-visible {
+    min-width: 0;
+  }
+}
+
+.orb-graph-canvas {
+  height: 420px;
+  min-width: 0;
+  background: #17131f;
+}
+.orb-graph-job {
+  width: 190px;
+  min-height: 65px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #655080;
+  border-radius: 8px;
+  background: #242033;
+  color: #eee;
+}
+.orb-graph-job small {
+  overflow-wrap: anywhere;
+}
+.orb-graph-active {
+  outline: 3px solid #a78bfa;
+}
+.orb-graph-canvas .react-flow__controls button {
+  color: #222;
+}
+
+.orb-patch-review {
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre;
+}
+.orb-patch-removed {
+  background: #7f1d1d44;
+  color: #fca5a5;
+}
+.orb-patch-added {
+  background: #14532d44;
+  color: #86efac;
+}
+
+:root {
+  --orb-input: #24242c;
+  --orb-muted-surface: #202027;
+  --orb-destructive: #ef4444;
+}
+
+/* Studio presentation, independent from HTTP lab chrome. */
+.orb-studio .lab-layout {
+  display: block;
+}
+.orb-studio .heading {
+  margin-block: 8px;
+}
+.orb-studio .heading h1 {
+  font-size: 1.25rem;
+  margin: 4px 0;
+}
+.orb-studio .heading p {
+  font-size: 0.75rem;
+  margin: 4px 0;
+}
+.orb-studio .lab-address {
+  padding: 8px;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.orb-studio .lab-panel {
+  min-width: 0;
+  padding: 10px;
+}
+.orb-studio .lab-tabs {
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.orb-studio .lab-tabs button {
+  font-size: 0.75rem;
+  padding: 6px 9px;
+  min-height: 32px;
+}
+.orb-studio input[type="checkbox"] {
+  accent-color: var(--orb-primary);
+}
+.orb-studio .cm-editor {
+  background: var(--orb-card);
+}
+.orb-studio .cm-gutters {
+  background: var(--orb-card);
+  border-color: var(--orb-border);
+}
+@media (max-width: 700px) {
+  .orb-studio .lab-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .orb-studio .lab-panel input:not([type="checkbox"]),
+  .orb-studio .lab-panel select {
+    font-size: 16px;
+    padding: 6px 8px;
+  }
+}
+
+/* Compact inspector reset, including Safari native fieldset defaults. */
+.lab .orb-inspector fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.lab .orb-inspector legend {
+  font-size: 0.8rem;
+  color: var(--orb-muted);
+  padding: 0;
+  margin-bottom: 8px;
+}
+.lab .orb-inspector label {
+  font-size: 0.75rem;
+  margin-block: 6px;
+}
+.lab .orb-inspector input[type="checkbox"],
+.lab input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  accent-color: var(--orb-primary);
+}
+.lab .orb-inspector nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+.lab .orb-inspector nav button {
+  min-width: 0;
+  margin: 0;
+}
+.lab .cm-editor,
+.lab .cm-gutters {
+  background-color: #212121;
+}
+.lab .cm-activeLine,
+.lab .cm-activeLineGutter {
+  background-color: #303030;
+}
+.lab .lab-tabs {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.lab .lab-tabs button {
+  min-height: 32px;
+  padding: 6px 9px;
+}
+
+/* Mobile graph and source selection. */
+.orb-studio,
+.orb-studio .lab-layout,
+.orb-studio .lab-workspace,
+.orb-studio .lab-columns,
+.orb-studio .lab-panel,
+.orb-studio .orb-inspector {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.orb-studio .lab-panel {
+  overflow-wrap: anywhere;
+}
+.orb-linked-range {
+  background: #7c3aed55;
+  outline: 1px solid #a78bfa;
+}
+.lab .orb-graph-canvas {
+  height: clamp(240px, 48vh, 500px);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.lab .react-flow__controls-button {
+  padding: 5px;
+  min-height: 28px;
+  width: 28px;
+  height: 28px;
+  background: var(--orb-card);
+  color: var(--orb-foreground);
+  border-color: var(--orb-border);
+}
+.lab .react-flow__controls-button svg {
+  fill: currentColor;
+  max-width: 14px;
+  max-height: 14px;
+}
+.lab .orb-dependencies {
+  border: 0;
+  margin: 8px 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+.lab .orb-dependencies label,
+.lab .lab-tabs label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+}
+.lab .orb-dependencies input {
+  flex: none;
+}
+.lab .orb-graph-detail {
+  min-width: 0;
+}
+.lab .orb-script-panel {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+@media (max-width: 700px) {
+  .orb-studio .lab-columns {
+    display: flex;
+    flex-direction: column;
+  }
+  .orb-studio .lab-panel {
+    width: 100%;
+  }
+  .orb-studio .orb-inspector nav button {
+    width: 100%;
+  }
+}
+
+/* Workspace shell: contained horizontal strips, independent mobile panels. */
+.app > header {
+  gap: 12px;
+  min-width: 0;
+}
+.app > header .brand {
+  white-space: nowrap;
+  flex: none;
+}
+.workspace-context {
+  min-width: 0;
+}
+.workspace-context select {
+  min-width: 0;
+  max-width: 100%;
+}
+.orb-workspace,
+.workspace-visible,
+.workspace-secondary {
+  min-width: 0;
+  max-width: 100%;
+}
+.orb-workspace-nav,
+.orb-pane-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.orb-workspace-nav a {
+  margin-left: auto;
+  color: var(--orb-muted);
+}
+.orb-workspace-nav button,
+.orb-pane-nav button {
+  padding: 6px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.orb-pane-nav button[aria-pressed="true"],
+.orb-workspace-nav button[aria-pressed="true"] {
+  background: var(--orb-primary);
+  color: var(--orb-primary-foreground);
+}
+.orb-studio .orb-documents {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 4px 0;
+  scrollbar-width: thin;
+}
+.orb-documents .lab-document {
+  flex: none;
+}
+.orb-file-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.orb-file-menu > button {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+.orb-file-actions:not([hidden]) {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  background: var(--orb-card);
+  border: 1px solid var(--orb-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #0008;
+}
+.orb-file-actions button {
+  text-align: left;
+  font-size: 12px;
+}
+.orb-studio .heading[hidden] {
+  display: none;
+}
+.orb-studio .lab-address {
+  margin: 4px 0 8px;
+}
+.orb-studio .lab-address > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.orb-pane-nav {
+  display: none;
+}
+@media (max-width: 900px) {
+  .app > header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 8px 10px;
+    gap: 6px 10px;
+  }
+  .app > header .brand {
+    font-size: 18px;
+  }
+  .app > header .workspace-context {
+    display: flex;
+    min-width: 0;
+  }
+  .app > header .workspace-context select {
+    flex: 1;
+    width: 0;
+    font-size: 16px;
+    padding: 4px 6px;
+  }
+  .app > header .workspace-context button {
+    font-size: 11px;
+    padding: 6px;
+    white-space: nowrap;
+  }
+  .app > header nav {
+    grid-column: 1/-1;
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .app > main {
+    padding: 8px;
+    min-width: 0;
+  }
+  .orb-pane-nav {
+    display: flex;
+  }
+  .orb-pane-nav button {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 4px;
+  }
+  .orb-studio .lab-columns {
+    display: block;
+  }
+  .orb-studio [data-pane="source"] .orb-inspect-pane,
+  .orb-studio .lab-columns:not([data-pane="source"]) .orb-source-pane {
+    display: none;
+  }
+  .orb-studio [data-pane="graph"] .orb-builder-pane,
+  .orb-studio [data-pane="inspector"] .orb-flow-pane {
+    display: none;
+  }
+  .orb-studio .lab-panel {
+    padding: 8px;
+  }
+  .orb-studio .orb-source-pane .cm-scroller {
+    max-height: 60dvh;
+  }
+  .orb-studio .orb-source-pane > label {
+    margin: 0;
+  }
+}
+
+/* iOS focus zoom: WebKit uses the computed editable font size, not the
+   surrounding label. Keep all editors and form controls at least 16px. */
+@media (hover: none) and (pointer: coarse) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  [contenteditable="true"],
+  .cm-editor,
+  .cm-editor .cm-scroller,
+  .cm-editor .cm-content {
+    font-size: max(16px, 1em) !important;
+  }
+  /* React Flow owns its own pinch/pan gestures. */
+  .react-flow__pane {
+    touch-action: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .orb-studio .orb-response-heading {
+    display: none;
+  }
+  .orb-studio .orb-response-tabs > button {
+    display: none;
+  }
+  .orb-studio .orb-response-tabs {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .orb-studio .orb-response-tabs label {
+    font-size: 12px;
+  }
+  .orb-studio .orb-inspector {
+    border: 0;
+    padding: 0;
+  }
+  .orb-studio .orb-graph-canvas {
+    height: 48dvh;
+    min-height: 240px;
+  }
+  .orb-studio .react-flow__controls-button svg {
+    fill: var(--orb-foreground) !important;
+  }
+  .orb-studio fieldset {
+    border: 0;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .orb-studio .orb-inspector label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.orb-step-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+.orb-step-list button {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.orb-dependencies {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 4px;
+}
+.orb-dependencies label {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+}
+.orb-linked-range {
+  background: color-mix(
+    in srgb,
+    var(--orb-primary) 45%,
+    transparent
+  ) !important;
+  outline: 1px solid var(--orb-primary);
+}
+
+.orb-script-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.orb-script-panel {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.orb-script-expanded .cm-scroller {
+  min-height: 45dvh !important;
+  max-height: 65dvh !important;
+}
+
+.orb-expression {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 8px 0;
+}
+.orb-expression-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.orb-expression-row input {
+  flex: 1;
+  min-width: 100px;
+}
+.orb-expression select {
+  max-width: 100%;
+  min-width: 0;
+}
+.orb-expression strong {
+  font-size: 12px;
 }

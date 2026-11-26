@@ -61,7 +61,15 @@ export async function accessIdentity(
   const audience = env.CF_ACCESS_AUD;
   if (!issuer || !audience) return null;
 
-  const jwt = request.headers.get("cf-access-jwt-assertion");
+  // Service bindings may omit the Access assertion header. The browser's
+  // application cookie is also a signed JWT and must pass identical checks.
+  const cookie = request.headers
+    .get("cookie")
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("CF_Authorization="))
+    ?.slice("CF_Authorization=".length);
+  const jwt = request.headers.get("cf-access-jwt-assertion") || cookie;
   if (!jwt || jwt.length > 8192) return null;
   const parts = jwt.split(".");
   if (parts.length !== 3) return null;

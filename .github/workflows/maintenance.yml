@@ -1,0 +1,89 @@
+name: 🪐 ORB · Maintenance
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [format, lockfile, update, install, add, uninstall, custom]
+        default: format
+      packages:
+        type: string
+        default: ""
+      custom_command:
+        type: string
+        default: ""
+      commit_changes:
+        type: boolean
+        default: true
+permissions:
+  contents: write
+concurrency:
+  group: orb-maintenance-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  format:
+    if: github.event_name == 'workflow_dispatch' || (github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[format]'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check App configuration
+        env:
+          APP_ID: ${{ vars.ORB_GITHUB_APP_ID || vars.BOT_APP_ID || secrets.BOT_APP_ID }}
+          APP_KEY: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY || secrets.BOT_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APP_ID" || -z "$APP_KEY" ]]; then
+            echo "::error::Configure repository-scoped ORB_GITHUB_APP_ID and ORB_GITHUB_APP_PRIVATE_KEY (or BOT_APP_ID and BOT_PRIVATE_KEY). Production environment credentials are not visible here."
+            exit 1
+          fi
+      - uses: rodkisten/github/app-token@main
+        id: app
+        with:
+          app-id: ${{ vars.ORB_GITHUB_APP_ID || vars.BOT_APP_ID || secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY || secrets.BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ steps.app.outputs.token }}
+      - uses: ./.github/actions/setup
+        with:
+          install: "false"
+      - name: Prepare dependencies
+        env:
+          OPERATION: ${{ inputs.operation || 'format' }}
+          PACKAGES: ${{ inputs.packages }}
+          CUSTOM_COMMAND: ${{ inputs.custom_command }}
+        run: |
+          case "$OPERATION" in
+            format|lockfile) pnpm install --no-frozen-lockfile ;;
+            update) if [[ -n "$PACKAGES" ]]; then read -r -a args <<< "$PACKAGES"; pnpm update "${args[@]}"; else pnpm -r update --latest; fi ;;
+            install) pnpm install --no-frozen-lockfile ;;
+            add|uninstall) read -r -a args <<< "$PACKAGES"; [[ ${#args[@]} -gt 0 ]]; if [[ "$OPERATION" == add ]]; then pnpm add "${args[@]}"; else pnpm remove "${args[@]}"; fi ;;
+            custom) [[ -n "$CUSTOM_COMMAND" ]] ;;
+            *) exit 1 ;;
+          esac
+          if [[ -n "$CUSTOM_COMMAND" ]]; then bash -e -o pipefail -c "$CUSTOM_COMMAND"; fi
+          pnpm install --frozen-lockfile
+      - name: Format
+        if: github.event_name == 'push' || inputs.operation == 'format'
+        run: pnpm format
+      - run: pnpm typecheck
+      - run: pnpm --filter @orb/web build
+      - run: pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir ../../.wrangler-dry-run
+      - name: Commit maintenance changes
+        if: github.event_name == 'push' || inputs.commit_changes
+        env:
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          bot="$APP_SLUG[bot]"
+          id=$(gh api "users/$bot" --jq .id)
+          git config user.name "$bot"
+          git config user.email "$id+$bot@users.noreply.github.com"
+          git add -u
+          git add pnpm-lock.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore: maintain workspace [format] [deploy]'
+          git push

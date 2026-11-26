@@ -1,0 +1,74 @@
+name: 🪐 ORB · Production
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        options: [all, api, web]
+        default: all
+permissions:
+  contents: read
+concurrency:
+  group: orb-production
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+  api:
+    needs: verify
+    if: inputs.target != 'web'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Verify Access, migrate D1, deploy and check health
+        env:
+          FORCE_COLOR: "1"
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCESS_APP_ID: ${{ vars.CF_ACCESS_APP_ID }}
+          CF_ACCESS_AUD: ${{ vars.CF_ACCESS_AUD }}
+          CF_ACCESS_TEAM_DOMAIN: ${{ vars.CF_ACCESS_TEAM_DOMAIN }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          ORB_INGEST_TOKEN: ${{ secrets.ORB_INGEST_TOKEN }}
+          ORB_WEBHOOK_SECRET: ${{ secrets.ORB_WEBHOOK_SECRET }}
+          ORB_CI_READ_TOKEN: ${{ secrets.ORB_CI_READ_TOKEN }}
+          ORB_CI_REPOSITORIES: ${{ vars.ORB_CI_REPOSITORIES }}
+          ORB_GITHUB_APP_ID: ${{ vars.ORB_GITHUB_APP_ID }}
+          ORB_GITHUB_APP_INSTALLATION_ID: ${{ vars.ORB_GITHUB_APP_INSTALLATION_ID }}
+          ORB_GITHUB_APP_PRIVATE_KEY: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY }}
+        run: node scripts/api-deploy.mjs
+
+  web:
+    needs: [verify, api]
+    if: always() && needs.verify.result == 'success' && (needs.api.result == 'success' || needs.api.result == 'skipped') && inputs.target != 'api'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v4
+        with:
+          name: orb-web-${{ github.sha }}
+          path: apps/web/dist
+      - name: Deploy frontend
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm --fail-if-no-match --filter @orb/api exec wrangler deploy --config ../web/wrangler.jsonc
+      - name: Verify domain
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          curl --retry 8 --retry-all-errors --retry-max-time 180 --fail --silent --show-error -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" https://orb.migos.club/ -o /tmp/orb-index.html
+          grep -q 'id="root"' /tmp/orb-index.html

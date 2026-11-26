@@ -1,0 +1,9 @@
+# Workspace Explorer
+
+Global context selector for app, predefined group or all apps. Context drives API Lab repository choices and Workspace Explorer. Tabs automatically fetch real GitHub data through authenticated allowlisted API: workflows, root files, branches, PRs, commits, runs. TanStack Query caches per repository and tab, cancels obsolete requests, exposes partial failures and refresh. Pagination capped at 20 pages of 100. Groups currently static; custom group editing, nested file navigation, branch-aware browsing, URL persistence across router navigation, and CodeMirror remain pending. Context query parameter is updated on selection. No repository mutations.
+
+Custom workspaces: create, edit and delete named groups of apps via global Manage control. Selection and groups persist in localStorage (orb.workspace.v1); incoming context query is accepted on initial load. Added CLI repositories to selectable catalog. No server synchronization yet. Context remains active across router navigation. Custom groups are local to browser; deleting a group does not delete repositories. Native controls remain provisional pending shadcn migration.
+
+File explorer now navigates nested directories per repository, with branch selection, breadcrumbs and workflow links into API Lab. API validates path segments and ref length, retaining repository allowlist and authentication. Branch selector currently loads first 100 branches; GitHub contents API directory limits apply. Generic file content editing is not implemented. Workflow links prepopulate request parameters; Send loads source.
+
+Unified workspace: /workspace is the main entry point, /api remains a compatible entry into the same shell. Explorer opens workflow documents directly in Studio without full page navigation. Mobile switches panels, wide screens show both side by side. Edit groups only edits context groups. Existing IndexedDB drafts remain available. Generic files remain browse-only.

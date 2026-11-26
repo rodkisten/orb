@@ -12,8 +12,8 @@ import {
 import { z } from "zod";
 import { EventExplorer } from "./pages/events";
 import { Connectors } from "./pages/connectors";
-import { ApiWorkbench } from "./pages/api-workbench";
-import { WorkflowStudio } from "./pages/workflow-studio";
+import { WorkspaceProvider, ContextSelector } from "./workspace/context";
+import { WorkspaceStudio } from "./workspace/studio";
 import "./styles.css";
 
 const searchSchema = z.object({
@@ -38,16 +38,16 @@ const root = createRootRoute({
         <Link to="/" className="brand">
           🪐 orb
         </Link>
+        <ContextSelector />
         <nav>
+          <Link to="/workspace" activeProps={{ className: "active" }}>
+            Workspace
+          </Link>
           <Link to="/events" search={{}} activeProps={{ className: "active" }}>
             Events
           </Link>
           <Link to="/connectors" activeProps={{ className: "active" }}>
             Connectors
-          </Link>
-          <Link to="/workflows" search={{ context: "all" }} activeProps={{ className: "active" }}>Workflows</Link>
-          <Link to="/api" activeProps={{ className: "active" }}>
-            API Lab
           </Link>
         </nav>
       </header>
@@ -88,10 +88,14 @@ const connectors = createRoute({
 const api = createRoute({
   getParentRoute: () => root,
   path: "/api",
-  component: ApiWorkbench,
+  component: WorkspaceStudio,
 });
-const workflowStudio = createRoute({ getParentRoute: () => root, path: "/workflows", validateSearch: z.object({ context: z.string().catch("all") }), component: WorkflowStudio });
-const routeTree = root.addChildren([home, events, connectors, api, workflowStudio]);
+const workspace = createRoute({
+  getParentRoute: () => root,
+  path: "/workspace",
+  component: WorkspaceStudio,
+});
+const routeTree = root.addChildren([home, events, connectors, api, workspace]);
 const router = createRouter({ routeTree, defaultPreload: "intent" });
 declare module "@tanstack/react-router" {
   interface Register {
@@ -104,7 +108,9 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <WorkspaceProvider>
+        <RouterProvider router={router} />
+      </WorkspaceProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );
