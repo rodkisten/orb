@@ -93,7 +93,8 @@ export function WorkflowInspector({
           {fields.map(([key, example]) => (
             <label key={key}>
               {key}
-              <StructuredEditor disabled={disabled}
+              <StructuredEditor
+                disabled={disabled}
                 placeholder={example}
                 value={values[key] ?? ""}
                 onChange={(value) => setValues((v) => ({ ...v, [key]: value }))}

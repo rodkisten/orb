@@ -501,4 +501,8 @@ nav {
   color: #86efac;
 }
 
-:root { --orb-input: #24242c; --orb-muted-surface: #202027; --orb-destructive: #ef4444; }
+:root {
+  --orb-input: #24242c;
+  --orb-muted-surface: #202027;
+  --orb-destructive: #ef4444;
+}

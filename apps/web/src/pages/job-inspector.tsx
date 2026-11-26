@@ -92,10 +92,13 @@ export function JobInspector({
             .map((f) => (
               <label key={f.key}>
                 {f.key}
-                <StructuredEditor disabled={disabled || !current}
+                <StructuredEditor
+                  disabled={disabled || !current}
                   placeholder={f.example}
                   value={values[f.key] ?? ""}
-                  onChange={(value) => setValues((v) => ({ ...v, [f.key]: value }))}
+                  onChange={(value) =>
+                    setValues((v) => ({ ...v, [f.key]: value }))
+                  }
                 />
               </label>
             ))}
