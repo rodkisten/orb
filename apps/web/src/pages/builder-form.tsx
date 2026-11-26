@@ -65,7 +65,7 @@ export function BuilderForm({
     if (Array.isArray(data.jobs))
       jobs = data.jobs.map((j: { id: string }) => j.id);
   } catch {}
-  const selected = jobs.includes(job) ? job : (jobs[0] ?? "");
+  const selected = jobs.includes(job) ? job : (jobs.includes(route.job ?? "") ? route.job! : jobs[0] ?? "");
   if (!jobs.length)
     return (
       <p className="text-sm text-muted-foreground">
@@ -211,10 +211,10 @@ export function BuilderForm({
         <WorkflowInspector disabled={disabled} onEdit={onEdit} />
       </div>
       <div hidden={active !== "job"}>
-        <JobInspector body={body} disabled={disabled} onEdit={onEdit} />
+        <JobInspector key={route.job ?? ""} body={body} disabled={disabled} onEdit={onEdit} />
       </div>
       <div hidden={active !== "steps"}>
-        <StepEditor body={body} disabled={disabled} onEdit={onEdit} />
+        <StepEditor key={JSON.stringify([route.job,route.step])} body={body} disabled={disabled} onEdit={onEdit} />
       </div>
     </section>
   );

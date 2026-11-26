@@ -1,3 +1,4 @@
+import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
 import { StructuredEditor } from "./structured-editor";
 import { useState } from "react";
@@ -28,8 +29,9 @@ export function JobInspector({
   disabled: boolean;
   onEdit: (edit: BuilderEdit) => void;
 }) {
-  const [job, setJob] = useState(""),
-    [values, setValues] = useState<Record<string, string>>({}),
+  const route = useRouteState();
+  const job = route.job ?? "";
+  const [values, setValues] = useState<Record<string, string>>({}),
     [error, setError] = useState("");
   let jobs: { id: string; uses?: string }[] = [];
   try {
@@ -38,8 +40,7 @@ export function JobInspector({
   } catch {}
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
   return (
-    <details>
-      <summary>Job Inspector</summary>
+    <section>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -64,7 +65,7 @@ export function JobInspector({
             <select
               value={current?.id ?? ""}
               onChange={(e) => {
-                setJob(e.target.value);
+                updateRoute({job:e.target.value,step:"0"});
                 setValues({});
                 setError("");
               }}
@@ -106,6 +107,6 @@ export function JobInspector({
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>
-    </details>
+    </section>
   );
 }

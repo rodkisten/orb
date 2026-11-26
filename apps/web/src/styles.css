@@ -881,3 +881,5 @@ nav {
     touch-action: none;
   }
 }
+
+@media(max-width:900px){.orb-studio .orb-response-heading{display:none}.orb-studio .orb-response-tabs>button{display:none}.orb-studio .orb-response-tabs{gap:8px;margin-bottom:8px}.orb-studio .orb-response-tabs label{font-size:12px}.orb-studio .orb-inspector{border:0;padding:0}.orb-studio .orb-graph-canvas{height:48dvh;min-height:240px}.orb-studio .react-flow__controls-button svg{fill:var(--orb-foreground)!important}.orb-studio fieldset{border:0;min-width:0;padding:0;margin:0}.orb-studio .orb-inspector label:has(input[type=checkbox]){display:flex;align-items:center;gap:8px}}

@@ -69,3 +69,5 @@ Mobile workspace uses a compact two-row global header, File menu, scrollable doc
 ### Mobile viewport
 
 The standalone Orb web app requests a fixed viewport scale. Touch-device form controls and all CodeMirror editing surfaces use a minimum computed font size of 16px to prevent Safari focus zoom. React Flow retains its own gestures. Safari may override viewport zoom restrictions for accessibility; embedded hosts own their viewport settings.
+
+Mobile graph and AST selection open the corresponding inspector immediately; workflow/job forms no longer require expanding a second accordion. Job selection follows URL state, and step forms reset when selection changes. Graph refits when its container becomes visible or resizes. Script patches remain explicitly reviewed.

@@ -47,8 +47,7 @@ export function WorkflowInspector({
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   return (
-    <details>
-      <summary>Workflow Inspector</summary>
+    <section>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -114,6 +113,6 @@ export function WorkflowInspector({
           {error && <p role="alert">{error}</p>}
         </fieldset>
       </form>
-    </details>
+    </section>
   );
 }
