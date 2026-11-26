@@ -53,7 +53,7 @@ jobs:
     steps:
       - name: 🔑 Authenticate Rod GitHub App
         id: app-token
-        uses: rodkisten/github/app-token@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/app-token@main
         with:
           app-id: ${{ secrets.BOT_APP_ID || vars.BOT_APP_ID || secrets.ORB_GITHUB_APP_ID || vars.ORB_GITHUB_APP_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY || secrets.ORB_GITHUB_APP_PRIVATE_KEY }}
@@ -68,7 +68,7 @@ jobs:
           ref: ${{ inputs.selected-branch || github.ref_name }}
 
       - name: 🟢 Setup Node.js
-        uses: rodkisten/github/setup-node@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/setup-node@main
         with:
           node-version: "24"
           install: "false"
