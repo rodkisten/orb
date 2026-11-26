@@ -1,6 +1,6 @@
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Textarea } from "../../../components/ui/textarea";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 import { WorkflowInspector } from "./workflow-inspector";
 import { JobInspector } from "./job-inspector";
 import { StepEditor } from "./step-editor";

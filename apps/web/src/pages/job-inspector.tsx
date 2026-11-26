@@ -1,4 +1,4 @@
-import { Button } from "../../../components/ui/button";
+import { Button } from "../components/ui/button";
 import { StructuredEditor } from "./structured-editor";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
