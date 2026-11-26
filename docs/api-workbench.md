@@ -20,3 +20,5 @@ Graph handles now accept drag connections to propose needs edits. Self/duplicate
 Job & Step Editor proposes add-job (ubuntu-latest placeholder), duplicate-job and append run/uses step via authenticated /workflows/edit. Plain block collections only; unsupported shapes rejected. Shared patch review and explicit local apply. No remote execution or writes. Full Actions schema validation and deletion pending.
 
 Action Inspector uses cached TanStack queries against existing authenticated GitHub gateway: search public actions, choose tags, resolve manifests, pin SHA, configure inputs and inspect outputs. Inputs are emitted as quoted YAML with fields in the reviewed patch. Required input validation applies when manifest is loaded. State type narrowing and formatter lockfile staging corrected.
+
+Existing step editor proposes removal, adjacent movement, and insertion of missing if, timeout-minutes, continue-on-error and env fields. Existing configuration fields and ambiguous comment boundaries are rejected rather than overwritten. Formatter excludes workflow files until a workflow-write-capable App token is configured.

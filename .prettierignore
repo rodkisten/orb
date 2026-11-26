@@ -3,3 +3,5 @@ pnpm-lock.yaml
 **/node_modules/**
 **/.wrangler/**
 .wrangler-dry-run/
+
+.github/workflows/**

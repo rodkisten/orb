@@ -70,7 +70,7 @@ export function editJobNeeds(source:string,id:string,needs:string[]){
  return {yaml,patches:[patch],...result}
 }
 
-export type BuilderEdit={kind:'add-job'|'duplicate-job'|'add-step';job:string;id?:string;name?:string;run?:string;uses?:string;inputs?:Record<string,string>}
+export type BuilderEdit={kind:'add-job'|'duplicate-job'|'add-step'|'remove-step'|'move-step'|'configure-step';job:string;id?:string;name?:string;run?:string;uses?:string;inputs?:Record<string,string>;index?:number;direction?:number;condition?:string;timeout?:number;continueOnError?:boolean;env?:Record<string,string>}
 export function editWorkflow(source:string,edit:BuilderEdit){
  const doc=parseDocument(source,{version:'1.2',uniqueKeys:true,keepSourceTokens:true})
  if(doc.errors.length)throw Error('Invalid YAML')
@@ -111,6 +111,35 @@ export function editWorkflow(source:string,edit:BuilderEdit){
   const start=source.lastIndexOf('\n',firstStep.range[0]-1)+1
   const prefix=source.slice(start,firstStep.range[0]).match(/^( *)- +$/)
   if(!prefix)throw Error('Unsupported step indentation')
+  if(edit.kind==='remove-step'||edit.kind==='move-step'||edit.kind==='configure-step'){
+   const index=edit.index??-1
+   const item=steps.items[index]
+   if(!isMap(item)||!item.range||!Number.isInteger(index))throw Error('Invalid step')
+   const startOf=(i:number)=>{const n=steps.items[i];if(!isMap(n)||!n.range)throw Error('Unsupported step');return source.lastIndexOf('\n',n.range[0]-1)+1}
+   const endOf=(i:number)=>{const n=steps.items[i];if(!isMap(n)||!n.range)throw Error('Unsupported step');const end=n.range[1];if(source[end-1]==='\n')return end;const next=source.indexOf('\n',end);return next<0?source.length:next+1}
+   const from=startOf(index),to=endOf(index)
+   if(edit.kind==='remove-step'){if(steps.items.length===1)throw Error('Cannot remove last step');patch={from,to,insert:''}}
+   else if(edit.kind==='move-step'){
+    const other=index+(edit.direction===-1?-1:1)
+    if(other<0||other>=steps.items.length)throw Error('Step already at boundary')
+    const a=Math.min(index,other),b=Math.max(index,other),left=startOf(a),middle=startOf(b),right=endOf(b)
+    if(endOf(a)!==middle)throw Error('Comments between steps require manual editing')
+    const first=source.slice(left,middle),second=source.slice(middle,right)
+    patch={from:left,to:right,insert:second+(second.endsWith('\n')?'':newline)+first}
+   }else{
+    const fields:Record<string,unknown>={}
+    if(edit.condition!==undefined)fields.if=edit.condition
+    if(edit.timeout!==undefined)fields['timeout-minutes']=edit.timeout
+    if(edit.continueOnError!==undefined)fields['continue-on-error']=edit.continueOnError
+    if(edit.env!==undefined)fields.env=edit.env
+    if(!Object.keys(fields).length)throw Error('No configuration supplied')
+    if(Object.keys(fields).some(k=>item.has(k)))throw Error('Existing fields require manual editing')
+    patch={from:to,to,insert:(source[to-1]==='\n'?'':newline)+Object.entries(fields).map(([k,v])=>prefix[1]+'  '+k+': '+JSON.stringify(v)).join(newline)+newline}
+   }
+   const yaml=applySourcePatches(source,[patch]);const result=parseWorkflow(yaml)
+   if(!result.valid)throw Error('Edit would produce invalid workflow')
+   return {yaml,patches:[patch],...result}
+  }
   if(Boolean(edit.run)===Boolean(edit.uses))throw Error('Choose run or uses')
   const line=edit.run?'run: '+JSON.stringify(edit.run):'uses: '+JSON.stringify(edit.uses)
   const fields=Object.entries(edit.inputs??{});if(fields.length&&!edit.uses)throw Error('Inputs require an action');patch=insertion(steps,[prefix[1]+'- '+(edit.name?'name: '+JSON.stringify(edit.name):line),...(edit.name?[prefix[1]+'  '+line]:[]),...(fields.length?[prefix[1]+'  with:',...fields.map(([k,v])=>prefix[1]+'    '+JSON.stringify(k)+': '+JSON.stringify(v))]:[])])
