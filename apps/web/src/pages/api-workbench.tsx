@@ -1,3 +1,4 @@
+import type {OpenWorkflow} from '../workspace/explorer'
 import {useRef,useState,useEffect} from 'react'
 import {Send,Copy,Square,FolderGit2} from 'lucide-react'
 import {useWorkspace} from '../workspace/context'
@@ -9,12 +10,12 @@ const operations=['health','github/repositories','branches','pulls','commits','a
 type Operation=typeof operations[number]
 type Result={status:number;ms:number;bytes:number;body:string;headers:string}
 const parserOps=['parse','validate','inspect','transform']
-export function ApiWorkbench(){const {repos}=useWorkspace();return <Lab key={repos.join(',')} repos={repos}/>}
-function Lab({repos}:{repos:string[]}){
+export function ApiWorkbench({file}:{file?:OpenWorkflow}={}){const {repos}=useWorkspace();return <Lab key={repos.join(',')+JSON.stringify(file??null)} repos={repos} file={file}/>}
+function Lab({repos,file}:{repos:string[];file?:OpenWorkflow}){
  const [operation,setOperation]=useState<Operation>('workflow-source')
- const [repo,setRepo]=useState(()=>{const r=new URLSearchParams(location.search).get('repo');return r&&repos.includes(r)?r:repos[0]??''})
- const [ref,setRef]=useState(()=>new URLSearchParams(location.search).get('ref')??'main')
- const [path,setPath]=useState(()=>new URLSearchParams(location.search).get('path')??'.github/workflows/api-verify.yml')
+ const [repo,setRepo]=useState(()=>{const r=file?.repo??new URLSearchParams(location.search).get('repo');return r&&repos.includes(r)?r:repos[0]??''})
+ const [ref,setRef]=useState(()=>file?.ref??new URLSearchParams(location.search).get('ref')??'main')
+ const [path,setPath]=useState(()=>file?.path??new URLSearchParams(location.search).get('path')??'.github/workflows/api-verify.yml')
  const [yaml,setYaml]=useState('')
  const drafts=useDrafts(repos)
  const [opened,setOpened]=useState<Draft|null>(null)
@@ -59,7 +60,7 @@ function Lab({repos}:{repos:string[]}){
   }catch(e){setError(e instanceof Error?e.message:String(e))}
   finally{active.current=null;setBusy(false)}
  }
- useEffect(()=>{if(!autoLoaded.current&&new URLSearchParams(location.search).has('path')){autoLoaded.current=true;void send()}},[])
+ useEffect(()=>{if(!autoLoaded.current&&(file||new URLSearchParams(location.search).has('path'))){autoLoaded.current=true;void send()}},[])
  return <section className="lab"><div className="heading"><div><p className="eyebrow">ORB / DEVELOPER TOOLS</p><h1>API Lab</h1><p>Real requests. Real repositories. No mock responses.</p></div></div>
  <div className="lab-tabs" aria-label="Open documents">{drafts.items.map(d=><span key={d.id} className="lab-document"><button disabled={busy} aria-pressed={opened?.id===d.id} onClick={()=>switchDocument(d)} title={d.repo+' @ '+d.ref+' / '+d.path}>{d.repo.split('/').at(-1)} / {d.path.split('/').at(-1)}{d.yaml!==d.original?' •':''}</button><button disabled={busy} aria-label={'Close '+d.path} onClick={()=>{if(d.yaml!==d.original&&!window.confirm('Discard local changes and close this draft?'))return;void drafts.remove(d.id).then(()=>{if(opened?.id===d.id)detach()}).catch(e=>setDraftError(String(e)))}}>×</button></span>)}</div>{(draftError||drafts.error)&&<p role="alert">{draftError||drafts.error}</p>}{opened&&<small>{opened.repo} @ {opened.ref} · {opened.yaml===opened.original?'Original':'Local draft'}</small>}<div className="lab-layout"><aside className="lab-collection"><h3><FolderGit2 size={15}/> Operations</h3>{operations.map(op=><button key={op} disabled={busy} className={op===operation?'lab-selected':''} onClick={()=>setOperation(op)}><small>{parserOps.includes(op)?'POST':'GET'}</small>{op}</button>)}</aside>
  <div className="lab-workspace"><div className="lab-address"><code>{post?'POST':'GET'}</code><code>{endpoint}</code><button disabled={busy} onClick={send}><Send size={14}/> Send</button>{busy&&<button onClick={()=>active.current?.abort()} aria-label="Cancel"><Square size={14}/></button>}</div>

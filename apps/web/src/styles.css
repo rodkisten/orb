@@ -11,3 +11,5 @@
 .orb-diagnostic-error{text-decoration:underline wavy #f87171;text-decoration-thickness:2px}.orb-diagnostic-warning{text-decoration:underline wavy #fbbf24;text-decoration-thickness:2px}
 
 .lab-document{display:inline-flex;white-space:nowrap;align-items:center}.lab-document button[aria-pressed=true]{border-color:var(--lab-accent)}
+
+.workspace-unified{display:grid;grid-template-columns:minmax(0,1fr)}.workspace-secondary{display:none}@media(min-width:1200px){.workspace-unified{grid-template-columns:minmax(260px,1fr) minmax(0,3fr);gap:16px}.workspace-secondary{display:block;min-width:0}.workspace-visible{min-width:0}}
