@@ -59,6 +59,7 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY || secrets.ORB_GITHUB_APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          permission-workflows: write
 
       - name: 📥 Checkout repository
         uses: actions/checkout@v6
