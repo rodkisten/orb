@@ -65,7 +65,7 @@ export function JobInspector({
             <select
               value={current?.id ?? ""}
               onChange={(e) => {
-                updateRoute({job:e.target.value,step:"0"});
+                updateRoute({ job: e.target.value, step: "0" });
                 setValues({});
                 setError("");
               }}

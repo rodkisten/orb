@@ -67,7 +67,10 @@ export function WorkflowGraph({
   onEditNeeds: (job: string, needs: string[]) => void;
 }) {
   const canvas = useRef<HTMLDivElement>(null);
-  const [instance,setInstance] = useState<ReactFlowInstance<JobNode,Edge> | null>(null);
+  const [instance, setInstance] = useState<ReactFlowInstance<
+    JobNode,
+    Edge
+  > | null>(null);
   const model = useMemo(() => read(body), [body]);
   const [selected, setSelected] = useState<string | null>(null);
   const active =
@@ -124,8 +127,26 @@ export function WorkflowGraph({
     );
     return { nodes, edges };
   }, [model, active]);
-  const topology = JSON.stringify(nodes.map(n=>[n.id,n.position]));
-  useEffect(()=>{const el=canvas.current;if(!el||!instance)return;let frame=0;const fit=()=>{cancelAnimationFrame(frame);if(el.clientWidth>0&&el.clientHeight>0)frame=requestAnimationFrame(()=>{void instance.fitView({padding:0.15,maxZoom:1});});};const observer=new ResizeObserver(fit);observer.observe(el);fit();return()=>{observer.disconnect();cancelAnimationFrame(frame);};},[instance,topology]);
+  const topology = JSON.stringify(nodes.map((n) => [n.id, n.position]));
+  useEffect(() => {
+    const el = canvas.current;
+    if (!el || !instance) return;
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      if (el.clientWidth > 0 && el.clientHeight > 0)
+        frame = requestAnimationFrame(() => {
+          void instance.fitView({ padding: 0.15, maxZoom: 1 });
+        });
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    fit();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [instance, topology]);
   function select(path: Path) {
     if (stale) return;
     const n = model.ranges.find(

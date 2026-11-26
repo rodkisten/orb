@@ -627,27 +627,30 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                     />
                   </div>
                   <div className="orb-flow-pane">
-                    {(!studio || pane === "graph" || pane === "source") && <WorkflowGraph
-                      onEditNeeds={editNeeds}
-                      body={astBody}
-                      stale={astStale || editBusy || proposal !== null}
-                      cursor={sync ? cursor : null}
-                      onSelect={(path, from, to) => {
-                        setNodePath(JSON.stringify(path));
-                        setCursor(from);
-                        if (path[0] === "jobs" && studio) setPane("inspector");
-                        if (path[0] === "jobs" && typeof path[1] === "string")
-                          updateRoute({
-                            job: path[1],
-                            step:
-                              typeof path[3] === "number"
-                                ? String(path[3])
-                                : "0",
-                            inspector: path[2] === "steps" ? "steps" : "job",
-                          });
-                        if (sync) editor.current?.select(from, to);
-                      }}
-                    />}
+                    {(!studio || pane === "graph" || pane === "source") && (
+                      <WorkflowGraph
+                        onEditNeeds={editNeeds}
+                        body={astBody}
+                        stale={astStale || editBusy || proposal !== null}
+                        cursor={sync ? cursor : null}
+                        onSelect={(path, from, to) => {
+                          setNodePath(JSON.stringify(path));
+                          setCursor(from);
+                          if (path[0] === "jobs" && studio)
+                            setPane("inspector");
+                          if (path[0] === "jobs" && typeof path[1] === "string")
+                            updateRoute({
+                              job: path[1],
+                              step:
+                                typeof path[3] === "number"
+                                  ? String(path[3])
+                                  : "0",
+                              inspector: path[2] === "steps" ? "steps" : "job",
+                            });
+                          if (sync) editor.current?.select(from, to);
+                        }}
+                      />
+                    )}
                   </div>
                 </>
               ) : tab === "ast" ? (
@@ -659,8 +662,22 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                     setNodePath(JSON.stringify(path));
                     setCursor(from);
                     if (studio) {
-                      updateRoute({inspector:path[0]==="jobs" && typeof path[1]==="string" ? (path[2]==="steps" && typeof path[3]==="number" ? "steps":"job"):"workflow",job:typeof path[1]==="string" && path[0]==="jobs"?path[1]:null,step:typeof path[3]==="number"?String(path[3]):"0"});
-                      setTab("graph");setPane("inspector");
+                      updateRoute({
+                        inspector:
+                          path[0] === "jobs" && typeof path[1] === "string"
+                            ? path[2] === "steps" && typeof path[3] === "number"
+                              ? "steps"
+                              : "job"
+                            : "workflow",
+                        job:
+                          typeof path[1] === "string" && path[0] === "jobs"
+                            ? path[1]
+                            : null,
+                        step:
+                          typeof path[3] === "number" ? String(path[3]) : "0",
+                      });
+                      setTab("graph");
+                      setPane("inspector");
                     }
                     if (sync) editor.current?.select(from, to);
                   }}
