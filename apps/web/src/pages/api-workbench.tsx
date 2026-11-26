@@ -1,3 +1,4 @@
+import { PanelNavigation } from "../components/shared/panel-navigation";
 import { editWorkflow, editJobNeeds, parseWorkflow } from "@orb/workflow-core";
 import type { OpenWorkflow } from "../workspace/explorer";
 import { useRef, useState, useEffect } from "react";
@@ -430,25 +431,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
             )}
           </div>
           {studio && (
-            <nav className="orb-pane-nav" aria-label="Studio panels">
-              {(["source", "graph", "ast", "inspector"] as const).map((p) => (
-                <button
-                  key={p}
-                  aria-pressed={pane === p}
-                  onClick={() => {
-                    setPane(p);
-                  }}
-                >
-                  {p === "source"
-                    ? "YAML"
-                    : p === "ast"
-                      ? "AST"
-                      : p === "graph"
-                        ? "Graph"
-                        : "Inspector"}
-                </button>
-              ))}
-            </nav>
+            <div className="orb-pane-nav"><PanelNavigation label="Studio panels" items={[{id:"source",label:"YAML"},{id:"graph",label:"Graph"},{id:"ast",label:"AST"},{id:"inspector",label:"Inspector"}]} value={pane} onChange={id=>{if(id==="source"||id==="graph"||id==="ast"||id==="inspector")setPane(id);}}/></div>
           )}
           <div className="lab-columns" data-pane={studio ? pane : undefined}>
             <section className="lab-panel orb-source-pane">
