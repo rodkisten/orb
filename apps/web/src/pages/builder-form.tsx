@@ -50,7 +50,8 @@ export function BuilderForm({
   const route = useRouteState();
   const tabs = [
     { id: "workflow", label: "Workflow", Icon: Workflow },
-    { id: "dispatch", label: "Dispatch", Icon: Play },
+    { id: "dispatch", label: "Inputs", Icon: Play },
+    ...(dispatchTarget ? [{id:"runner",label:"Run",Icon:Play}] : []),
     { id: "job", label: "Job", Icon: Box },
     { id: "steps", label: "Steps", Icon: ListOrdered },
     { id: "add", label: "Add / Actions", Icon: Plus },
@@ -92,7 +93,7 @@ export function BuilderForm({
       </div>
       <nav
         aria-label="Inspector sections"
-        className="mb-3 grid grid-cols-2 gap-1 sm:grid-cols-4"
+        className="mb-3 flex flex-wrap gap-1"
       >
         {tabs.map(({ id, label, Icon }) => (
           <Button
@@ -225,7 +226,7 @@ export function BuilderForm({
           onEdit={onEdit}
         />
       )}
-      {active === "dispatch" && dispatchTarget && (
+      {active === "runner" && dispatchTarget && (
         <DispatchRunner
           key={JSON.stringify(dispatchTarget)}
           target={dispatchTarget}
