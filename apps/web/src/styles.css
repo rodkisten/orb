@@ -9,3 +9,5 @@
 .lab-ast-list button.lab-ast-active{background:var(--lab-accent,#7c3aed);color:white;outline:2px solid currentColor}.lab-ast-list button.lab-ast-active small{color:inherit}
 
 .orb-diagnostic-error{text-decoration:underline wavy #f87171;text-decoration-thickness:2px}.orb-diagnostic-warning{text-decoration:underline wavy #fbbf24;text-decoration-thickness:2px}
+
+.lab-document{display:inline-flex;white-space:nowrap;align-items:center}.lab-document button[aria-pressed=true]{border-color:var(--lab-accent)}
