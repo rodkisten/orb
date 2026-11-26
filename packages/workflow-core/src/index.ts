@@ -191,10 +191,20 @@ export function editWorkflow(source: string, edit: BuilderEdit) {
   if (doc.errors.length) throw Error("Invalid YAML");
   if (edit.kind === "configure-workflow") {
     const root = doc.contents;
-    if (!isMap(root) || root.flow || root.anchor || root.tag) throw Error("Expected plain workflow mapping");
-    const allowed = new Set(["name", "run-name", "on", "permissions", "concurrency", "env", "defaults"]);
+    if (!isMap(root) || root.flow || root.anchor || root.tag)
+      throw Error("Expected plain workflow mapping");
+    const allowed = new Set([
+      "name",
+      "run-name",
+      "on",
+      "permissions",
+      "concurrency",
+      "env",
+      "defaults",
+    ]);
     const entries = Object.entries(edit.jobFields ?? {});
-    if (!entries.length || entries.some(([key]) => !allowed.has(key))) throw Error("Invalid workflow fields");
+    if (!entries.length || entries.some(([key]) => !allowed.has(key)))
+      throw Error("Invalid workflow fields");
     const patches: SourcePatch[] = [];
     const added: string[] = [];
     for (const [key, raw] of entries) {
@@ -202,22 +212,37 @@ export function editWorkflow(source: string, edit: BuilderEdit) {
       if (value === null) throw Error("Null workflow fields are not supported");
       const existing = root.get(key, true);
       const insert = JSON.stringify(value);
-      if (existing === undefined) { added.push(key + ": " + insert); continue; }
-      if (!isScalar(existing) || !existing.range || existing.anchor || existing.tag || existing.comment || existing.commentBefore || existing.type === "BLOCK_LITERAL" || existing.type === "BLOCK_FOLDED") throw Error("Complex existing field requires YAML editing: " + key);
-      patches.push({from: existing.range[0], to: existing.range[1], insert});
+      if (existing === undefined) {
+        added.push(key + ": " + insert);
+        continue;
+      }
+      if (
+        !isScalar(existing) ||
+        !existing.range ||
+        existing.anchor ||
+        existing.tag ||
+        existing.comment ||
+        existing.commentBefore ||
+        existing.type === "BLOCK_LITERAL" ||
+        existing.type === "BLOCK_FOLDED"
+      )
+        throw Error("Complex existing field requires YAML editing: " + key);
+      patches.push({ from: existing.range[0], to: existing.range[1], insert });
     }
     if (added.length) {
       const first = root.items[0]?.key;
-      if (!isScalar(first) || !first.range) throw Error("Missing workflow insertion point");
+      if (!isScalar(first) || !first.range)
+        throw Error("Missing workflow insertion point");
       const from = first.range[0];
-      if (source.slice(source.lastIndexOf("\n", from - 1) + 1, from) !== "") throw Error("Unsupported root indentation");
+      if (source.slice(source.lastIndexOf("\n", from - 1) + 1, from) !== "")
+        throw Error("Unsupported root indentation");
       const newline = source.includes("\r\n") ? "\r\n" : "\n";
-      patches.push({from, to: from, insert: added.join(newline) + newline});
+      patches.push({ from, to: from, insert: added.join(newline) + newline });
     }
     const yaml = applySourcePatches(source, patches);
     const result = parseWorkflow(yaml);
     if (!result.valid) throw Error("Invalid workflow after edit");
-    return {yaml, patches, ...result};
+    return { yaml, patches, ...result };
   }
   const jobs = doc.get("jobs", true);
   if (!isMap(jobs) || jobs.flow || jobs.anchor || jobs.tag)
