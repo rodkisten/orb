@@ -21,13 +21,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: ./.github/actions/setup
         with:
-          version: 12.22.0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+          install: 'false'
 
       - name: Verify release build
         run: |

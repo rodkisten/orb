@@ -27,6 +27,15 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[format]'))
     runs-on: ubuntu-latest
     steps:
+      - name: Check App configuration
+        env:
+          APP_ID: ${{ vars.ORB_GITHUB_APP_ID || vars.BOT_APP_ID || secrets.BOT_APP_ID }}
+          APP_KEY: ${{ secrets.ORB_GITHUB_APP_PRIVATE_KEY || secrets.BOT_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APP_ID" || -z "$APP_KEY" ]]; then
+            echo "::error::Configure repository-scoped ORB_GITHUB_APP_ID and ORB_GITHUB_APP_PRIVATE_KEY (or BOT_APP_ID and BOT_PRIVATE_KEY). Production environment credentials are not visible here."
+            exit 1
+          fi
       - uses: rodkisten/github/app-token@main
         id: app
         with:
@@ -38,12 +47,9 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           token: ${{ steps.app.outputs.token }}
-      - uses: pnpm/action-setup@v4
+      - uses: ./.github/actions/setup
         with:
-          version: 12.22.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+          install: 'false'
       - name: Prepare dependencies
         env:
           OPERATION: ${{ inputs.operation || 'format' }}
