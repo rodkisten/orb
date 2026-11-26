@@ -13,3 +13,5 @@ SchemaForm renders controlled string, number, boolean, choice and environment fi
 PatchReview is now shared, with configurable title and bounded scroll. It retains the existing single changed-range algorithm, not a full multi-hunk diff. Studio mobile panel navigation uses PanelNavigation; URL state remains in the feature adapter. WorkbenchLayout extraction is deferred until desktop/mobile pane CSS is audited.
 
 SessionAlert and ExecutionTracker now separate presentation from session polling and GitHub run queries. The adapters retain authentication and exact run links. WorkbenchLayout remains pending because responsive CSS selectors couple source and inspector visibility to the existing DOM.
+
+WorkbenchLayout now provides a generic responsive grid and active-pane data attribute. Orb retains its legacy visibility CSS through className; full migration of those rules is pending. The UAI repository was found empty, so publication requires initial registry scaffolding. Do not claim registry installation is available yet.

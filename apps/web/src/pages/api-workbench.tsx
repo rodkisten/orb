@@ -1,3 +1,4 @@
+import { WorkbenchLayout } from "../components/shared/workbench-layout";
 import { PanelNavigation } from "../components/shared/panel-navigation";
 import { editWorkflow, editJobNeeds, parseWorkflow } from "@orb/workflow-core";
 import type { OpenWorkflow } from "../workspace/explorer";
@@ -453,7 +454,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               />
             </div>
           )}
-          <div className="lab-columns" data-pane={studio ? pane : undefined}>
+          <WorkbenchLayout className="lab-columns" activePane={studio ? pane : undefined}>
             <section className="lab-panel orb-source-pane">
               <h3>{studio ? "Source" : "Request"}</h3>
               {!local && (!studio || !opened) && (
@@ -733,7 +734,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                 </pre>
               )}
             </section>
-          </div>
+          </WorkbenchLayout>
         </div>
       </div>
     </section>
