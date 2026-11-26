@@ -70,7 +70,7 @@ export function editJobNeeds(source:string,id:string,needs:string[]){
  return {yaml,patches:[patch],...result}
 }
 
-export type BuilderEdit={kind:'add-job'|'duplicate-job'|'add-step';job:string;id?:string;name?:string;run?:string;uses?:string}
+export type BuilderEdit={kind:'add-job'|'duplicate-job'|'add-step';job:string;id?:string;name?:string;run?:string;uses?:string;inputs?:Record<string,string>}
 export function editWorkflow(source:string,edit:BuilderEdit){
  const doc=parseDocument(source,{version:'1.2',uniqueKeys:true,keepSourceTokens:true})
  if(doc.errors.length)throw Error('Invalid YAML')
@@ -113,7 +113,7 @@ export function editWorkflow(source:string,edit:BuilderEdit){
   if(!prefix)throw Error('Unsupported step indentation')
   if(Boolean(edit.run)===Boolean(edit.uses))throw Error('Choose run or uses')
   const line=edit.run?'run: '+JSON.stringify(edit.run):'uses: '+JSON.stringify(edit.uses)
-  patch=insertion(steps,[prefix[1]+'- '+(edit.name?'name: '+JSON.stringify(edit.name):line),...(edit.name?[prefix[1]+'  '+line]:[])])
+  const fields=Object.entries(edit.inputs??{});if(fields.length&&!edit.uses)throw Error('Inputs require an action');patch=insertion(steps,[prefix[1]+'- '+(edit.name?'name: '+JSON.stringify(edit.name):line),...(edit.name?[prefix[1]+'  '+line]:[]),...(fields.length?[prefix[1]+'  with:',...fields.map(([k,v])=>prefix[1]+'    '+JSON.stringify(k)+': '+JSON.stringify(v))]:[])])
  }
  const yaml=applySourcePatches(source,[patch])
  const result=parseWorkflow(yaml)

@@ -19,7 +19,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}){
  const [state,setState]=useState(restore)
  const route=useRouteState()
  useEffect(()=>{let alive=true;void sessionDB.sessions.get('workspace').then(row=>{if(alive&&row){const saved=row.value as Stored;setState(old=>({...old,...saved,selection:route.context??saved.selection}))}}).catch(()=>{});return()=>{alive=false}},[])
- useEffect(()=>{if(route.context&& (groups[route.context]||apps.includes(route.context)||state.custom.some(g=>g.id===route.context)))setState(old=>old.selection===route.context?old:{...old,selection:route.context})},[route.context,state.custom])
+ useEffect(()=>{if(route.context&& (groups[route.context]||apps.includes(route.context)||state.custom.some(g=>g.id===route.context)))setState(old=>old.selection===route.context?old:{...old,selection:route.context??old.selection})},[route.context,state.custom])
  function update(next:Stored){setState(next);updateRoute({context:next.selection,repo:null,path:null,ref:null});void sessionDB.sessions.put({id:'workspace',value:next}).catch(console.error)}
  function choose(v:string){update({...state,selection:v})}
  function save(name:string,repos:string[],id?:string){
