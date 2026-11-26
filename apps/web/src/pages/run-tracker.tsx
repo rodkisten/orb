@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Activity } from "lucide-react";
+import { ExecutionTracker } from "../components/shared/execution-tracker";
 type Run = {
   status: string;
   conclusion: string | null;
@@ -54,50 +54,6 @@ export function RunTracker({ repo, id }: { repo: string; id: number }) {
     retry: false,
   });
   const data = run.data?.data;
-  return (
-    <section className="orb-expression rounded-xl border border-border p-3">
-      <h3>
-        <Activity size={16} /> Run #{id}
-      </h3>
-      <strong>{data?.name ?? "Waiting for GitHub"}</strong>
-      <p>{data?.conclusion ?? data?.status ?? "Loading…"}</p>
-      {run.error && <p role="alert">{String(run.error)}</p>}
-      <a
-        href={"https://github.com/" + repo + "/actions/runs/" + id}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Open exact run logs
-      </a>
-      {jobs.error && <p role="alert">{String(jobs.error)}</p>}
-      {jobs.data?.data.jobs.map((j) => (
-        <details key={j.id} className="rounded border border-border p-2">
-          <summary>
-            {j.name} · {j.conclusion ?? j.status}
-          </summary>
-          {j.steps?.map((s) => (
-            <p key={s.number}>
-              {s.number}. {s.name} · {s.conclusion ?? s.status}
-            </p>
-          ))}
-          <a
-            href={
-              "https://github.com/" +
-              repo +
-              "/actions/runs/" +
-              id +
-              "/job/" +
-              j.id
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            Job logs
-          </a>
-        </details>
-      ))}
-      {jobs.data?.hasNext && <small>First 100 jobs shown.</small>}
-      <small>Refreshes every 10 seconds while active.</small>
-    </section>
-  );
+  const url="https://github.com/"+repo+"/actions/runs/"+id;
+  return <ExecutionTracker title={"Run #"+id} name={data?.name??"Waiting for GitHub"} status={data?.conclusion??data?.status??"Loading…"} url={url} errors={[run.error,jobs.error].filter(Boolean).map(String)} jobs={jobs.data?.data.jobs.map(j=>({id:String(j.id),name:j.name,status:j.conclusion??j.status,url:url+"/job/"+j.id,steps:j.steps?.map(s=>({id:String(s.number),name:s.number+". "+s.name,status:s.conclusion??s.status}))}))} note={(jobs.data?.hasNext?"First 100 jobs shown. ":"")+"Refreshes every 10 seconds while active."}/>;
 }

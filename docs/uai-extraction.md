@@ -11,3 +11,5 @@ CodeEditor now owns the existing CodeMirror lifecycle; StructuredEditor adapts G
 SchemaForm renders controlled string, number, boolean, choice and environment fields with accessible labels and optional externally supplied validation errors. DispatchEditor uses it for the run-form preview; actual dispatch validation remains in the runner. ConditionField and EnvField now use ExpressionInput. KeyValueEditor integration is deferred until the env serialization adapter preserves incomplete and malformed rows without data loss.
 
 PatchReview is now shared, with configurable title and bounded scroll. It retains the existing single changed-range algorithm, not a full multi-hunk diff. Studio mobile panel navigation uses PanelNavigation; URL state remains in the feature adapter. WorkbenchLayout extraction is deferred until desktop/mobile pane CSS is audited.
+
+SessionAlert and ExecutionTracker now separate presentation from session polling and GitHub run queries. The adapters retain authentication and exact run links. WorkbenchLayout remains pending because responsive CSS selectors couple source and inspector visibility to the existing DOM.
