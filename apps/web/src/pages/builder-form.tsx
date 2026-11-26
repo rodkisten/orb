@@ -1,3 +1,4 @@
+import { JobInspector } from "./job-inspector";
 import { StepEditor } from "./step-editor";
 import { ActionInspector } from "./action-inspector";
 import { useState } from "react";
@@ -8,7 +9,8 @@ export type BuilderEdit = {
     | "add-step"
     | "remove-step"
     | "move-step"
-    | "configure-step";
+    | "configure-step"
+    | "configure-job";
   job: string;
   id?: string;
   name?: string;
@@ -21,6 +23,7 @@ export type BuilderEdit = {
   timeout?: number;
   continueOnError?: boolean;
   env?: Record<string, string>;
+  jobFields?: Record<string, string>;
 };
 export function BuilderForm({
   body,
@@ -137,6 +140,7 @@ export function BuilderForm({
           <button type="submit">Review patch</button>
         </fieldset>
       </form>
+      <JobInspector body={body} disabled={disabled} onEdit={onEdit} />
       <StepEditor body={body} disabled={disabled} onEdit={onEdit} />
     </details>
   );

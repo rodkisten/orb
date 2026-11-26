@@ -25,3 +25,5 @@ Action Inspector uses cached TanStack queries against existing authenticated Git
 Existing step editor proposes removal, adjacent movement, and insertion of missing if, timeout-minutes, continue-on-error and env fields. Existing configuration fields and ambiguous comment boundaries are rejected rather than overwritten. Formatter excludes workflow files until a workflow-write-capable App token is configured.
 
 Local source tools support new YAML, pasted text, .yml/.yaml import up to 256 KiB and download. Local drafts use @local namespace and UUIDs in Dexie, available across repository contexts. The draft query parameter is device-local, not a shareable snapshot. Parsing and edits still use authenticated API. External CodeMirror updates do not trigger draft writes.
+
+Job Inspector supports reviewed JSON-valued field patches for runner, strategy/matrix, permissions, concurrency, outputs, conditions, timeout, environment and existing reusable jobs. Missing fields and simple existing scalars are supported; complex existing YAML collections remain manual to preserve comments and anchors. No conversion between executable and reusable jobs.
