@@ -76,7 +76,7 @@ export function StepEditor({
         <select
           value={current?.id ?? ""}
           onChange={(e) => {
-            updateRoute({job:e.target.value,step:"0"});
+            updateRoute({ job: e.target.value, step: "0" });
           }}
         >
           {jobs.map((j) => (
@@ -88,7 +88,7 @@ export function StepEditor({
         Step
         <select
           value={step?.index ?? 0}
-          onChange={(e) => updateRoute({step:e.target.value})}
+          onChange={(e) => updateRoute({ step: e.target.value })}
         >
           {current?.steps.map((s) => (
             <option key={s.index} value={s.index}>
@@ -97,7 +97,22 @@ export function StepEditor({
           ))}
         </select>
       </label>
-      {current && step && typeof step.run === "string" && <ScriptPanel key={JSON.stringify([current.id,step.index,step.run])} value={step.run} shell={step.shell ?? "default shell"} disabled={disabled} onSave={run=>onEdit({kind:"configure-step",job:current.id,index:step.index,run})}/>}
+      {current && step && typeof step.run === "string" && (
+        <ScriptPanel
+          key={JSON.stringify([current.id, step.index, step.run])}
+          value={step.run}
+          shell={step.shell ?? "default shell"}
+          disabled={disabled}
+          onSave={(run) =>
+            onEdit({
+              kind: "configure-step",
+              job: current.id,
+              index: step.index,
+              run,
+            })
+          }
+        />
+      )}
       <Button
         type="button"
         disabled={!step || step.index === 0}
@@ -156,7 +171,34 @@ export function StepEditor({
   );
 }
 
-function ScriptPanel({value,shell,disabled,onSave}:{value:string;shell:string;disabled:boolean;onSave:(value:string)=>void}) {
- const [draft,setDraft]=useState(value);
- return <section className="orb-script-panel"><h3>Script · {shell}</h3><StructuredEditor script value={draft} onChange={setDraft} disabled={disabled}/><Button type="button" disabled={disabled||draft===value} onClick={()=>onSave(draft)}>Review script patch</Button></section>;
+function ScriptPanel({
+  value,
+  shell,
+  disabled,
+  onSave,
+}: {
+  value: string;
+  shell: string;
+  disabled: boolean;
+  onSave: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  return (
+    <section className="orb-script-panel">
+      <h3>Script · {shell}</h3>
+      <StructuredEditor
+        script
+        value={draft}
+        onChange={setDraft}
+        disabled={disabled}
+      />
+      <Button
+        type="button"
+        disabled={disabled || draft === value}
+        onClick={() => onSave(draft)}
+      >
+        Review script patch
+      </Button>
+    </section>
+  );
 }

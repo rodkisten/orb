@@ -13,7 +13,7 @@ export function LocalSourceTools({
   onOpen: (source: string, filename: string) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
-  const [menu,setMenu]=useState(false);
+  const [menu, setMenu] = useState(false);
   const [paste, setPaste] = useState(false),
     [text, setText] = useState(""),
     [error, setError] = useState("");
@@ -50,45 +50,53 @@ export function LocalSourceTools({
   }
   return (
     <section aria-label="Local YAML">
-      <div className="orb-file-menu"><button type="button" aria-expanded={menu} onClick={()=>setMenu(v=>!v)}>File ▾</button><div className="orb-file-actions" hidden={!menu}>
+      <div className="orb-file-menu">
         <button
-          disabled={disabled}
-          onClick={() =>
-            open(
-              "name: Workflow\non: workflow_dispatch\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo Ready\n",
-              "workflow.yml",
-            )
-          }
+          type="button"
+          aria-expanded={menu}
+          onClick={() => setMenu((v) => !v)}
         >
-          New YAML
+          File ▾
         </button>
-        <button
-          disabled={disabled}
-          onClick={() => open(kitchenSinkWorkflow, "kitchen-sink.yml")}
-        >
-          Load demo
-        </button>
-        <button disabled={disabled} onClick={() => setPaste((v) => !v)}>
-          Paste YAML
-        </button>
-        <button disabled={disabled} onClick={() => input.current?.click()}>
-          Import file
-        </button>
-        <input
-          hidden
-          ref={input}
-          type="file"
-          accept=".yaml,.yml,application/yaml,text/yaml"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) void read(file);
-          }}
-        />
-        <button disabled={!source} onClick={download}>
-          Download YAML
-        </button>
-      </div>
+        <div className="orb-file-actions" hidden={!menu}>
+          <button
+            disabled={disabled}
+            onClick={() =>
+              open(
+                "name: Workflow\non: workflow_dispatch\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo Ready\n",
+                "workflow.yml",
+              )
+            }
+          >
+            New YAML
+          </button>
+          <button
+            disabled={disabled}
+            onClick={() => open(kitchenSinkWorkflow, "kitchen-sink.yml")}
+          >
+            Load demo
+          </button>
+          <button disabled={disabled} onClick={() => setPaste((v) => !v)}>
+            Paste YAML
+          </button>
+          <button disabled={disabled} onClick={() => input.current?.click()}>
+            Import file
+          </button>
+          <input
+            hidden
+            ref={input}
+            type="file"
+            accept=".yaml,.yml,application/yaml,text/yaml"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void read(file);
+            }}
+          />
+          <button disabled={!source} onClick={download}>
+            Download YAML
+          </button>
+        </div>
       </div>
       {paste && (
         <div>

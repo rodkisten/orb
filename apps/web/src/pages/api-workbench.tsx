@@ -47,7 +47,9 @@ export function ApiWorkbench({ file }: { file?: OpenWorkflow } = {}) {
 }
 function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const studio = location.pathname !== "/api";
-  const [pane,setPane]=useState<"source"|"graph"|"ast"|"inspector">("source");
+  const [pane, setPane] = useState<"source" | "graph" | "ast" | "inspector">(
+    "source",
+  );
   const [operation, setOperation] = useState<Operation>("workflow-source");
   const [repo, setRepo] = useState(() => {
     const r = file?.repo ?? new URLSearchParams(location.search).get("repo");
@@ -403,8 +405,30 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               </button>
             )}
           </div>
-          {studio && <nav className="orb-pane-nav" aria-label="Studio panels">{(["source","graph","ast","inspector"] as const).map(p=><button key={p} aria-pressed={pane===p} onClick={()=>{setPane(p);if(p==="ast"||p==="graph")setTab(p);if(p==="inspector")setTab("graph");}}>{p==="source"?"YAML":p==="ast"?"AST":p==="graph"?"Graph":"Inspector"}</button>)}</nav>}
-          <div className="lab-columns" data-pane={studio?pane:undefined}>
+          {studio && (
+            <nav className="orb-pane-nav" aria-label="Studio panels">
+              {(["source", "graph", "ast", "inspector"] as const).map((p) => (
+                <button
+                  key={p}
+                  aria-pressed={pane === p}
+                  onClick={() => {
+                    setPane(p);
+                    if (p === "ast" || p === "graph") setTab(p);
+                    if (p === "inspector") setTab("graph");
+                  }}
+                >
+                  {p === "source"
+                    ? "YAML"
+                    : p === "ast"
+                      ? "AST"
+                      : p === "graph"
+                        ? "Graph"
+                        : "Inspector"}
+                </button>
+              ))}
+            </nav>
+          )}
+          <div className="lab-columns" data-pane={studio ? pane : undefined}>
             <section className="lab-panel orb-source-pane">
               <h3>{studio ? "Source" : "Request"}</h3>
               {!local && (!studio || !opened) && (
@@ -595,24 +619,36 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
               )}
               {tab === "graph" ? (
                 <>
-                  <div className="orb-builder-pane"><BuilderForm
-                    body={astBody}
-                    disabled={astStale || editBusy || proposal !== null}
-                    onEdit={editJob}
-                  /></div>
-                  <div className="orb-flow-pane"><WorkflowGraph
-                    onEditNeeds={editNeeds}
-                    body={astBody}
-                    stale={astStale || editBusy || proposal !== null}
-                    cursor={sync ? cursor : null}
-                    onSelect={(path, from, to) => {
-                      setNodePath(JSON.stringify(path));
-                      setCursor(from);
-                      if (path[2] === "steps" && studio) setPane("inspector");
-                      if (path[0] === "jobs" && typeof path[1] === "string") updateRoute({job:path[1],step:typeof path[3]==="number"?String(path[3]):"0",inspector:path[2]==="steps"?"steps":"job"});
-                      if (sync) editor.current?.select(from, to);
-                    }}
-                  /></div>
+                  <div className="orb-builder-pane">
+                    <BuilderForm
+                      body={astBody}
+                      disabled={astStale || editBusy || proposal !== null}
+                      onEdit={editJob}
+                    />
+                  </div>
+                  <div className="orb-flow-pane">
+                    <WorkflowGraph
+                      onEditNeeds={editNeeds}
+                      body={astBody}
+                      stale={astStale || editBusy || proposal !== null}
+                      cursor={sync ? cursor : null}
+                      onSelect={(path, from, to) => {
+                        setNodePath(JSON.stringify(path));
+                        setCursor(from);
+                        if (path[2] === "steps" && studio) setPane("inspector");
+                        if (path[0] === "jobs" && typeof path[1] === "string")
+                          updateRoute({
+                            job: path[1],
+                            step:
+                              typeof path[3] === "number"
+                                ? String(path[3])
+                                : "0",
+                            inspector: path[2] === "steps" ? "steps" : "job",
+                          });
+                        if (sync) editor.current?.select(from, to);
+                      }}
+                    />
+                  </div>
                 </>
               ) : tab === "ast" ? (
                 <AstExplorer

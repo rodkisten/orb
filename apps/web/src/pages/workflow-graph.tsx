@@ -148,9 +148,9 @@ export function WorkflowGraph({
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
-              key={JSON.stringify(nodes.map(n=>[n.id,n.position]))}
+              key={JSON.stringify(nodes.map((n) => [n.id, n.position]))}
               fitView
-              fitViewOptions={{padding:0.15,maxZoom:1}}
+              fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
               minZoom={0.05}
               maxZoom={1.5}
               nodesConnectable={!stale}
@@ -171,7 +171,6 @@ export function WorkflowGraph({
             >
               <Background />
               <Controls />
-
             </ReactFlow>
           </div>
           <p>

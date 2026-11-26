@@ -160,15 +160,24 @@ export function BuilderForm({
                 </label>
                 <label>
                   {mode}
-                  {mode === "run" ? <StructuredEditor script value={value} onChange={setValue} disabled={disabled}/> : <Textarea
-                    required
-                    value={value}
-                    onChange={(e) => {
-                      setValue(e.target.value);
-                      setInputs({});
-                    }}
-                    autoCapitalize="none"
-                  />}
+                  {mode === "run" ? (
+                    <StructuredEditor
+                      script
+                      value={value}
+                      onChange={setValue}
+                      disabled={disabled}
+                    />
+                  ) : (
+                    <Textarea
+                      required
+                      value={value}
+                      onChange={(e) => {
+                        setValue(e.target.value);
+                        setInputs({});
+                      }}
+                      autoCapitalize="none"
+                    />
+                  )}
                 </label>
                 {mode === "uses" && (
                   <ActionInspector

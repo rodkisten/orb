@@ -28,7 +28,14 @@ export function WorkspaceStudio() {
         >
           Studio
         </button>
-        <a href={(location.pathname === "/api" ? "/workspace" : "/api") + location.search}>{location.pathname === "/api" ? "Studio" : "API Lab"}</a>
+        <a
+          href={
+            (location.pathname === "/api" ? "/workspace" : "/api") +
+            location.search
+          }
+        >
+          {location.pathname === "/api" ? "Studio" : "API Lab"}
+        </a>
       </div>
       <div className="workspace-unified">
         <div
