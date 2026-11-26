@@ -4,6 +4,7 @@ import {
   EditorState,
   StateEffect,
   StateField,
+  Transaction,
 } from "@codemirror/state";
 import { EditorView, Decoration, type DecorationSet } from "@codemirror/view";
 import { basicSetup } from "codemirror";
@@ -55,7 +56,7 @@ const diagnosticsField = StateField.define<DecorationSet>({
   },
   provide: (f) => EditorView.decorations.from(f),
 });
-export type SourceEditorHandle = { select: (from: number, to: number) => void };
+export type SourceEditorHandle = { select: (from: number, to: number, reveal?: boolean) => void };
 export const SourceEditor = forwardRef<
   SourceEditorHandle,
   {
@@ -116,7 +117,7 @@ export const SourceEditor = forwardRef<
     if (e && e.state.doc.toString() !== value)
       e.dispatch({
         changes: { from: 0, to: e.state.doc.length, insert: value },
-        annotations: externalUpdate.of(true),
+        annotations: [externalUpdate.of(true), Transaction.addToHistory.of(false)],
       });
   }, [value]);
   useEffect(() => {
@@ -127,11 +128,11 @@ export const SourceEditor = forwardRef<
   useImperativeHandle(
     ref,
     () => ({
-      select(from, to) {
+      select(from, to, reveal = false) {
         const e = view.current;
         if (!e || from < 0 || to < from || to > e.state.doc.length) return;
         e.dispatch({
-          effects: selectionEffect.of({ from, to }),
+          effects: [selectionEffect.of({ from, to }), ...(reveal ? [EditorView.scrollIntoView(from,{y:"center"})] : [])],
         });
       },
     }),

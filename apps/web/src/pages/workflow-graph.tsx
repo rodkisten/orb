@@ -160,7 +160,7 @@ export function WorkflowGraph({
     if (target && !target.needs.includes(c.source))
       onEditNeeds(target.id, [...target.needs, c.source]);
   }
-  const detail = model.details.find((d) => d.id === (selected ?? active));
+  const detail = model.details.find((d) => d.id === (active ?? selected));
   const job = model.jobs.find((j) => j.id === detail?.id);
   return (
     <div>
@@ -213,8 +213,9 @@ export function WorkflowGraph({
       {detail && (
         <section className="orb-graph-detail">
           <h3>{detail.name ?? detail.id}</h3>
+          <p className="text-xs text-muted-foreground">Select a step to edit its configuration or script.</p>
           {job && (
-            <fieldset className="orb-dependencies" disabled={stale}>
+            <details><summary>Dependencies ({job.needs.length})</summary><fieldset className="orb-dependencies" disabled={stale}>
               <legend>Dependencies</legend>
               {model.jobs
                 .filter((j) => j.id !== job.id)
@@ -235,17 +236,17 @@ export function WorkflowGraph({
                     {j.id}
                   </label>
                 ))}
-            </fieldset>
+            </fieldset></details>
           )}
-          {detail.steps.map((step) => (
+          <div className="orb-step-list">{detail.steps.map((step) => (
             <button
               key={step.index}
               disabled={stale}
               onClick={() => select(["jobs", detail.id, "steps", step.index])}
             >
-              {step.index + 1}. {step.name ?? step.uses ?? step.kind}
+              {step.index + 1}. {step.name ?? step.uses ?? step.kind} {step.kind === "run" ? " · Script" : ""}
             </button>
-          ))}
+          ))}</div>
         </section>
       )}
     </div>

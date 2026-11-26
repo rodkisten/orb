@@ -94,6 +94,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   const astStale = live
     ? parsed.source !== yaml
     : yaml !== (transformed ?? parsedSource);
+  const linkedRange = useRef<{from:number;to:number}|null>(null);
+  function linkSource(from:number,to:number){linkedRange.current={from,to};if(sync)editor.current?.select(from,to);}
+  useEffect(()=>{if(pane==="source" && sync && linkedRange.current){const {from,to}=linkedRange.current;editor.current?.select(from,to,true);}},[pane,sync]);
   const autoLoaded = useRef(false);
   const local = opened?.repo === "@local";
   function openLocal(source: string, filename: string) {
@@ -112,6 +115,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   }
   const documentKey = documentId(repo, ref, path);
   function editYaml(value: string) {
+    linkedRange.current=null;
     setYaml(value);
     if (opened) {
       const next = { ...opened, yaml: value, updatedAt: Date.now() };
@@ -143,6 +147,8 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   function switchDocument(d: Draft) {
     if (active.current || editBusy) return;
     setProposal(null);
+    linkedRange.current=null;
+    updateRoute({job:null,step:null,inspector:null});
     if (d.repo === "@local") {
       setOperation("parse");
       updateRoute({ draft: d.id });
@@ -564,6 +570,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                   <Copy size={13} />
                 </button>
               </div>
+              {studio && pane==="inspector" && linkedRange.current && <button type="button" onClick={()=>setPane("source")}>Show selected YAML</button>}
               {proposal && (
                 <div>
                   <PatchReview before={proposal.source} after={proposal.yaml} />
@@ -636,7 +643,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                         onSelect={(path, from, to) => {
                           setNodePath(JSON.stringify(path));
                           setCursor(from);
-                          if (path[0] === "jobs" && studio)
+                          if (path[2] === "steps" && studio)
                             setPane("inspector");
                           if (path[0] === "jobs" && typeof path[1] === "string")
                             updateRoute({
@@ -647,7 +654,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                                   : "0",
                               inspector: path[2] === "steps" ? "steps" : "job",
                             });
-                          if (sync) editor.current?.select(from, to);
+                          linkSource(from,to);
                         }}
                       />
                     )}
@@ -676,10 +683,9 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                         step:
                           typeof path[3] === "number" ? String(path[3]) : "0",
                       });
-                      setTab("graph");
-                      setPane("inspector");
+                      if(path[0]==="jobs" && path[2]==="steps"){setTab("graph");setPane("inspector");}
                     }
-                    if (sync) editor.current?.select(from, to);
+                    linkSource(from,to);
                   }}
                 />
               ) : (
