@@ -1,3 +1,4 @@
+import {SessionStatus} from "./workspace/session-status";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -51,6 +52,7 @@ const root = createRootRoute({
           </Link>
         </nav>
       </header>
+      <SessionStatus />
       <main>
         <Outlet />
       </main>

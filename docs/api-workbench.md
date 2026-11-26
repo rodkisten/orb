@@ -99,3 +99,5 @@ Dispatch history stores up to 50 attempts per repository/workflow in the existin
 Dispatch uses GitHub REST API 2026-03-10 to receive workflow_run_id directly. Exact run and jobs endpoints are authenticated and repository-allowlisted. Tracker polls every 10 seconds, stops after completion, and links to exact run/job logs. Legacy or malformed successful responses retain the workflow-list link without guessing a run ID. First 100 jobs only.
 
 UX polish: separate published Runner from dispatch input design using URL-backed inspector tabs. Authentication diagnostics and full layout redesign remain pending.
+
+Session recovery: GET /v1/session verifies Access identity without contacting GitHub, returns 503 for missing Access bindings and 401 for unverified identity. The app shell displays one session banner with retry and Access logout link. No authentication bypass or token storage. Preview routing must allow this read endpoint.

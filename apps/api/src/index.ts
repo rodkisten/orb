@@ -197,6 +197,12 @@ function createApp(env: Bindings) {
         detail: { tags: ["GitHub"] },
       },
     )
+    .get("/session",async ({request,set})=>{
+      set.headers["cache-control"]="no-store";
+      if(!env.CF_ACCESS_TEAM_DOMAIN||!env.CF_ACCESS_AUD){set.status=503;return {authenticated:false,reason:"access_configuration_missing"};}
+      if(!(await accessIdentity(request,env))){set.status=401;return {authenticated:false,reason:"access_identity_unverified"};}
+      return {authenticated:true};
+    })
     .get(
       "/github/:owner/:repo/branches",
       async ({ params, query, request, set }) => {
