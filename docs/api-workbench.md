@@ -4,3 +4,5 @@ Route /api. Same-origin authenticated real requests via existing Worker gateway.
 AST tab consumes actual parse response nodes, supports path filtering, bounded rendering, and selects UTF-16 ranges in the YAML textarea. Selection is disabled when source differs from request snapshot. Selecting a node also fills the transform path. CodeMirror migration remains pending.
 
 CodeMirror 6 YAML editor replaces textarea, with folding, search, line numbers, undo and AST range navigation. Deep links automatically load workflow source. Transformed AST ranges are disabled until transformed source is explicitly applied. Dependency lock refresh is required before frozen CI. One Dark is provisional pending semantic theme integration. No document tabs or reverse AST selection yet.
+
+AST synchronization now follows editor selection start to the deepest containing UTF-16 range, reveals ancestors and scrolls active node into view. Tree branches can collapse/expand; Sync AST checkbox disables both directions of editor navigation. Source edits invalidate server ranges until reparse; no live network parsing yet. No new dependencies.
