@@ -54,6 +54,29 @@ export function RunTracker({ repo, id }: { repo: string; id: number }) {
     retry: false,
   });
   const data = run.data?.data;
-  const url="https://github.com/"+repo+"/actions/runs/"+id;
-  return <ExecutionTracker title={"Run #"+id} name={data?.name??"Waiting for GitHub"} status={data?.conclusion??data?.status??"Loading…"} url={url} errors={[run.error,jobs.error].filter(Boolean).map(String)} jobs={jobs.data?.data.jobs.map(j=>({id:String(j.id),name:j.name,status:j.conclusion??j.status,url:url+"/job/"+j.id,steps:j.steps?.map(s=>({id:String(s.number),name:s.number+". "+s.name,status:s.conclusion??s.status}))}))} note={(jobs.data?.hasNext?"First 100 jobs shown. ":"")+"Refreshes every 10 seconds while active."}/>;
+  const url = "https://github.com/" + repo + "/actions/runs/" + id;
+  return (
+    <ExecutionTracker
+      title={"Run #" + id}
+      name={data?.name ?? "Waiting for GitHub"}
+      status={data?.conclusion ?? data?.status ?? "Loading…"}
+      url={url}
+      errors={[run.error, jobs.error].filter(Boolean).map(String)}
+      jobs={jobs.data?.data.jobs.map((j) => ({
+        id: String(j.id),
+        name: j.name,
+        status: j.conclusion ?? j.status,
+        url: url + "/job/" + j.id,
+        steps: j.steps?.map((s) => ({
+          id: String(s.number),
+          name: s.number + ". " + s.name,
+          status: s.conclusion ?? s.status,
+        })),
+      }))}
+      note={
+        (jobs.data?.hasNext ? "First 100 jobs shown. " : "") +
+        "Refreshes every 10 seconds while active."
+      }
+    />
+  );
 }
