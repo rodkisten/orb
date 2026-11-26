@@ -32,9 +32,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const [ref, setRef] = useState(target.ref);
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const dispatchLock=useRef(false);
-  const [review,setReview]=useState(false);
-  const [refDraft,setRefDraft]=useState(target.ref);
+  const dispatchLock = useRef(false);
+  const [review, setReview] = useState(false);
+  const [refDraft, setRefDraft] = useState(target.ref);
   const [message, setMessage] = useState("");
   const [runs, setRuns] = useState("");
   const [runId, setRunId] = useState<number | null>(null);
@@ -99,7 +99,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const names = raw?.data ?? [];
   const tagNames = tags.data?.data ?? [];
   function changeRef(v: string) {
-    setRef(v);setRefDraft(v);setReview(false);
+    setRef(v);
+    setRefDraft(v);
+    setReview(false);
     setValues({});
     setConfirmed(false);
     setMessage("");
@@ -107,7 +109,8 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
     setRunId(null);
   }
   function change(k: string, v: string) {
-    setValues((s) => ({ ...s, [k]: v }));setReview(false);
+    setValues((s) => ({ ...s, [k]: v }));
+    setReview(false);
     setConfirmed(false);
   }
   const invalidPorts = ports.filter(([k, p]) => {
@@ -120,12 +123,14 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
           (p.type === "choice" && !p.options?.includes(v))))
     );
   });
-  const invalid=invalidPorts.length>0;
+  const invalid = invalidPorts.length > 0;
   async function dispatch() {
     if (
       !production ||
       !confirmed ||
-      busy || dispatchLock.current || !review ||
+      busy ||
+      dispatchLock.current ||
+      !review ||
       !source.data ||
       confirmedSha !== source.data.sha ||
       !valid ||
@@ -143,7 +148,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       at: Date.now(),
       status: "unconfirmed",
     };
-    dispatchLock.current=true;
+    dispatchLock.current = true;
     setBusy(true);
     setHistoryError("");
     setConfirmed(false);
@@ -211,7 +216,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       void recordDispatch(attempt).catch(() =>
         setHistoryError("Dispatch result not saved locally"),
       );
-      dispatchLock.current=false;
+      dispatchLock.current = false;
       setBusy(false);
     }
   }
@@ -225,159 +230,209 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       </small>
       {!production && <p>Preview mode: execution disabled.</p>}
       <fieldset disabled={busy}>
-      <div className="orb-run-stage"><strong>1 · Published source</strong>
-        <label>
-          Branch or tag
-          <Input
-            value={refDraft}
-            onChange={(e) => {setRefDraft(e.target.value);setReview(false);setConfirmed(false);}}
-            autoCapitalize="none"
-          />
-        </label>
-        <Button type="button" disabled={!refDraft.trim()||refDraft.trim()===ref} onClick={()=>changeRef(refDraft.trim())}>Load ref</Button>
-        {(names.length > 0 || tagNames.length > 0) && (
-          <select
-            aria-label="Choose branch"
-            value=""
-            onChange={(e) => changeRef(e.target.value)}
+        <div className="orb-run-stage">
+          <strong>1 · Published source</strong>
+          <label>
+            Branch or tag
+            <Input
+              value={refDraft}
+              onChange={(e) => {
+                setRefDraft(e.target.value);
+                setReview(false);
+                setConfirmed(false);
+              }}
+              autoCapitalize="none"
+            />
+          </label>
+          <Button
+            type="button"
+            disabled={!refDraft.trim() || refDraft.trim() === ref}
+            onClick={() => changeRef(refDraft.trim())}
           >
-            <option value="">Choose branch</option>
-            <optgroup label="Branches">
-              {names.map((n) => (
-                <option key={n.name} value={n.name}>
-                  {n.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Tags">
-              {tagNames.map((n) => (
-                <option key={n.name} value={n.name}>
-                  {n.name}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-        )}
-        {(raw?.hasNext || tags.data?.hasNext) && (
-          <small>First 100 refs shown; enter other refs manually.</small>
-        )}
-        <Button
-          type="button"
-          onClick={() => {
-            setConfirmed(false);
-            void source.refetch();
-          }}
-        >
-          <RefreshCw size={14} /> Reload published schema
-        </Button>
-        {source.isFetching && <p>Loading published workflow…</p>}
-        {source.error && <p role="alert">{String(source.error)}</p>}
-        {source.data && !valid && (
-          <p>No valid workflow_dispatch on this ref.</p>
-        )}
-        </div><div className="orb-run-stage"><strong>2 · Inputs</strong>
-        {valid && ports.length===0 && <p>No inputs required.</p>}
-        {valid &&
-          ports.map(([k, p]) => (
-            <label key={k}>
-              {k}
-              {p.required ? " *" : ""}
-              <small>{p.description}</small>
-              {invalidPorts.some(([id])=>id===k)&&<small role="alert">Enter a valid {p.type??"string"} value.</small>}
-              {p.type === "boolean" || p.type === "choice" ? (
-                <select
-                  value={values[k] ?? String(p.default ?? "")}
-                  onChange={(e) => change(k, e.target.value)}
-                >
-                  <option value="">Select</option>
-                  {(p.type === "boolean"
-                    ? ["true", "false"]
-                    : (p.options ?? [])
-                  ).map((o) => (
-                    <option key={o}>{o}</option>
-                  ))}
-                </select>
-              ) : p.type === "environment" &&
-                envNames.length > 0 &&
-                !environments.error && !environments.data?.hasNext ? (
-                <select
-                  value={values[k] ?? String(p.default ?? "")}
-                  onChange={(e) => change(k, e.target.value)}
-                >
-                  <option value="">Select environment</option>
-                  {envNames.map((n) => (
-                    <option key={n.name}>{n.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <Input
-                  type={p.type === "number" ? "number" : "text"}
-                  value={values[k] ?? String(p.default ?? "")}
-                  onChange={(e) => change(k, e.target.value)}
-                />
-              )}
-            </label>
-          ))}
-        {environments.error && (
-          <small>Environment lookup unavailable; enter name manually.</small>
-        )}
-        {environments.data?.hasNext && (
-          <small>Environment list incomplete; enter name manually.</small>
-        )}
-        {valid && (
-          <small>
-            Published blob: {source.data?.sha.slice(0, 12)} · local edits are
-            not executed.
-          </small>
-        )}
-        </div><div className="orb-run-stage"><strong>3 · Review & execute</strong>
-        <Button type="button" disabled={!valid||invalid||source.isFetching||!!source.error||refDraft.trim()!==ref} onClick={()=>{setReview(true);setConfirmed(false);}}>Review execution</Button>
-        {review&&<><p>Published workflow on <code>{ref}</code> · {ports.length} input fields. Local edits are excluded.</p><label>
-          <input
-            type="checkbox"
-            checked={confirmed && confirmedSha === source.data?.sha}
-            disabled={!production || !valid || invalid || source.isFetching}
-            onChange={(e) => {
-              setConfirmed(e.target.checked);
-              setConfirmedSha(source.data?.sha ?? "");
+            Load ref
+          </Button>
+          {(names.length > 0 || tagNames.length > 0) && (
+            <select
+              aria-label="Choose branch"
+              value=""
+              onChange={(e) => changeRef(e.target.value)}
+            >
+              <option value="">Choose branch</option>
+              <optgroup label="Branches">
+                {names.map((n) => (
+                  <option key={n.name} value={n.name}>
+                    {n.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Tags">
+                {tagNames.map((n) => (
+                  <option key={n.name} value={n.name}>
+                    {n.name}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          )}
+          {(raw?.hasNext || tags.data?.hasNext) && (
+            <small>First 100 refs shown; enter other refs manually.</small>
+          )}
+          <Button
+            type="button"
+            onClick={() => {
+              setConfirmed(false);
+              void source.refetch();
             }}
-          />{" "}
-          Confirm execution on {ref}
-        </label>
-        <Button
-          type="button"
-          disabled={
-            !production || !review || refDraft.trim()!==ref ||
-            !confirmed ||
-            confirmedSha !== source.data?.sha ||
-            !!source.error ||
-            !valid ||
-            invalid ||
-            busy ||
-            source.isFetching
-          }
-          onClick={() => void dispatch()}
-        >
-          <Play size={14} />
-          {busy ? "Dispatching…" : "Run workflow"}
-        </Button></>}</div>
+          >
+            <RefreshCw size={14} /> Reload published schema
+          </Button>
+          {source.isFetching && <p>Loading published workflow…</p>}
+          {source.error && <p role="alert">{String(source.error)}</p>}
+          {source.data && !valid && (
+            <p>No valid workflow_dispatch on this ref.</p>
+          )}
+        </div>
+        <div className="orb-run-stage">
+          <strong>2 · Inputs</strong>
+          {valid && ports.length === 0 && <p>No inputs required.</p>}
+          {valid &&
+            ports.map(([k, p]) => (
+              <label key={k}>
+                {k}
+                {p.required ? " *" : ""}
+                <small>{p.description}</small>
+                {invalidPorts.some(([id]) => id === k) && (
+                  <small role="alert">
+                    Enter a valid {p.type ?? "string"} value.
+                  </small>
+                )}
+                {p.type === "boolean" || p.type === "choice" ? (
+                  <select
+                    value={values[k] ?? String(p.default ?? "")}
+                    onChange={(e) => change(k, e.target.value)}
+                  >
+                    <option value="">Select</option>
+                    {(p.type === "boolean"
+                      ? ["true", "false"]
+                      : (p.options ?? [])
+                    ).map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                ) : p.type === "environment" &&
+                  envNames.length > 0 &&
+                  !environments.error &&
+                  !environments.data?.hasNext ? (
+                  <select
+                    value={values[k] ?? String(p.default ?? "")}
+                    onChange={(e) => change(k, e.target.value)}
+                  >
+                    <option value="">Select environment</option>
+                    {envNames.map((n) => (
+                      <option key={n.name}>{n.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    type={p.type === "number" ? "number" : "text"}
+                    value={values[k] ?? String(p.default ?? "")}
+                    onChange={(e) => change(k, e.target.value)}
+                  />
+                )}
+              </label>
+            ))}
+          {environments.error && (
+            <small>Environment lookup unavailable; enter name manually.</small>
+          )}
+          {environments.data?.hasNext && (
+            <small>Environment list incomplete; enter name manually.</small>
+          )}
+          {valid && (
+            <small>
+              Published blob: {source.data?.sha.slice(0, 12)} · local edits are
+              not executed.
+            </small>
+          )}
+        </div>
+        <div className="orb-run-stage">
+          <strong>3 · Review & execute</strong>
+          <Button
+            type="button"
+            disabled={
+              !valid ||
+              invalid ||
+              source.isFetching ||
+              !!source.error ||
+              refDraft.trim() !== ref
+            }
+            onClick={() => {
+              setReview(true);
+              setConfirmed(false);
+            }}
+          >
+            Review execution
+          </Button>
+          {review && (
+            <>
+              <p>
+                Published workflow on <code>{ref}</code> · {ports.length} input
+                fields. Local edits are excluded.
+              </p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={confirmed && confirmedSha === source.data?.sha}
+                  disabled={
+                    !production || !valid || invalid || source.isFetching
+                  }
+                  onChange={(e) => {
+                    setConfirmed(e.target.checked);
+                    setConfirmedSha(source.data?.sha ?? "");
+                  }}
+                />{" "}
+                Confirm execution on {ref}
+              </label>
+              <Button
+                type="button"
+                disabled={
+                  !production ||
+                  !review ||
+                  refDraft.trim() !== ref ||
+                  !confirmed ||
+                  confirmedSha !== source.data?.sha ||
+                  !!source.error ||
+                  !valid ||
+                  invalid ||
+                  busy ||
+                  source.isFetching
+                }
+                onClick={() => void dispatch()}
+              >
+                <Play size={14} />
+                {busy ? "Dispatching…" : "Run workflow"}
+              </Button>
+            </>
+          )}
+        </div>
       </fieldset>
-      <div className="orb-run-stage"><strong>4 · Execution status</strong>
-      {message && <p role="status">{message}</p>}
-      {historyError && <p role="alert">{historyError}</p>}
-      {runId !== null && <RunTracker repo={target.repo} id={runId} />}
-      <DispatchHistory
-        repo={target.repo}
-        path={target.path}
-        onRef={(v) => {
-          if (!busy) changeRef(v);
-        }}
-      />
-      {runs && (
-        <a href={runs} target="_blank" rel="noreferrer">
-          Open workflow runs
-        </a>
-      )}</div>
+      <div className="orb-run-stage">
+        <strong>4 · Execution status</strong>
+        {message && <p role="status">{message}</p>}
+        {historyError && <p role="alert">{historyError}</p>}
+        {runId !== null && <RunTracker repo={target.repo} id={runId} />}
+        <DispatchHistory
+          repo={target.repo}
+          path={target.path}
+          onRef={(v) => {
+            if (!busy) changeRef(v);
+          }}
+        />
+        {runs && (
+          <a href={runs} target="_blank" rel="noreferrer">
+            Open workflow runs
+          </a>
+        )}
+      </div>
     </section>
   );
 }
