@@ -50,7 +50,7 @@ jobs:
           git pull --ff-only origin "$BRANCH"
 
       - name: Regenerate and validate lockfile
-        uses: rodkisten/github/execute@dc39d2a9755e5a1dd3b10b81532c1b724e2d6a11
+        uses: rodkisten/github/execute@main
         with:
           node-version: "24"
           package-manager: npm
