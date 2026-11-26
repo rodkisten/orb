@@ -73,3 +73,5 @@ The standalone Orb web app requests a fixed viewport scale. Touch-device form co
 Mobile graph and AST selection open the corresponding inspector immediately; workflow/job forms no longer require expanding a second accordion. Job selection follows URL state, and step forms reset when selection changes. Graph refits when its container becomes visible or resizes. Script patches remain explicitly reviewed.
 
 Graph job selection keeps the graph visible so its step list remains reachable; step selection opens the inspector. AST navigation keeps the tree visible except for step selection. Explicit Show selected YAML reveals the linked range without focusing the editor. External source updates do not enter CodeMirror undo history. Dependencies are collapsed by default.
+
+Step scripts now expose expand/collapse, reset, copy, line count and unsaved status. Configuration validates timeout and environment keys; graph labels shell steps as scripts. Structured editors use a darker background; shell syntax grammar remains pending.

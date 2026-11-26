@@ -200,10 +200,7 @@ export function WorkflowGraph({
               <Controls />
             </ReactFlow>
           </div>
-          <p>
-            Drag a source handle to another job to propose a dependency. Remove
-            dependencies in the inspector.
-          </p>
+          <small className="text-muted-foreground">Connect jobs to edit dependencies.</small>
           <small>
             {nodes.length} jobs · {edges.length} dependencies
             {model.jobs.length > 300 ? " · limited to 300 jobs" : ""}
@@ -251,7 +248,7 @@ export function WorkflowGraph({
                 onClick={() => select(["jobs", detail.id, "steps", step.index])}
               >
                 {step.index + 1}. {step.name ?? step.uses ?? step.kind}{" "}
-                {step.kind === "run" ? " · Script" : ""}
+                {step.kind === "shell" ? " · Script" : ""}
               </button>
             ))}
           </div>

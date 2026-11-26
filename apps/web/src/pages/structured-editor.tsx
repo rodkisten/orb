@@ -39,6 +39,7 @@ export function StructuredEditor({
           basicSetup,
           ...(script ? [] : [yaml()]),
           oneDark,
+          EditorView.theme({"&":{backgroundColor:"#212121"},".cm-gutters":{backgroundColor:"#212121",color:"#999"},".cm-activeLine,.cm-activeLineGutter":{backgroundColor:"#303030"}} ,{dark:true}),
           EditorView.lineWrapping,
           access.current.of([
             EditorState.readOnly.of(disabled),
@@ -49,6 +50,7 @@ export function StructuredEditor({
             "aria-label": script ? "Shell script" : "Structured JSON value",
             autocapitalize: "off",
             spellcheck: "false",
+            autocorrect: "off",
           }),
           EditorView.theme({
             "&": { fontSize: "12px", borderRadius: "8px", overflow: "hidden" },
