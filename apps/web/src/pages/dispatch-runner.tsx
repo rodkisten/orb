@@ -1,3 +1,4 @@
+import {DispatchHistory,recordDispatch,type DispatchRecord} from "./dispatch-history";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { inspectWorkflow } from "@orb/workflow-core";
@@ -28,6 +29,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [runs, setRuns] = useState("");
+  const [historyError,setHistoryError]=useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [confirmedSha, setConfirmedSha] = useState("");
   const base =
@@ -121,7 +123,9 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       !!source.error
     )
       return;
+    const attempt:DispatchRecord={id:crypto.randomUUID(),repo:target.repo,path:target.path,ref,sha:source.data.sha,at:Date.now(),status:"unconfirmed"};
     setBusy(true);
+    setHistoryError("");
     setConfirmed(false);
     setMessage("");
     setRuns("");
@@ -159,6 +163,7 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
       };
       if (!res.ok || !data.accepted)
         throw Error(data.error ?? "Dispatch not confirmed");
+      attempt.status="accepted";
       setMessage(
         "GitHub accepted the dispatch. Check runs for execution status.",
       );
@@ -167,10 +172,11 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
           "https://github.com/" + target.repo + "/actions/workflows/",
         )
       )
-        setRuns(data.runsUrl);
+        {setRuns(data.runsUrl);attempt.runsUrl=data.runsUrl;}
     } catch (e) {
       setMessage(String(e) + " · Check GitHub before retrying.");
     } finally {
+      void recordDispatch(attempt).catch(()=>setHistoryError("Dispatch result not saved locally"));
       setBusy(false);
     }
   }
@@ -315,6 +321,8 @@ export function DispatchRunner({ target }: { target: DispatchTarget }) {
         </Button>
       </fieldset>
       {message && <p role="status">{message}</p>}
+      {historyError&&<p role="alert">{historyError}</p>}
+      <DispatchHistory repo={target.repo} path={target.path} onRef={v=>{if(!busy)changeRef(v)}}/>
       {runs && (
         <a href={runs} target="_blank" rel="noreferrer">
           Open workflow runs
