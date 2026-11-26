@@ -13,6 +13,7 @@ import { z } from "zod";
 import { EventExplorer } from "./pages/events";
 import { Connectors } from "./pages/connectors";
 import { ApiWorkbench } from "./pages/api-workbench";
+import { WorkflowStudio } from "./pages/workflow-studio";
 import "./styles.css";
 
 const searchSchema = z.object({
@@ -44,6 +45,7 @@ const root = createRootRoute({
           <Link to="/connectors" activeProps={{ className: "active" }}>
             Connectors
           </Link>
+          <Link to="/workflows" search={{ context: "all" }} activeProps={{ className: "active" }}>Workflows</Link>
           <Link to="/api" activeProps={{ className: "active" }}>
             API Lab
           </Link>
@@ -88,7 +90,8 @@ const api = createRoute({
   path: "/api",
   component: ApiWorkbench,
 });
-const routeTree = root.addChildren([home, events, connectors, api]);
+const workflowStudio = createRoute({ getParentRoute: () => root, path: "/workflows", validateSearch: z.object({ context: z.string().catch("all") }), component: WorkflowStudio });
+const routeTree = root.addChildren([home, events, connectors, api, workflowStudio]);
 const router = createRouter({ routeTree, defaultPreload: "intent" });
 declare module "@tanstack/react-router" {
   interface Register {
