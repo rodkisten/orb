@@ -24,7 +24,9 @@ export function inspectWorkflow(source: string) {
   const dispatch = isMap(triggers)
     ? triggers.get("workflow_dispatch", true)
     : null;
-  const dispatchInputs:unknown=isMap(dispatch)?dispatch.get("inputs",true):null;
+  const dispatchInputs: unknown = isMap(dispatch)
+    ? dispatch.get("inputs", true)
+    : null;
   const details =
     isMap(jobs) && !doc.errors.length
       ? jobs.items.flatMap((pair) => {
@@ -87,7 +89,7 @@ export function inspectWorkflow(source: string) {
   return {
     ...validation,
     triggerNames,
-    dispatchSchema: isMap(dispatchInputs)?dispatchInputs.toJSON():{},
+    dispatchSchema: isMap(dispatchInputs) ? dispatchInputs.toJSON() : {},
     env: keys(doc.get("env", true)),
     interface: {
       inputs: isMap(call) ? keys(call.get("inputs", true)) : [],

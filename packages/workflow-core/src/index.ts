@@ -211,17 +211,36 @@ export function editWorkflow(source: string, edit: BuilderEdit) {
       const value: unknown = JSON.parse(raw);
       if (value === null) throw Error("Null workflow fields are not supported");
       const existing = root.get(key, true);
-      if(key==="on" && isMap(existing) && !existing.flow && typeof value==="object" && value && Object.keys(value).length===1 && Object.hasOwn(value,"workflow_dispatch")){
-        const dispatchValue=(value as Record<string,unknown>).workflow_dispatch;
-        const current:unknown=existing.get("workflow_dispatch",true);
-        const newline=source.includes("\r\n")?"\r\n":"\n";
-        if(current===undefined){
-          const first=existing.items[0]?.key;
-          if(!isScalar(first)||!first.range||first.commentBefore)throw Error("Unsupported trigger insertion");
-          const from=source.lastIndexOf("\n",first.range[0]-1)+1;
-          const indent=source.slice(from,first.range[0]);
-          if(!/^ +$/.test(indent))throw Error("Unsupported trigger indentation");
-          patches.push({from,to:from,insert:indent+"workflow_dispatch: "+JSON.stringify(dispatchValue)+newline});
+      if (
+        key === "on" &&
+        isMap(existing) &&
+        !existing.flow &&
+        typeof value === "object" &&
+        value &&
+        Object.keys(value).length === 1 &&
+        Object.hasOwn(value, "workflow_dispatch")
+      ) {
+        const dispatchValue = (value as Record<string, unknown>)
+          .workflow_dispatch;
+        const current: unknown = existing.get("workflow_dispatch", true);
+        const newline = source.includes("\r\n") ? "\r\n" : "\n";
+        if (current === undefined) {
+          const first = existing.items[0]?.key;
+          if (!isScalar(first) || !first.range || first.commentBefore)
+            throw Error("Unsupported trigger insertion");
+          const from = source.lastIndexOf("\n", first.range[0] - 1) + 1;
+          const indent = source.slice(from, first.range[0]);
+          if (!/^ +$/.test(indent))
+            throw Error("Unsupported trigger indentation");
+          patches.push({
+            from,
+            to: from,
+            insert:
+              indent +
+              "workflow_dispatch: " +
+              JSON.stringify(dispatchValue) +
+              newline,
+          });
           continue;
         }
         throw Error("Existing dispatch trigger requires manual YAML editing");

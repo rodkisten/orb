@@ -1,5 +1,5 @@
-import {DispatchEditor} from "./dispatch-editor";
-import {Play} from "lucide-react";
+import { DispatchEditor } from "./dispatch-editor";
+import { Play } from "lucide-react";
 import { StructuredEditor } from "./structured-editor";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -47,7 +47,7 @@ export function BuilderForm({
   const route = useRouteState();
   const tabs = [
     { id: "workflow", label: "Workflow", Icon: Workflow },
-    {id:"dispatch",label:"Dispatch",Icon:Play},
+    { id: "dispatch", label: "Dispatch", Icon: Play },
     { id: "job", label: "Job", Icon: Box },
     { id: "steps", label: "Steps", Icon: ListOrdered },
     { id: "add", label: "Add / Actions", Icon: Plus },
@@ -214,7 +214,14 @@ export function BuilderForm({
           </fieldset>
         </form>
       </div>
-      {active==="dispatch"&&<DispatchEditor key={body} body={body} disabled={disabled} onEdit={onEdit}/>}
+      {active === "dispatch" && (
+        <DispatchEditor
+          key={body}
+          body={body}
+          disabled={disabled}
+          onEdit={onEdit}
+        />
+      )}
       <div hidden={active !== "workflow"}>
         <WorkflowInspector disabled={disabled} onEdit={onEdit} />
       </div>
