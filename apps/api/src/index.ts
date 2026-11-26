@@ -466,7 +466,12 @@ function createApp(env: Bindings) {
                 t.String({ maxLength: 65536 }),
               ),
             ),
-            jobFields: t.Optional(t.Record(t.String({maxLength:64}),t.String({maxLength:65536}))),
+            jobFields: t.Optional(
+              t.Record(
+                t.String({ maxLength: 64 }),
+                t.String({ maxLength: 65536 }),
+              ),
+            ),
             index: t.Optional(t.Integer({ minimum: 0 })),
             direction: t.Optional(t.Union([t.Literal(-1), t.Literal(1)])),
             condition: t.Optional(t.String({ maxLength: 65536 })),

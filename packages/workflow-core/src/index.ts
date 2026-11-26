@@ -245,30 +245,73 @@ export function editWorkflow(source: string, edit: BuilderEdit) {
       ]);
     }
   } else if (edit.kind === "configure-job") {
-    if (!isMap(job) || job.flow || job.anchor || job.tag) throw Error("Expected plain block job");
-    const allowed = new Set(["name","runs-on","strategy","permissions","concurrency","outputs","if","timeout-minutes","env","with","secrets","uses"]);
+    if (!isMap(job) || job.flow || job.anchor || job.tag)
+      throw Error("Expected plain block job");
+    const allowed = new Set([
+      "name",
+      "runs-on",
+      "strategy",
+      "permissions",
+      "concurrency",
+      "outputs",
+      "if",
+      "timeout-minutes",
+      "env",
+      "with",
+      "secrets",
+      "uses",
+    ]);
     const fields = Object.entries(edit.jobFields ?? {});
-    if (!fields.length || fields.some(([k])=>!allowed.has(k))) throw Error("Invalid job fields");
+    if (!fields.length || fields.some(([k]) => !allowed.has(k)))
+      throw Error("Invalid job fields");
     const first = job.items[0]?.key;
-    if (!isScalar(first) || !first.range) throw Error("Missing job insertion point");
+    if (!isScalar(first) || !first.range)
+      throw Error("Missing job insertion point");
     const prefix = indentAt(first.range[0]);
     const patches: SourcePatch[] = [];
     const added: string[] = [];
     for (const [key, raw] of fields) {
       const parsed: unknown = JSON.parse(raw);
       if (parsed === null) throw Error("Null fields are not supported");
-      if (job.has("uses") && ["runs-on","strategy","outputs","timeout-minutes","env"].includes(key)) throw Error("Field not supported for reusable workflow job");
-      if (!job.has("uses") && ["uses","with","secrets"].includes(key)) throw Error("Reusable workflow fields require an existing reusable job");
+      if (
+        job.has("uses") &&
+        ["runs-on", "strategy", "outputs", "timeout-minutes", "env"].includes(
+          key,
+        )
+      )
+        throw Error("Field not supported for reusable workflow job");
+      if (!job.has("uses") && ["uses", "with", "secrets"].includes(key))
+        throw Error(
+          "Reusable workflow fields require an existing reusable job",
+        );
       const value = JSON.stringify(parsed);
-      const existing = job.get(key,true);
-      if (existing === undefined) { added.push(prefix+key+": "+value); continue; }
-      if (!isScalar(existing) || !existing.range || existing.anchor || existing.tag || existing.comment || existing.commentBefore || existing.type === "BLOCK_LITERAL" || existing.type === "BLOCK_FOLDED") throw Error("Complex existing field requires YAML editing: "+key);
-      patches.push({from:existing.range[0],to:existing.range[1],insert:value});
+      const existing = job.get(key, true);
+      if (existing === undefined) {
+        added.push(prefix + key + ": " + value);
+        continue;
+      }
+      if (
+        !isScalar(existing) ||
+        !existing.range ||
+        existing.anchor ||
+        existing.tag ||
+        existing.comment ||
+        existing.commentBefore ||
+        existing.type === "BLOCK_LITERAL" ||
+        existing.type === "BLOCK_FOLDED"
+      )
+        throw Error("Complex existing field requires YAML editing: " + key);
+      patches.push({
+        from: existing.range[0],
+        to: existing.range[1],
+        insert: value,
+      });
     }
-    if (added.length) patches.push(insertion(job,added));
-    const yaml = applySourcePatches(source,patches); const result = parseWorkflow(yaml);
+    if (added.length) patches.push(insertion(job, added));
+    const yaml = applySourcePatches(source, patches);
+    const result = parseWorkflow(yaml);
     if (!result.valid) throw Error("Invalid workflow after job edit");
-    return {yaml,patches,...result};
+    return { yaml, patches, ...result };
   } else {
     if (!isMap(job) || job.flow || job.has("uses"))
       throw Error("Expected executable job");
