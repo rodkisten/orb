@@ -167,7 +167,8 @@ export function CodeEditor({
         </Button>
       )}
       {expression && suggestions.length > 0 && (
-        <select className="min-w-0 rounded-md border border-input bg-background px-2 py-1 text-base"
+        <select
+          className="min-w-0 rounded-md border border-input bg-background px-2 py-1 text-base"
           aria-label="Complete expression"
           value=""
           onChange={(e) => {
