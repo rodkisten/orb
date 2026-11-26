@@ -1,0 +1,35 @@
+import {useMemo,useState} from 'react'
+import {ReactFlow,Background,Controls,MiniMap,Handle,Position,type Node,type Edge,type NodeProps} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
+type Path=(string|number)[]
+type Range={path:Path;range:{from:number;to:number}|null}
+type Step={index:number;name:string|null;uses:string|null;kind:string}
+type Job={id:string;needs:string[]}
+type Detail={id:string;name:string|null;uses:string|null;steps:Step[]}
+type Data={label:string;detail:Detail|undefined;active:boolean}
+type JobNode=Node<Data,'job'>
+function JobCard({data}:NodeProps<JobNode>){
+ return <div className={'orb-graph-job'+(data.active?' orb-graph-active':'')}><Handle type="target" position={Position.Left}/><strong>{data.label}</strong>{data.detail?.uses&&<small>{data.detail.uses}</small>}<small>{data.detail?.steps.length??0} steps</small><Handle type="source" position={Position.Right}/></div>
+}
+const nodeTypes={job:JobCard}
+function read(body:string){
+ try{const d=JSON.parse(body);return {jobs:(Array.isArray(d.jobs)?d.jobs:[]) as Job[],details:(Array.isArray(d.details)?d.details:[]) as Detail[],ranges:(Array.isArray(d.nodes)?d.nodes:[]) as Range[]}}catch{return {jobs:[],details:[],ranges:[]}}
+}
+export function WorkflowGraph({body,stale,cursor,onSelect}:{body:string;stale:boolean;cursor:number|null;onSelect:(path:Path,from:number,to:number)=>void}){
+ const model=useMemo(()=>read(body),[body])
+ const [selected,setSelected]=useState<string|null>(null)
+ const active=stale||cursor===null?undefined:model.ranges.filter(n=>n.path.length===2&&n.path[0]==='jobs'&&n.range&&n.range.from<=cursor&&cursor<n.range.to)[0]?.path[1]
+ const {nodes,edges}=useMemo(()=>{
+  const jobs=model.jobs.slice(0,300)
+  const ids=new Set(jobs.map(j=>j.id))
+  const depth=new Map<string,number>()
+  for(let pass=0;pass<jobs.length;pass++){let changed=false;for(const j of jobs){if(depth.has(j.id))continue;if(j.needs.every(n=>!ids.has(n)||depth.has(n))){depth.set(j.id,Math.max(0,...j.needs.map(n=>(depth.get(n)??-1)+1)));changed=true}}if(!changed)break}
+  const rows=new Map<number,number>()
+  const nodes:JobNode[]=jobs.map(j=>{const x=depth.get(j.id)??0;const y=rows.get(x)??0;rows.set(x,y+1);const detail=model.details.find(d=>d.id===j.id);return {id:j.id,type:'job',position:{x:x*250,y:y*115},data:{label:detail?.name??j.id,detail,active:active===j.id},draggable:false}})
+  const edges:Edge[]=jobs.flatMap(j=>[...new Set(j.needs)].filter(n=>ids.has(n)).map(n=>({id:JSON.stringify([n,j.id]),source:n,target:j.id})))
+  return {nodes,edges}
+ },[model,active])
+ function select(path:Path){if(stale)return;const n=model.ranges.find(n=>JSON.stringify(n.path)===JSON.stringify(path));if(n?.range)onSelect(path,n.range.from,n.range.to)}
+ const detail=model.details.find(d=>d.id===(active??selected))
+ return <div>{stale&&<p role="status">Waiting for current source parse…</p>}{!nodes.length?<p>No jobs to display. Open or parse a workflow.</p>:<><div className="orb-graph-canvas"><ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView nodesConnectable={false} nodesDraggable={false} onNodeClick={(_,node)=>{setSelected(node.id);select(['jobs',node.id])}}><Background/><Controls/><MiniMap pannable zoomable/></ReactFlow></div><small>{nodes.length} jobs · {edges.length} dependencies{model.jobs.length>300?' · limited to 300 jobs':''}</small></>}{detail&&<section><h3>{detail.name??detail.id}</h3>{detail.steps.map(step=><button key={step.index} disabled={stale} onClick={()=>select(['jobs',detail.id,'steps',step.index])}>{step.index+1}. {step.name??step.uses??step.kind}</button>)}</section>}</div>
+}
