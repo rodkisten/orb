@@ -243,30 +243,99 @@ export function editWorkflow(source: string, edit: BuilderEdit) {
           });
           continue;
         }
-        function safe(node:unknown):boolean {
-          if(!isMap(node)&&!isSeq(node)&&!isScalar(node))return false;
-          if(node.anchor||node.tag||node.comment||node.commentBefore)return false;
-          if(isMap(node))return node.items.every(p=>safe(p.key)&&safe(p.value));
-          if(isSeq(node))return node.items.every(safe);
+        function safe(node: unknown): boolean {
+          if (!isMap(node) && !isSeq(node) && !isScalar(node)) return false;
+          if (node.anchor || node.tag || node.comment || node.commentBefore)
+            return false;
+          if (isMap(node))
+            return node.items.every((p) => safe(p.key) && safe(p.value));
+          if (isSeq(node)) return node.items.every(safe);
           return true;
         }
-        const pair=existing.items.find(p=>isScalar(p.key)&&p.key.value==="workflow_dispatch");
-        if(!pair||!isScalar(pair.key)||!pair.key.range||!safe(pair.key)||!safe(current)||(!isMap(current)&&!isScalar(current))||!current.range)
-          throw Error("Dispatch contains comments, aliases or unsupported YAML; edit source instead");
-        const from=pair.key.range[0],to=current.range[1];
-        const tail=source.slice(from,to);
-        patches.push({from,to,insert:"workflow_dispatch: "+JSON.stringify(dispatchValue)+(tail.endsWith("\n")?newline:"")});
+        const pair = existing.items.find(
+          (p) => isScalar(p.key) && p.key.value === "workflow_dispatch",
+        );
+        if (
+          !pair ||
+          !isScalar(pair.key) ||
+          !pair.key.range ||
+          !safe(pair.key) ||
+          !safe(current) ||
+          (!isMap(current) && !isScalar(current)) ||
+          !current.range
+        )
+          throw Error(
+            "Dispatch contains comments, aliases or unsupported YAML; edit source instead",
+          );
+        const from = pair.key.range[0],
+          to = current.range[1];
+        const tail = source.slice(from, to);
+        patches.push({
+          from,
+          to,
+          insert:
+            "workflow_dispatch: " +
+            JSON.stringify(dispatchValue) +
+            (tail.endsWith("\n") ? newline : ""),
+        });
         continue;
       }
       let insert = JSON.stringify(value);
-      if(key==="on"&&typeof value==="object"&&value&&Object.keys(value).length===1&&Object.hasOwn(value,"workflow_dispatch")){
-        if(isScalar(existing)&&typeof existing.value==="string"&&existing.value!=="workflow_dispatch")insert=JSON.stringify({[existing.value]:null,...value});
-        if(isSeq(existing)){
-          if(existing.anchor||existing.tag||existing.comment||existing.commentBefore||!existing.range||!existing.items.every(n=>isScalar(n)&&typeof n.value==="string"&&!n.comment&&!n.commentBefore&&!n.anchor&&!n.tag))throw Error("Complex trigger list requires source editing");
-          const names=existing.items.map(n=>String((n as {value:unknown}).value));
-          const from=existing.range[0],to=existing.range[1];
-          const prefix=source.slice(source.lastIndexOf("\n",from-1)+1,from);
-          patches.push({from,to,insert:(/^ +$/.test(prefix)?"":"")+JSON.stringify({...Object.fromEntries(names.map(n=>[n,null])),...value})+(source.slice(from,to).endsWith("\n")?(source.includes("\r\n")?"\r\n":"\n"):"")});
+      if (
+        key === "on" &&
+        typeof value === "object" &&
+        value &&
+        Object.keys(value).length === 1 &&
+        Object.hasOwn(value, "workflow_dispatch")
+      ) {
+        if (
+          isScalar(existing) &&
+          typeof existing.value === "string" &&
+          existing.value !== "workflow_dispatch"
+        )
+          insert = JSON.stringify({ [existing.value]: null, ...value });
+        if (isSeq(existing)) {
+          if (
+            existing.anchor ||
+            existing.tag ||
+            existing.comment ||
+            existing.commentBefore ||
+            !existing.range ||
+            !existing.items.every(
+              (n) =>
+                isScalar(n) &&
+                typeof n.value === "string" &&
+                !n.comment &&
+                !n.commentBefore &&
+                !n.anchor &&
+                !n.tag,
+            )
+          )
+            throw Error("Complex trigger list requires source editing");
+          const names = existing.items.map((n) =>
+            String((n as { value: unknown }).value),
+          );
+          const from = existing.range[0],
+            to = existing.range[1];
+          const prefix = source.slice(
+            source.lastIndexOf("\n", from - 1) + 1,
+            from,
+          );
+          patches.push({
+            from,
+            to,
+            insert:
+              (/^ +$/.test(prefix) ? "" : "") +
+              JSON.stringify({
+                ...Object.fromEntries(names.map((n) => [n, null])),
+                ...value,
+              }) +
+              (source.slice(from, to).endsWith("\n")
+                ? source.includes("\r\n")
+                  ? "\r\n"
+                  : "\n"
+                : ""),
+          });
           continue;
         }
       }
