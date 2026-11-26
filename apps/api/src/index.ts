@@ -7,7 +7,7 @@ import { authorized, eventSchema } from './events'
 import { handleGitHubWebhook } from './github-webhook'
 import { accessIdentity } from './access-auth'
 import { workflowSource, validateWorkflow } from './workflow-builder'
-import { inspectWorkflow, parseWorkflow, replaceScalar, editJobNeeds } from '@orb/workflow-core'
+import { inspectWorkflow, parseWorkflow, replaceScalar, editJobNeeds, editWorkflow } from '@orb/workflow-core'
 import { repositoryRead, GatewayError } from './repository-read'
 import { githubToken, githubAuthMode } from './github-auth'
 import { readPrFailure } from './github-pr-ci'
@@ -111,6 +111,11 @@ function createApp(env: Bindings) {
       try{return editJobNeeds(body.yaml,body.job,body.needs)}
       catch(error){set.status=422;return {error:error instanceof Error?error.message:'Unsupported dependency edit'}}
     },{body:t.Object({yaml:t.String({maxLength:262144}),job:t.String({maxLength:255}),needs:t.Array(t.String({maxLength:255}),{maxItems:300})}),detail:{tags:['Workflow Builder']}})
+    .post('/workflows/edit',async ({body,request,set})=>{
+      if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
+      try{return editWorkflow(body.yaml,body.edit)}
+      catch(error){set.status=422;return {error:error instanceof Error?error.message:'Unsupported edit'}}
+    },{body:t.Object({yaml:t.String({maxLength:262144}),edit:t.Object({kind:t.Union([t.Literal('add-job'),t.Literal('duplicate-job'),t.Literal('add-step')]),job:t.String({maxLength:255}),id:t.Optional(t.String({maxLength:255})),name:t.Optional(t.String({maxLength:255})),run:t.Optional(t.String({maxLength:65536})),uses:t.Optional(t.String({maxLength:255}))})}),detail:{tags:['Workflow Builder']}})
     .post('/workflows/inspect',async ({body,request,set})=>{
       if(!(await accessIdentity(request,env))){set.status=401;return {error:'Unauthorized'}}
       return inspectWorkflow(body.yaml)

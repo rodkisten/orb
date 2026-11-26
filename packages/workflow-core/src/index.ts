@@ -69,3 +69,54 @@ export function editJobNeeds(source:string,id:string,needs:string[]){
  if(!result.valid)throw Error('Dependency edit would produce invalid workflow')
  return {yaml,patches:[patch],...result}
 }
+
+export type BuilderEdit={kind:'add-job'|'duplicate-job'|'add-step';job:string;id?:string;name?:string;run?:string;uses?:string}
+export function editWorkflow(source:string,edit:BuilderEdit){
+ const doc=parseDocument(source,{version:'1.2',uniqueKeys:true,keepSourceTokens:true})
+ if(doc.errors.length)throw Error('Invalid YAML')
+ const jobs=doc.get('jobs',true)
+ if(!isMap(jobs)||jobs.flow||jobs.anchor||jobs.tag)throw Error('Expected plain block jobs')
+ const newline=source.includes('\r\n')?'\r\n':'\n'
+ function insertion(node:unknown,lines:string[]):SourcePatch{
+  if(!isMap(node)&&!isSeq(node))throw Error('Expected block collection')
+  if(node.flow||node.anchor||node.tag||!node.range)throw Error('Unsupported collection')
+  const end=node.range[1]
+  const from=source.lastIndexOf('\n',Math.max(0,end-1))+1
+  const at=end===from?end:source.indexOf('\n',end)
+  const pos=at<0?source.length:at===end&&end===from?end:at+1
+  return {from:pos,to:pos,insert:(pos>0&&source[pos-1]!=='\n'?newline:'')+lines.join(newline)+newline}
+ }
+ function indentAt(offset:number){const start=source.lastIndexOf('\n',offset-1)+1;const prefix=source.slice(start,offset);if(!/^ *$/.test(prefix))throw Error('Unsupported indentation');return prefix}
+ const first=jobs.items[0]?.key
+ if(!isScalar(first)||!first.range)throw Error('Missing job insertion point')
+ const indent=indentAt(first.range[0])
+ const job=jobs.get(edit.job,true)
+ let patch:SourcePatch
+ if(edit.kind==='add-job'||edit.kind==='duplicate-job'){
+  const id=edit.id??''
+  if(!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(id)||jobs.has(id))throw Error('Invalid or duplicate job ID')
+  if(edit.kind==='add-job')patch=insertion(jobs,[indent+id+':',indent+'  runs-on: ubuntu-latest',indent+'  steps:',indent+'    - run: "echo Ready"'])
+  else{
+   if(!isMap(job)||job.flow||job.anchor||job.tag||!job.range)throw Error('Unsupported job')
+   const raw=source.slice(job.range[0],job.range[1])
+   if(/[&*][A-Za-z0-9_-]+/.test(raw))throw Error('Anchors or aliases require manual duplication')
+   patch=insertion(jobs,[indent+id+':',indent+'  '+raw.trimEnd()])
+  }
+ }else{
+  if(!isMap(job)||job.flow||job.has('uses'))throw Error('Expected executable job')
+  const steps=job.get('steps',true)
+  if(!isSeq(steps)||steps.flow||!steps.items.length)throw Error('Expected existing block steps')
+  const firstStep=steps.items[0]
+  if(!isMap(firstStep)||!firstStep.range)throw Error('Unsupported step')
+  const start=source.lastIndexOf('\n',firstStep.range[0]-1)+1
+  const prefix=source.slice(start,firstStep.range[0]).match(/^( *)- +$/)
+  if(!prefix)throw Error('Unsupported step indentation')
+  if(Boolean(edit.run)===Boolean(edit.uses))throw Error('Choose run or uses')
+  const line=edit.run?'run: '+JSON.stringify(edit.run):'uses: '+JSON.stringify(edit.uses)
+  patch=insertion(steps,[prefix[1]+'- '+(edit.name?'name: '+JSON.stringify(edit.name):line),...(edit.name?[prefix[1]+'  '+line]:[])])
+ }
+ const yaml=applySourcePatches(source,[patch])
+ const result=parseWorkflow(yaml)
+ if(!result.valid)throw Error('Edit would produce invalid workflow')
+ return {yaml,patches:[patch],...result}
+}
