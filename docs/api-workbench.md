@@ -85,3 +85,5 @@ Native CodeMirror completion replaces unique-prefix Tab handling for expression 
 Main YAML editor offers native expression completions inside open expression delimiters, scoped by AST job/step ranges. Stale AST is not used for scoped suggestions. Environment value composer uses the shared expression editor. Graph remains mounted on inspector selection so desktop layout is preserved; repository loading returns to graph in Studio. Main YAML completion currently uses local AST references, not remote manifest metadata.
 
 Dispatch inspector supports typed input definitions, required/default/choices and a non-executing run form preview. Adding dispatch to a plain block trigger map preserves other events. Existing dispatch mappings and actual execution are not yet supported by this editor; use YAML or GitHub for those operations.
+
+Dispatch patches now replace an existing plain dispatch subtree, preserving sibling triggers, and merge scalar/list trigger declarations into a mapping. Comments, aliases, anchors and tagged dispatch subtrees are rejected rather than silently discarded. Flow-style trigger maps remain unsupported. Execution is still preview-only.
