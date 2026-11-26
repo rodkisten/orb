@@ -35,22 +35,39 @@ export function PatchReview({
         {diff.removed.length} removed · {diff.added.length} added · line{" "}
         {diff.start + 1}
       </small>
-      <div role="region" aria-label="Diff" tabIndex={0} className="max-h-80 overflow-auto rounded-md border border-border bg-muted p-2 font-mono text-xs">
+      <div
+        role="region"
+        aria-label="Diff"
+        tabIndex={0}
+        className="max-h-80 overflow-auto rounded-md border border-border bg-muted p-2 font-mono text-xs"
+      >
         {diff.context.map((line, i) => (
-          <div className="whitespace-pre" key={"c" + i}> {line}</div>
+          <div className="whitespace-pre" key={"c" + i}>
+            {" "}
+            {line}
+          </div>
         ))}
         {diff.removed.map((line, i) => (
-          <div className="whitespace-pre bg-destructive/10 text-destructive" key={"r" + i}>
+          <div
+            className="whitespace-pre bg-destructive/10 text-destructive"
+            key={"r" + i}
+          >
             - {line}
           </div>
         ))}
         {diff.added.map((line, i) => (
-          <div className="whitespace-pre bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" key={"a" + i}>
+          <div
+            className="whitespace-pre bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+            key={"a" + i}
+          >
             + {line}
           </div>
         ))}
         {diff.tail.map((line, i) => (
-          <div className="whitespace-pre" key={"t" + i}> {line}</div>
+          <div className="whitespace-pre" key={"t" + i}>
+            {" "}
+            {line}
+          </div>
         ))}
       </div>
     </section>

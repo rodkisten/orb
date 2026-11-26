@@ -431,7 +431,27 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
             )}
           </div>
           {studio && (
-            <div className="orb-pane-nav"><PanelNavigation label="Studio panels" items={[{id:"source",label:"YAML"},{id:"graph",label:"Graph"},{id:"ast",label:"AST"},{id:"inspector",label:"Inspector"}]} value={pane} onChange={id=>{if(id==="source"||id==="graph"||id==="ast"||id==="inspector")setPane(id);}}/></div>
+            <div className="orb-pane-nav">
+              <PanelNavigation
+                label="Studio panels"
+                items={[
+                  { id: "source", label: "YAML" },
+                  { id: "graph", label: "Graph" },
+                  { id: "ast", label: "AST" },
+                  { id: "inspector", label: "Inspector" },
+                ]}
+                value={pane}
+                onChange={(id) => {
+                  if (
+                    id === "source" ||
+                    id === "graph" ||
+                    id === "ast" ||
+                    id === "inspector"
+                  )
+                    setPane(id);
+                }}
+              />
+            </div>
           )}
           <div className="lab-columns" data-pane={studio ? pane : undefined}>
             <section className="lab-panel orb-source-pane">
