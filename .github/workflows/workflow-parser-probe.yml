@@ -25,5 +25,5 @@ jobs:
           mkdir -p node_modules
           ln -s ../.parser-probe/node_modules/@actions node_modules/@actions
           ln -s ../.parser-probe/node_modules/web-tree-sitter node_modules/web-tree-sitter
-           .parser-probe/node_modules/.bin/esbuild scripts/workflow-parser-probe.mjs --bundle --platform=node --format=esm --external:web-tree-sitter --outfile=.parser-probe/probe.mjs
+           .parser-probe/node_modules/.bin/esbuild scripts/workflow-parser-probe.mjs --bundle --platform=node --format=esm --banner:js='import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' --external:web-tree-sitter --outfile=.parser-probe/probe.mjs
           node .parser-probe/probe.mjs
