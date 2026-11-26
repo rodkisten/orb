@@ -1,4 +1,4 @@
-import {ConditionField,EnvField,references} from "./expression-fields";
+import {ConditionField,EnvField,useReferences} from "./expression-fields";
 import { StructuredEditor } from "./structured-editor";
 import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
@@ -40,7 +40,7 @@ export function StepEditor({
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
   const step =
     current?.steps.find((s) => s.index === index) ?? current?.steps[0];
-  const refs=references(body,current?.id??"",step?.index);
+  const refs=useReferences(body,current?.id??"",step?.index);
   const changed = Boolean(condition || timeout || allow || env);
   function submit(kind: BuilderEdit["kind"], direction?: number) {
     if (!current || !step) return;

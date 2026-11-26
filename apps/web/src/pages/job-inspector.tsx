@@ -1,4 +1,4 @@
-import {ConditionField,EnvField,references} from "./expression-fields";
+import {ConditionField,EnvField,useReferences} from "./expression-fields";
 import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
 import { StructuredEditor } from "./structured-editor";
@@ -40,7 +40,7 @@ export function JobInspector({
     jobs = parsed.details ?? parsed.jobs ?? [];
   } catch {}
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
-  const refs=references(body,current?.id??"");
+  const refs=useReferences(body,current?.id??"");
   const [env,setEnv]=useState("");
   return (
     <section>

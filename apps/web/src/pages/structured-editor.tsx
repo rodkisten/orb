@@ -16,13 +16,18 @@ export function StructuredEditor({
   disabled = false,
   placeholder = "",
   script = false,
+  expression = false,
+  suggestions = [],
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   placeholder?: string;
   script?: boolean;
+  expression?: boolean;
+  suggestions?: string[];
 }) {
+  const options=useRef(suggestions);options.current=suggestions;
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const change = useRef(onChange);
@@ -37,7 +42,8 @@ export function StructuredEditor({
         doc: value,
         extensions: [
           basicSetup,
-          ...(script ? [] : [yaml()]),
+          ...(script || expression ? [] : [yaml()]),
+          ...(expression ? [EditorView.domEventHandlers({keydown(event,view){if(event.key!=="Tab"||event.shiftKey)return false;const pos=view.state.selection.main.head;const prefix=view.state.sliceDoc(0,pos).match(/[\w.]+$/)?.[0];if(!prefix)return false;const matches=options.current.filter(s=>s.startsWith(prefix));if(matches.length!==1||matches[0]===prefix)return false;view.dispatch({changes:{from:pos-prefix.length,to:pos,insert:matches[0]},selection:{anchor:pos-prefix.length+matches[0].length}});return true;}})] : []),
           oneDark,
           EditorView.theme(
             {
@@ -56,7 +62,7 @@ export function StructuredEditor({
           ]),
           hints.current.of(hint(placeholder)),
           EditorView.contentAttributes.of({
-            "aria-label": script ? "Shell script" : "Structured JSON value",
+            "aria-label": script ? "Shell script" : expression ? "GitHub expression" : "Structured JSON value",
             autocapitalize: "off",
             spellcheck: "false",
             autocorrect: "off",
@@ -107,10 +113,10 @@ export function StructuredEditor({
       effects: hints.current.reconfigure(hint(placeholder)),
     });
   }, [placeholder]);
-  return (
+  return (<div>{expression && suggestions.length>0 && <select aria-label="Complete expression" value="" onChange={e=>{const editor=view.current;if(!editor||disabled||!e.target.value)return;const pos=editor.state.selection.main.head;const prefix=editor.state.sliceDoc(0,pos).match(/[\w.]+$/)?.[0]??"";const insert=e.target.value;editor.dispatch({changes:{from:pos-prefix.length,to:pos,insert},selection:{anchor:pos-prefix.length+insert.length}});}} disabled={disabled}><option value="">Complete reference…</option>{suggestions.map(s=><option key={s}>{s}</option>)}</select>}
     <div
       ref={host}
       className="min-w-0 overflow-hidden rounded-lg border border-border"
-    />
+    /></div>
   );
 }

@@ -31,6 +31,7 @@ export function inspectWorkflow(source: string) {
             job = pair.value;
           if (!id || !isMap(job)) return [];
           const steps = job.get("steps", true);
+          const strategy:unknown=job.get("strategy",true);
           return [
             {
               id,
@@ -39,7 +40,7 @@ export function inspectWorkflow(source: string) {
               inputs: keys(job.get("with", true)),
               outputs: keys(job.get("outputs", true)),
               env: keys(job.get("env", true)),
-              matrix: isMap(job.get("strategy",true)) ? keys((job.get("strategy",true) as import("yaml").YAMLMap).get("matrix",true)).filter(k=>k!=="include"&&k!=="exclude") : [],
+              matrix: isMap(strategy) ? keys(strategy.get("matrix",true)).filter(k=>k!=="include"&&k!=="exclude") : [],
               steps: isSeq(steps)
                 ? steps.items.flatMap((step, index) =>
                     isMap(step)
