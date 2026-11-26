@@ -1,8 +1,8 @@
+import {ConditionField,EnvField,references} from "./expression-fields";
 import { StructuredEditor } from "./structured-editor";
 import { useRouteState, updateRoute } from "../workspace/state";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
 type Job = {
@@ -40,6 +40,7 @@ export function StepEditor({
   const current = jobs.find((j) => j.id === job) ?? jobs[0];
   const step =
     current?.steps.find((s) => s.index === index) ?? current?.steps[0];
+  const refs=references(body,current?.id??"",step?.index);
   const changed = Boolean(condition || timeout || allow || env);
   function submit(kind: BuilderEdit["kind"], direction?: number) {
     if (!current || !step) return;
@@ -148,13 +149,7 @@ export function StepEditor({
       >
         Review removal
       </Button>
-      <label>
-        if
-        <Input
-          value={condition}
-          onChange={(e) => setCondition(e.target.value)}
-        />
-      </label>
+      <ConditionField value={condition} onChange={setCondition} refs={refs}/>
       <label>
         Timeout minutes
         <Input
@@ -173,10 +168,7 @@ export function StepEditor({
         />{" "}
         Continue on error
       </label>
-      <label>
-        Environment (KEY=value)
-        <Textarea value={env} onChange={(e) => setEnv(e.target.value)} />
-      </label>
+      <EnvField value={env} onChange={setEnv} refs={refs}/>
       <Button
         type="button"
         disabled={!changed}
