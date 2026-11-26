@@ -1,3 +1,4 @@
+import { YamlEditor } from "../components/yaml-editor";
 import { useState } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -57,7 +58,7 @@ export function WorkflowStudio() {
       <div className="lab-workspace"><div className="lab-panel">
         <h3>{filename}</h3>
         <label>Import YAML<input type="file" accept=".yml,.yaml,text/yaml" disabled={busy} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 262144) { setError("File exceeds 256 KiB"); return; } try { edit(await file.text()); setFilename(file.name); setError(""); } catch (err) { setError(String(err)); } }} /></label>
-        <textarea rows={22} value={yaml} disabled={busy} onChange={e => edit(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="Paste YAML or import a workflow" />
+        <YamlEditor key={filename} value={yaml} onChange={edit} disabled={busy} />
         <div className="lab-tabs"><button disabled={busy || !yaml.trim()} onClick={() => void validate()}>Validate & inspect jobs</button><button disabled={!yaml} onClick={() => { const url = URL.createObjectURL(new Blob([yaml], { type: "text/yaml" })); const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>Export YAML</button></div>
         {error && <p role="alert">{error}</p>}
         {validation && <div><h3>{validation.valid ? "Valid workflow" : "Validation failed"}</h3>{validation.diagnostics.map((d,i) => <p key={i}>{d.severity}: {d.message}</p>)}{validation.jobs.map(j => <div key={j.id} className="rounded border p-2 my-2"><strong>{j.id}</strong><p>{j.needs.length ? "Depends on: " + j.needs.join(", ") : "Entry job"}</p></div>)}</div>}
