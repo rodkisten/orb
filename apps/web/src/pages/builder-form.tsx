@@ -92,7 +92,16 @@ export function BuilderForm({
           {disabled ? "Read only" : "Review before applying"}
         </span>
       </div>
-      <PanelNavigation label="Inspector sections" items={tabs.map(({id,label,Icon})=>({id,label,icon:<Icon size={14}/> }))} value={active ?? "workflow"} onChange={id=>updateRoute({inspector:id})}/>
+      <PanelNavigation
+        label="Inspector sections"
+        items={tabs.map(({ id, label, Icon }) => ({
+          id,
+          label,
+          icon: <Icon size={14} />,
+        }))}
+        value={active ?? "workflow"}
+        onChange={(id) => updateRoute({ inspector: id })}
+      />
       <div hidden={active !== "add"}>
         <form
           onSubmit={(e) => {
