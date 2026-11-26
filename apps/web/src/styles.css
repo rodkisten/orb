@@ -563,3 +563,15 @@ nav {
     padding: 6px 8px;
   }
 }
+
+/* Compact inspector reset, including Safari native fieldset defaults. */
+.lab .orb-inspector fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.lab .orb-inspector legend { font-size: .8rem; color: var(--orb-muted); padding: 0; margin-bottom: 8px; }
+.lab .orb-inspector label { font-size: .75rem; margin-block: 6px; }
+.lab .orb-inspector input[type=checkbox], .lab input[type=checkbox] { width: 16px; height: 16px; min-height: 0; accent-color: var(--orb-primary); }
+.lab .orb-inspector nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+.lab .orb-inspector nav button { min-width: 0; margin: 0; }
+.lab .cm-editor, .lab .cm-gutters { background-color: #212121; }
+.lab .cm-activeLine, .lab .cm-activeLineGutter { background-color: #303030; }
+.lab .lab-tabs { align-items: center; flex-wrap: wrap; gap: 4px; }
+.lab .lab-tabs button { min-height: 32px; padding: 6px 9px; }

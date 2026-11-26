@@ -212,6 +212,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@orb/workflow-core':
+        specifier: workspace:*
+        version: link:../../packages/workflow-core
       '@codemirror/lang-yaml':
         specifier: ^6.1.2
         version: 6.1.3

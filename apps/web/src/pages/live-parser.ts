@@ -1,3 +1,4 @@
+import { parseWorkflow } from "@orb/workflow-core";
 import { useEffect, useState } from "react";
 export type ParserDiagnostic = {
   severity: "error" | "warning";
@@ -53,16 +54,7 @@ export function useLiveParser(source: string, enabled: boolean) {
     const timer = setTimeout(async () => {
       setSnapshot((old) => ({ ...old, status: "parsing" }));
       try {
-        const response = await fetch("/v1/workflows/parse", {
-          method: "POST",
-          credentials: "same-origin",
-          redirect: "error",
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ yaml: source }),
-        });
-        if (!response.ok) throw Error("Parser HTTP " + response.status);
-        const data: unknown = await response.json();
+        const data = parseWorkflow(source);
         if (!controller.signal.aborted)
           setSnapshot({
             source,

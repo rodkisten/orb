@@ -1,3 +1,4 @@
+import { editWorkflow, editJobNeeds, parseWorkflow } from "@orb/workflow-core";
 import type { OpenWorkflow } from "../workspace/explorer";
 import { useRef, useState, useEffect } from "react";
 import { Send, Copy, Square, FolderGit2 } from "lucide-react";
@@ -59,7 +60,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
     () =>
       file?.path ??
       new URLSearchParams(location.search).get("path") ??
-      ".github/workflows/api-verify.yml",
+      ".github/workflows/ci.yml",
   );
   const [yaml, setYaml] = useState("");
   const drafts = useDrafts(repos);
@@ -115,23 +116,14 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
       void drafts.save(next).catch((e) => setDraftError(String(e)));
     }
   }
-  async function propose(endpoint: string, payload: object) {
+  async function propose(build: (source: string) => { yaml: string }) {
     if (editBusy || busy) return;
     const source = yaml;
     setEditBusy(true);
     setProposal(null);
     setError("");
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        credentials: "same-origin",
-        redirect: "error",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ yaml: source, ...payload }),
-      });
-      const data = await response.json();
-      if (!response.ok || typeof data.yaml !== "string")
-        throw Error(data.error ?? "Dependency edit failed");
+      const data = build(source);
       setProposal({ source, yaml: data.yaml });
     } catch (e) {
       setError(String(e));
@@ -140,10 +132,10 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
     }
   }
   function editNeeds(job: string, needs: string[]) {
-    void propose("/v1/workflows/edit-needs", { job, needs });
+    void propose((source) => editJobNeeds(source, job, needs));
   }
   function editJob(edit: BuilderEdit) {
-    void propose("/v1/workflows/edit", { edit });
+    void propose((source) => editWorkflow(source, edit));
   }
   function switchDocument(d: Draft) {
     if (active.current || editBusy) return;
@@ -189,6 +181,10 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
           : "");
   async function send() {
     if (active.current) return;
+    if (studio && local) {
+      try { const data = parseWorkflow(yaml); setResult({status: 200, ms: 0, bytes: new TextEncoder().encode(JSON.stringify(data)).length, body: JSON.stringify(data), headers: ""}); setParsedSource(yaml); setTab("graph"); setError(""); } catch (e) { setError(String(e)); }
+      return;
+    }
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);

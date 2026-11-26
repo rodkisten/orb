@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@orb/workflow-core": "workspace:*",
     "@dagrejs/dagre": "^3.1.4",
     "@hookform/resolvers": "^7.0.9",
     "@radix-ui/react-dialog": "^1.1.0",
