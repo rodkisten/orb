@@ -1,5 +1,5 @@
 import { Button } from "../../../components/ui/button";
-import { Textarea } from "../../../components/ui/textarea";
+import { StructuredEditor } from "./structured-editor";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
 const fields = [
@@ -92,15 +92,10 @@ export function JobInspector({
             .map((f) => (
               <label key={f.key}>
                 {f.key}
-                <Textarea
-                  rows={2}
-                  autoCapitalize="none"
-                  spellCheck={false}
+                <StructuredEditor disabled={disabled || !current}
                   placeholder={f.example}
                   value={values[f.key] ?? ""}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                  }
+                  onChange={(value) => setValues((v) => ({ ...v, [f.key]: value }))}
                 />
               </label>
             ))}

@@ -1,5 +1,5 @@
 import { Button } from "../../../components/ui/button";
-import { Textarea } from "../../../components/ui/textarea";
+import { StructuredEditor } from "./structured-editor";
 import { useState } from "react";
 import type { BuilderEdit } from "./builder-form";
 const presets = {
@@ -93,15 +93,10 @@ export function WorkflowInspector({
           {fields.map(([key, example]) => (
             <label key={key}>
               {key}
-              <Textarea
-                rows={key === "on" ? 8 : 2}
-                spellCheck={false}
-                autoCapitalize="none"
+              <StructuredEditor disabled={disabled}
                 placeholder={example}
                 value={values[key] ?? ""}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, [key]: e.target.value }))
-                }
+                onChange={(value) => setValues((v) => ({ ...v, [key]: value }))}
               />
             </label>
           ))}

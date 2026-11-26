@@ -33,3 +33,5 @@ Workflow Inspector: root-level reviewed patches for name, run-name, on, permissi
 Midnight migration: Tailwind v4 Vite plugin enabled without global preflight; semantic Orb tokens and URL-driven inspector navigation (`inspector=workflow|job|steps|add`). Existing forms remain mounted to preserve drafts. Shared shadcn/Base UI migration is a subsequent step.
 
 Inspector forms now import the existing shared shadcn Button, Input and Textarea directly from apps/components/ui. Native selects remain until their value/event adapters are migrated. Tailwind explicitly scans the shared component directory. The existing apps workspace must be installed for shared Base UI and cn dependencies.
+
+Structured inspector fields use compact CodeMirror 6 editors with existing YAML grammar (JSON-compatible flow syntax), One Dark, controlled synchronization, read-only compartments and external updates excluded from undo history. JSON.parse remains the submission validator. Shell-specific syntax is not yet implemented.
