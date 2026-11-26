@@ -88,21 +88,24 @@ export function ActionInspector({
       >
         Search
       </Button>
-      <div className="orb-action-results">{results.data?.search.nodes
-        .filter((n) => n?.nameWithOwner)
-        .map((n) => (
-          <Button
-            type="button"
-            key={n.nameWithOwner}
-            onClick={() =>
-              onUses(
-                n.nameWithOwner + "@" + (n.defaultBranchRef?.name ?? "main"),
-              )
-            }
-          >
-            <strong>{n.nameWithOwner}</strong><small>{n.description}</small>
-          </Button>
-        ))}</div>
+      <div className="orb-action-results">
+        {results.data?.search.nodes
+          .filter((n) => n?.nameWithOwner)
+          .map((n) => (
+            <Button
+              type="button"
+              key={n.nameWithOwner}
+              onClick={() =>
+                onUses(
+                  n.nameWithOwner + "@" + (n.defaultBranchRef?.name ?? "main"),
+                )
+              }
+            >
+              <strong>{n.nameWithOwner}</strong>
+              <small>{n.description}</small>
+            </Button>
+          ))}
+      </div>
       {versions.data && (
         <label>
           Version
@@ -143,31 +146,36 @@ export function ActionInspector({
           >
             Pin commit SHA
           </Button>
-          <details open><summary>Inputs ({manifest.data.inputs.length})</summary>{manifest.data.inputs.map((p) => (
-            <label key={p.id}>
-              {p.id}
-              {p.required ? " (required)" : ""}
-              <small>{p.description}</small>
-              <Input
-                required={p.required && p.default === undefined}
-                placeholder={p.default ?? ""}
-                value={inputs[p.id] ?? ""}
-                onChange={(e) => {
-                  const next = { ...inputs };
-                  if (e.target.value) next[p.id] = e.target.value;
-                  else delete next[p.id];
-                  onInputs(next);
-                }}
-                autoCapitalize="none"
-              />
-            </label>
-          ))}</details>
-          <details><summary>Outputs ({manifest.data.outputs.length})</summary>
-          {manifest.data.outputs.map((p) => (
-            <p key={p.id}>
-              {p.id} · {p.description}
-            </p>
-          ))}</details>
+          <details open>
+            <summary>Inputs ({manifest.data.inputs.length})</summary>
+            {manifest.data.inputs.map((p) => (
+              <label key={p.id}>
+                {p.id}
+                {p.required ? " (required)" : ""}
+                <small>{p.description}</small>
+                <Input
+                  required={p.required && p.default === undefined}
+                  placeholder={p.default ?? ""}
+                  value={inputs[p.id] ?? ""}
+                  onChange={(e) => {
+                    const next = { ...inputs };
+                    if (e.target.value) next[p.id] = e.target.value;
+                    else delete next[p.id];
+                    onInputs(next);
+                  }}
+                  autoCapitalize="none"
+                />
+              </label>
+            ))}
+          </details>
+          <details>
+            <summary>Outputs ({manifest.data.outputs.length})</summary>
+            {manifest.data.outputs.map((p) => (
+              <p key={p.id}>
+                {p.id} · {p.description}
+              </p>
+            ))}
+          </details>
         </>
       )}
     </section>

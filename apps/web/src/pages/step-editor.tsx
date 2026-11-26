@@ -128,58 +128,86 @@ export function StepEditor({
           }
         />
       )}
-      <details className="orb-step-actions"><summary>Step actions</summary><div className="orb-form-actions">
-      <Button
-        type="button"
-        disabled={!step || step.index === 0}
-        onClick={() => submit("move-step", -1)}
-      >
-        Move up
-      </Button>
-      <Button
-        type="button"
-        disabled={!step || step.index === (current?.steps.length ?? 0) - 1}
-        onClick={() => submit("move-step", 1)}
-      >
-        Move down
-      </Button>
-      <Button
-        type="button"
-        disabled={(current?.steps.length ?? 0) < 2}
-        onClick={() => submit("remove-step")}
-      >
-        Review removal
-      </Button></div></details>
-      {step?.uses && <div className="orb-action-reference"><strong>Action</strong><code>{step.uses}</code></div>}
-      <details className="orb-step-advanced"><summary>Advanced configuration {changed && <small>· Pending edits</small>}</summary>
-      <ConditionField value={condition} onChange={setCondition} refs={refs} />
-      <label>
-        Timeout minutes
-        <Input
-          type="number"
-          min="1"
-          max="360"
-          value={timeout}
-          onChange={(e) => setTimeoutValue(e.target.value)}
-        />
-      </label>
-      <label>
-        <Input
-          type="checkbox"
-          checked={allow}
-          onChange={(e) => setAllow(e.target.checked)}
-        />{" "}
-        Continue on error
-      </label>
-      <EnvField value={env} onChange={setEnv} refs={refs} />
-      </details><div className="orb-form-actions"><Button type="button" variant="ghost" disabled={!changed} onClick={()=>{setCondition("");setTimeoutValue("");setAllow(false);setEnv("");setError("");}}>Clear</Button>
-      <Button
-        type="button"
-        disabled={!changed}
-        onClick={() => submit("configure-step")}
-      >
-        Review configuration
-      </Button></div>
+      <details className="orb-step-actions">
+        <summary>Step actions</summary>
+        <div className="orb-form-actions">
+          <Button
+            type="button"
+            disabled={!step || step.index === 0}
+            onClick={() => submit("move-step", -1)}
+          >
+            Move up
+          </Button>
+          <Button
+            type="button"
+            disabled={!step || step.index === (current?.steps.length ?? 0) - 1}
+            onClick={() => submit("move-step", 1)}
+          >
+            Move down
+          </Button>
+          <Button
+            type="button"
+            disabled={(current?.steps.length ?? 0) < 2}
+            onClick={() => submit("remove-step")}
+          >
+            Review removal
+          </Button>
+        </div>
+      </details>
+      {step?.uses && (
+        <div className="orb-action-reference">
+          <strong>Action</strong>
+          <code>{step.uses}</code>
+        </div>
+      )}
+      <details className="orb-step-advanced">
+        <summary>
+          Advanced configuration {changed && <small>· Pending edits</small>}
+        </summary>
+        <ConditionField value={condition} onChange={setCondition} refs={refs} />
+        <label>
+          Timeout minutes
+          <Input
+            type="number"
+            min="1"
+            max="360"
+            value={timeout}
+            onChange={(e) => setTimeoutValue(e.target.value)}
+          />
+        </label>
+        <label>
+          <Input
+            type="checkbox"
+            checked={allow}
+            onChange={(e) => setAllow(e.target.checked)}
+          />{" "}
+          Continue on error
+        </label>
+        <EnvField value={env} onChange={setEnv} refs={refs} />
+      </details>
+      <div className="orb-form-actions">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!changed}
+          onClick={() => {
+            setCondition("");
+            setTimeoutValue("");
+            setAllow(false);
+            setEnv("");
+            setError("");
+          }}
+        >
+          Clear
+        </Button>
+        <Button
+          type="button"
+          disabled={!changed}
+          onClick={() => submit("configure-step")}
+        >
+          Review configuration
+        </Button>
+      </div>
       {error && <p role="alert">{error}</p>}
     </fieldset>
   );
