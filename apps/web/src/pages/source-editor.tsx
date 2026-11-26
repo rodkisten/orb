@@ -1,5 +1,5 @@
-import {autocompletion} from "@codemirror/autocomplete";
-import {references} from "./expression-fields";
+import { autocompletion } from "@codemirror/autocomplete";
+import { references } from "./expression-fields";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import {
   Annotation,
@@ -70,8 +70,12 @@ export const SourceEditor = forwardRef<
     diagnostics?: ParserDiagnostic[];
     contextBody?: string;
   }
->(function SourceEditor({ value, onChange, onCursor, diagnostics, contextBody }, ref) {
-  const context=useRef(contextBody);context.current=contextBody;
+>(function SourceEditor(
+  { value, onChange, onCursor, diagnostics, contextBody },
+  ref,
+) {
+  const context = useRef(contextBody);
+  context.current = contextBody;
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const change = useRef(onChange);
@@ -89,25 +93,52 @@ export const SourceEditor = forwardRef<
           selectionField,
           basicSetup,
           yaml(),
-          autocompletion({override:[ctx=>{
-            const before=ctx.state.sliceDoc(0,ctx.pos);
-            const open=before.lastIndexOf("$"+"{{");
-            if(open<0||before.lastIndexOf("}}")>open)return null;
-            const token=ctx.matchBefore(/[\w.-]+/);
-            if(!token&&!ctx.explicit)return null;
-            let job="",step:number|undefined;
-            try{
-              const model=JSON.parse(context.current??"{}") as {nodes?:{path:(string|number)[];range:{from:number;to:number}|null}[]};
-              const nodes=model.nodes??[];
-              const within=nodes.filter(n=>n.range&&n.range.from<=open&&open<n.range.to&&n.path[0]==="jobs");
-              const j=within.find(n=>n.path.length===2);
-              if(typeof j?.path[1]==="string")job=j.path[1];
-              const st=within.find(n=>n.path.length===4&&n.path[2]==="steps");
-              if(typeof st?.path[3]==="number")step=st.path[3];
-            }catch{}
-            const options=references(context.current??"",job,step).map(r=>({label:r.value,type:"variable",detail:r.group,info:"Reference from current workflow"}));
-            return {from:token?.from??ctx.pos,options};
-          }]}),
+          autocompletion({
+            override: [
+              (ctx) => {
+                const before = ctx.state.sliceDoc(0, ctx.pos);
+                const open = before.lastIndexOf("$" + "{{");
+                if (open < 0 || before.lastIndexOf("}}") > open) return null;
+                const token = ctx.matchBefore(/[\w.-]+/);
+                if (!token && !ctx.explicit) return null;
+                let job = "",
+                  step: number | undefined;
+                try {
+                  const model = JSON.parse(context.current ?? "{}") as {
+                    nodes?: {
+                      path: (string | number)[];
+                      range: { from: number; to: number } | null;
+                    }[];
+                  };
+                  const nodes = model.nodes ?? [];
+                  const within = nodes.filter(
+                    (n) =>
+                      n.range &&
+                      n.range.from <= open &&
+                      open < n.range.to &&
+                      n.path[0] === "jobs",
+                  );
+                  const j = within.find((n) => n.path.length === 2);
+                  if (typeof j?.path[1] === "string") job = j.path[1];
+                  const st = within.find(
+                    (n) => n.path.length === 4 && n.path[2] === "steps",
+                  );
+                  if (typeof st?.path[3] === "number") step = st.path[3];
+                } catch {}
+                const options = references(
+                  context.current ?? "",
+                  job,
+                  step,
+                ).map((r) => ({
+                  label: r.value,
+                  type: "variable",
+                  detail: r.group,
+                  info: "Reference from current workflow",
+                }));
+                return { from: token?.from ?? ctx.pos, options };
+              },
+            ],
+          }),
           oneDark,
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({

@@ -293,7 +293,13 @@ export function EnvField({
         onChange={(e) => setKey(e.target.value)}
         placeholder="ARTIFACT"
       />
-      <StructuredEditor expression suggestions={refs.map(r=>r.value)} value={val} onChange={setVal} placeholder="Literal or expression"/>
+      <StructuredEditor
+        expression
+        suggestions={refs.map((r) => r.value)}
+        value={val}
+        onChange={setVal}
+        placeholder="Literal or expression"
+      />
       <Picker refs={refs} onPick={(v) => setVal(wrap(v))} />
       <Button
         type="button"

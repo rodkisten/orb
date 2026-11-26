@@ -177,7 +177,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
   function detach() {
     setProposal(null);
     updateRoute({ draft: null });
-    linkedRange.current=null;
+    linkedRange.current = null;
     setOpened(null);
     setYaml("");
     setResult(null);
@@ -269,8 +269,8 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
           setOpened(d);
           setYaml(d.yaml);
           await drafts.save(d);
-          linkedRange.current=null;
-          setTab(studio?"graph":"ast");
+          linkedRange.current = null;
+          setTab(studio ? "graph" : "ast");
         }
         if (
           response.ok &&
@@ -498,7 +498,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                   value={yaml}
                   onChange={editYaml}
                   onCursor={setCursor}
-                  contextBody={astStale?undefined:astBody}
+                  contextBody={astStale ? undefined : astBody}
                   diagnostics={
                     live && parsed.source === yaml
                       ? parsed.diagnostics
@@ -649,7 +649,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                     />
                   </div>
                   <div className="orb-flow-pane">
-                    {(
+                    {
                       <WorkflowGraph
                         onEditNeeds={editNeeds}
                         body={astBody}
@@ -672,7 +672,7 @@ function Lab({ repos, file }: { repos: string[]; file?: OpenWorkflow }) {
                           linkSource(from, to);
                         }}
                       />
-                    )}
+                    }
                   </div>
                 </>
               ) : tab === "ast" ? (
