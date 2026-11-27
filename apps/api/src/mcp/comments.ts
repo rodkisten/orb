@@ -51,6 +51,7 @@ export function registerComments(server: McpServer, env: McpEnv) {
         if (!pr.ok)
           return reply({ error: "PR unavailable", status: pr.status }, true);
         const marker = "<!-- orb:" + key + " -->";
+        let foreignMarker = false;
         const content = marker + "\n" + body;
         const matches: Array<{ id: number; body: string; html_url: string }> =
           [];
@@ -80,6 +81,7 @@ export function registerComments(server: McpServer, env: McpEnv) {
               performed_via_github_app?: { id: number };
             }>
           >();
+          foreignMarker ||= comments.some((c) => c.body?.startsWith(marker + "\n") && c.performed_via_github_app?.id !== appId);
           matches.push(
             ...comments.filter(
               (c) =>
@@ -92,7 +94,7 @@ export function registerComments(server: McpServer, env: McpEnv) {
             break;
           }
         }
-        if (!complete || matches.length > 1)
+        if (!complete || foreignMarker || matches.length > 1)
           return reply(
             {
               error:
@@ -149,7 +151,7 @@ export function registerComments(server: McpServer, env: McpEnv) {
       inputSchema: { repository, issueNumber: runId, body: bodyText.min(1) },
     },
     async ({ repository: repo, issueNumber, body }) =>
-      mutateResource(
+      body.includes("<!-- orb:") ? reply({ error: "Reserved comment marker" }, true) : mutateResource(
         env,
         repo,
         "/issues/" + issueNumber + "/comments",
