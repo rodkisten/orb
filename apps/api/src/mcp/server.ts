@@ -326,6 +326,55 @@ export async function serveDispatchMcp(
       }
     },
   );
+  async function pullOperation(repo: string, pr: number, action: "sync" | "checks", expectedHead?: string) {
+    const reply = (value: unknown, isError = false) => ({
+      isError,
+      content: [{ type: "text" as const, text: JSON.stringify(value) }],
+    });
+    if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+      return reply({ error: "Repository unavailable" }, true);
+    if (action === "sync" && githubAuthMode(env) !== "app")
+      return reply({ error: "GitHub App required" }, true);
+    try {
+      const token = await githubToken(env);
+      const base = "https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/");
+      const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" };
+      const signal = AbortSignal.timeout(15000);
+      const request = await fetch(base + "/pulls/" + pr, { headers, redirect: "error", signal });
+      if (!request.ok) return reply({ error: "Pull request unavailable", status: request.status }, true);
+      const pull = await request.json<{ state: string; merged: boolean; head: { sha: string }; base: { ref: string } }>();
+      if (action === "sync") {
+        if (pull.state !== "open" || pull.merged || pull.head.sha !== expectedHead)
+          return reply({ error: "PR closed or head changed; refresh before syncing" }, true);
+        const response = await fetch(base + "/pulls/" + pr + "/update-branch", {
+          method: "PUT", headers, redirect: "error", signal,
+          body: JSON.stringify({ expected_head_sha: expectedHead }),
+        });
+        return reply({ accepted: response.ok, status: response.status, pr, expectedHead }, !response.ok);
+      }
+      const sha = encodeURIComponent(pull.head.sha);
+      const [checks, statuses] = await Promise.all([
+        fetch(base + "/commits/" + sha + "/check-runs?per_page=30", { headers, redirect: "error", signal }),
+        fetch(base + "/commits/" + sha + "/status?per_page=30", { headers, redirect: "error", signal }),
+      ]);
+      if (!checks.ok || !statuses.ok) return reply({ error: "Checks unavailable", checksStatus: checks.status, commitStatus: statuses.status }, true);
+      const checkData = await checks.json<{ total_count: number; check_runs: Array<{ name: string; status: string; conclusion: string | null; html_url: string }> }>();
+      const statusData = await statuses.json<{ state: string; total_count: number; statuses: Array<{ context: string; state: string }> }>();
+      return reply({ pr, headSha: pull.head.sha, base: pull.base.ref, checks: checkData.check_runs.map(c => ({ name: c.name, status: c.status, conclusion: c.conclusion, url: c.html_url })), checkCount: checkData.total_count, combinedStatus: statusData.state, statuses: statusData.statuses.map(s => ({ context: s.context, state: s.state })), statusCount: statusData.total_count, requiredChecksVerified: false });
+    } catch {
+      return reply({ error: action === "sync" ? "Sync not confirmed; inspect PR before retrying" : "GitHub request failed" }, true);
+    }
+  }
+  server.registerTool("github_pr_sync", {
+    description: "Request GitHub to update an open PR from its base branch. Requires the current expected head SHA.",
+    inputSchema: { repository, prNumber: runId, expectedHeadSha: z.string().regex(/^[a-f0-9]{40}$/i) },
+    annotations: writeAnnotations,
+  }, async args => pullOperation(args.repository, args.prNumber, "sync", args.expectedHeadSha));
+  server.registerTool("github_pr_checks", {
+    description: "Inspect current PR head check runs and commit statuses. Does not determine branch protection requirements.",
+    inputSchema: { repository, prNumber: runId },
+    annotations,
+  }, async args => pullOperation(args.repository, args.prNumber, "checks"));
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
