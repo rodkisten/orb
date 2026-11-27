@@ -1126,7 +1126,7 @@ export default {
           const headers = new Headers(internal.headers);
           headers.set("authorization", "Bearer " + secret);
           return createApp(env).fetch(new Request(internal, { headers }));
-        });
+        }, env);
       }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
         return handleGitHubWebhook(request, env);
