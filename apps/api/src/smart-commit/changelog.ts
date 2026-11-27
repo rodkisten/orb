@@ -25,7 +25,8 @@ export async function evaluateChangelog(
   protectBreaking = true,
 ) {
   const parsed = await adapter.parse(message);
-  if (!parsed.type || !parsed.subject) throw new Error("Unrecognized commit format");
+  if (!parsed.type || !parsed.subject)
+    throw new Error("Unrecognized commit format");
   let group: string | null = null;
   let skipped = false;
   for (const rule of rules) {
@@ -35,6 +36,12 @@ export async function evaluateChangelog(
     skipped = Boolean(rule.skip) && !(protectBreaking && parsed.breaking);
     break;
   }
-  const semverSuggestion = parsed.breaking ? "major" : parsed.type === "feat" ? "minor" : parsed.type === "fix" || parsed.type === "perf" ? "patch" : null;
+  const semverSuggestion = parsed.breaking
+    ? "major"
+    : parsed.type === "feat"
+      ? "minor"
+      : parsed.type === "fix" || parsed.type === "perf"
+        ? "patch"
+        : null;
   return { parsed, group, skipped, semverSuggestion };
 }
