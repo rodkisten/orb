@@ -1,0 +1,30 @@
+name: DELETE ME - MCP crypto dependency
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/github-operations]
+    paths: [.github/workflows/delete-me-mcp-crypto.yml]
+permissions:
+  contents: read
+concurrency:
+  group: orb-mcp-crypto
+  cancel-in-progress: false
+jobs:
+  install:
+    if: github.ref == 'refs/heads/feat/github-operations'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm --filter @orb/api add libsodium-wrappers
+      - run: pnpm --filter @orb/api typecheck
+      - run: pnpm --filter @orb/api exec wrangler deploy --dry-run --outdir /tmp/orb-crypto-build
+      - uses: rodkisten/github/src/publish@main
+        with:
+          app-id: ${{ vars.PLOOCKY_APP_ID }}
+          private-key: ${{ secrets.PLOOCKY_PRIVATE_KEY }}
+          mode: commit
+          branch: feat/github-operations
+          commit-message: "build(api): install sealed-box crypto dependency [deploy]"
