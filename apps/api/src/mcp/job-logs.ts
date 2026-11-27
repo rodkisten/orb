@@ -70,5 +70,11 @@ export async function readJobLogs(env: McpEnv, repo: string, jobId: number, maxB
           }
           logs += decoder.decode();
         } finally {
-          await reader.cancel().catch(() 
+          await reader.cancel().catch(() => {});
+        }
+        logs = redactDiagnostic(logs, [token]);
+        return reply({ jobId, stepNumber, bytes, truncated, logs });
+      } catch {
+        return reply({ error: "Unable to retrieve job logs" }, true);
+      }
 }
