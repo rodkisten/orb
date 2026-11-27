@@ -1,3 +1,4 @@
+import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
 import {
   repository,
   runId,
@@ -149,8 +150,7 @@ export async function serveDispatchMcp(
     try {
       const token = await githubToken(env);
       const url = new URL(
-        "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/") +
+        githubRepositoryUrl(repo) +
           "/actions/runs/" +
           id +
           "/" +
@@ -162,14 +162,9 @@ export async function serveDispatchMcp(
       }
       const response = await fetch(url, {
         method: write ? "POST" : "GET",
-        headers: {
-          Authorization: "Bearer " + token,
-          Accept: "application/vnd.github+json",
-          "User-Agent": "orb-api",
-          "X-GitHub-Api-Version": "2026-03-10",
-        },
+        headers: githubHeaders(token, "2026-03-10", false),
         redirect: "error",
-        signal: AbortSignal.timeout(15000),
+        signal: githubTimeout(15000),
       });
       if (!response.ok)
         return result(
@@ -284,19 +279,13 @@ export async function serveDispatchMcp(
         const token = await githubToken(env);
         const signal = AbortSignal.timeout(20000);
         const endpoint =
-          "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/") +
+          githubRepositoryUrl(repo) +
           "/actions/jobs/" +
           jobId +
           (stepNumber ? "/steps/" + stepNumber : "") +
           "/logs";
         const response = await fetch(endpoint, {
-          headers: {
-            Authorization: "Bearer " + token,
-            Accept: "application/vnd.github+json",
-            "User-Agent": "orb-api",
-            "X-GitHub-Api-Version": "2026-03-10",
-          },
+          headers: githubHeaders(token, "2026-03-10", false),
           redirect: "manual",
           signal,
         });
@@ -372,16 +361,9 @@ export async function serveDispatchMcp(
     try {
       const token = await githubToken(env);
       const base =
-        "https://api.github.com/repos/" +
-        repo.split("/").map(encodeURIComponent).join("/");
-      const headers = {
-        Authorization: "Bearer " + token,
-        Accept: "application/vnd.github+json",
-        "Content-Type": "application/json",
-        "User-Agent": "orb-api",
-        "X-GitHub-Api-Version": "2022-11-28",
-      };
-      const signal = AbortSignal.timeout(15000);
+        githubRepositoryUrl(repo);
+      const headers = githubHeaders(token, "2022-11-28", true);
+      const signal = githubTimeout(15000);
       const request = await fetch(base + "/pulls/" + pr, {
         headers,
         redirect: "error",
@@ -540,15 +522,8 @@ export async function serveDispatchMcp(
       try {
         const token = await githubToken(env);
         const base =
-          "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/");
-        const headers = {
-          Authorization: "Bearer " + token,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-          "User-Agent": "orb-api",
-          "X-GitHub-Api-Version": "2022-11-28",
-        };
+          githubRepositoryUrl(repo);
+        const headers = githubHeaders(token, "2022-11-28", true);
         const signal = AbortSignal.timeout(20000);
         const pr = await fetch(base + "/pulls/" + prNumber, {
           headers,
@@ -715,16 +690,9 @@ export async function serveDispatchMcp(
       try {
         const token = await githubToken(env);
         const base =
-          "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/");
-        const headers = {
-          Authorization: "Bearer " + token,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-          "User-Agent": "orb-api",
-          "X-GitHub-Api-Version": "2022-11-28",
-        };
-        const signal = AbortSignal.timeout(30000);
+          githubRepositoryUrl(repo);
+        const headers = githubHeaders(token, "2022-11-28", true);
+        const signal = githubTimeout(30000);
         async function api<T>(
           path: string,
           method = "GET",
@@ -816,22 +784,16 @@ export async function serveDispatchMcp(
       try {
         const token = await githubToken(env);
         const url =
-          "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/") +
+          githubRepositoryUrl(repo) +
           "/compare/" +
           encodeURIComponent(base) +
           "..." +
           encodeURIComponent(head) +
           "?per_page=1";
         const response = await fetch(url, {
-          headers: {
-            Authorization: "Bearer " + token,
-            Accept: "application/vnd.github+json",
-            "User-Agent": "orb-api",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
+          headers: githubHeaders(token, "2022-11-28", false),
           redirect: "error",
-          signal: AbortSignal.timeout(15000),
+          signal: githubTimeout(15000),
         });
         if (!response.ok)
           return reply(
@@ -914,21 +876,14 @@ export async function serveDispatchMcp(
     try {
       const token = await githubToken(env);
       const response = await fetch(
-        "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/") +
+        githubRepositoryUrl(repo) +
           path,
         {
           method,
-          headers: {
-            Authorization: "Bearer " + token,
-            Accept: "application/vnd.github+json",
-            "Content-Type": "application/json",
-            "User-Agent": "orb-api",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
+          headers: githubHeaders(token, "2022-11-28", true),
           body: JSON.stringify(body),
           redirect: "error",
-          signal: AbortSignal.timeout(15000),
+          signal: githubTimeout(15000),
         },
       );
       if (!response.ok)
@@ -1090,16 +1045,9 @@ export async function serveDispatchMcp(
     try {
       const token = await githubToken(env);
       const root =
-        "https://api.github.com/repos/" +
-        repo.split("/").map(encodeURIComponent).join("/");
-      const headers = {
-        Authorization: "Bearer " + token,
-        Accept: "application/vnd.github+json",
-        "Content-Type": "application/json",
-        "User-Agent": "orb-api",
-        "X-GitHub-Api-Version": "2022-11-28",
-      };
-      const signal = AbortSignal.timeout(15000);
+        githubRepositoryUrl(repo);
+      const headers = githubHeaders(token, "2022-11-28", true);
+      const signal = githubTimeout(15000);
       const endpoint =
         kind === "environments"
           ? root + "/environments"
@@ -1261,18 +1209,11 @@ export async function serveDispatchMcp(
       try {
         const token = await githubToken(env);
         const url =
-          "https://api.github.com/repos/" +
-          repo.split("/").map(encodeURIComponent).join("/") +
+          githubRepositoryUrl(repo) +
           "/issues/comments/" +
           commentId;
-        const headers = {
-          Authorization: "Bearer " + token,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-          "User-Agent": "orb-api",
-          "X-GitHub-Api-Version": "2022-11-28",
-        };
-        const signal = AbortSignal.timeout(15000);
+        const headers = githubHeaders(token, "2022-11-28", true);
+        const signal = githubTimeout(15000);
         const current = await fetch(url, {
           headers,
           redirect: "error",
