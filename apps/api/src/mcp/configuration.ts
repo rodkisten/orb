@@ -129,9 +129,13 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
         return reply({ error: "GitHub App required" }, true);
       // Fail closed: PUT may replace existing deployment protection settings.
       // Even a 404 can conceal insufficient permissions, so do not infer absence.
-      return reply({
-        error: "Environment writes disabled pending protection-preserving implementation",
-      }, true);
+      return reply(
+        {
+          error:
+            "Environment writes disabled pending protection-preserving implementation",
+        },
+        true,
+      );
     },
   );
   server.registerTool(
