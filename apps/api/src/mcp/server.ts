@@ -1,3 +1,4 @@
+import { repository, runId, page, limit, annotations, writeAnnotations, environmentName, variableName, repositoryAllowed, reply } from "./shared";
 import { registerSecretSync } from "./secret-sync";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
@@ -52,18 +53,6 @@ export async function serveDispatchMcp(
       };
     },
   );
-  const repository = z
-    .string()
-    .regex(/^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9_.-]{1,100}$/);
-  const runId = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
-  const page = z.number().int().min(1).max(1000).default(1);
-  const limit = z.number().int().min(1).max(30).default(10);
-  const annotations = {
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: true,
-  };
   async function read(
     repo: string,
     resource: Parameters<typeof repositoryRead>[3],
@@ -215,12 +204,6 @@ export async function serveDispatchMcp(
       );
     }
   }
-  const writeAnnotations = {
-    readOnlyHint: false,
-    destructiveHint: true,
-    idempotentHint: false,
-    openWorldHint: true,
-  };
   server.registerTool(
     "github_workflow_run_cancel",
     {
@@ -281,10 +264,6 @@ export async function serveDispatchMcp(
       annotations,
     },
     async ({ repository: repo, jobId, stepNumber, maxBytes }) => {
-      const reply = (value: unknown, isError = false) => ({
-        isError,
-        content: [{ type: "text" as const, text: JSON.stringify(value) }],
-      });
       const allowed = (env.ORB_CI_REPOSITORIES ?? "")
         .split(",")
         .map((v) => v.trim().toLowerCase());
@@ -375,15 +354,8 @@ export async function serveDispatchMcp(
     action: "sync" | "checks",
     expectedHead?: string,
   ) {
-    const reply = (value: unknown, isError = false) => ({
-      isError,
-      content: [{ type: "text" as const, text: JSON.stringify(value) }],
-    });
     if (
-      !(env.ORB_CI_REPOSITORIES ?? "")
-        .split(",")
-        .map((v) => v.trim().toLowerCase())
-        .includes(repo.toLowerCase())
+      !repositoryAllowed(env, repo)
     )
       return reply({ error: "Repository unavailable" }, true);
     if (action === "sync" && githubAuthMode(env) !== "app")
@@ -550,15 +522,8 @@ export async function serveDispatchMcp(
       annotations: writeAnnotations,
     },
     async ({ repository: repo, prNumber, key, body }) => {
-      const reply = (value: unknown, isError = false) => ({
-        isError,
-        content: [{ type: "text" as const, text: JSON.stringify(value) }],
-      });
       if (
-        !(env.ORB_CI_REPOSITORIES ?? "")
-          .split(",")
-          .map((v) => v.trim().toLowerCase())
-          .includes(repo.toLowerCase())
+        !repositoryAllowed(env, repo)
       )
         return reply({ error: "Repository unavailable" }, true);
       if (githubAuthMode(env) !== "app")
@@ -701,15 +666,8 @@ export async function serveDispatchMcp(
       annotations: writeAnnotations,
     },
     async ({ repository: repo, branch, expectedHeadSha, message, files }) => {
-      const reply = (value: unknown, isError = false) => ({
-        isError,
-        content: [{ type: "text" as const, text: JSON.stringify(value) }],
-      });
       if (
-        !(env.ORB_CI_REPOSITORIES ?? "")
-          .split(",")
-          .map((v) => v.trim().toLowerCase())
-          .includes(repo.toLowerCase())
+        !repositoryAllowed(env, repo)
       )
         return reply({ error: "Repository unavailable" }, true);
       if (githubAuthMode(env) !== "app")
@@ -848,15 +806,8 @@ export async function serveDispatchMcp(
       annotations,
     },
     async ({ repository: repo, base, head, pathPrefix, maxBytes }) => {
-      const reply = (value: unknown, isError = false) => ({
-        isError,
-        content: [{ type: "text" as const, text: JSON.stringify(value) }],
-      });
       if (
-        !(env.ORB_CI_REPOSITORIES ?? "")
-          .split(",")
-          .map((v) => v.trim().toLowerCase())
-          .includes(repo.toLowerCase())
+        !repositoryAllowed(env, repo)
       )
         return reply({ error: "Repository unavailable" }, true);
       try {
@@ -953,15 +904,8 @@ export async function serveDispatchMcp(
     method: "POST" | "PATCH" | "PUT",
     body: unknown,
   ) {
-    const reply = (value: unknown, isError = false) => ({
-      isError,
-      content: [{ type: "text" as const, text: JSON.stringify(value) }],
-    });
     if (
-      !(env.ORB_CI_REPOSITORIES ?? "")
-        .split(",")
-        .map((v) => v.trim().toLowerCase())
-        .includes(repo.toLowerCase())
+      !repositoryAllowed(env, repo)
     )
       return reply({ error: "Repository unavailable" }, true);
     if (githubAuthMode(env) !== "app")
@@ -1130,12 +1074,6 @@ export async function serveDispatchMcp(
         body,
       }),
   );
-  const environmentName = z
-    .string()
-    .min(1)
-    .max(255)
-    .refine((v) => v !== "." && v !== ".." && !/[\x00-\x1f]/.test(v));
-  const variableName = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]{0,254}$/);
   async function configuration(
     repo: string,
     environment: string | undefined,
@@ -1143,15 +1081,8 @@ export async function serveDispatchMcp(
     name?: string,
     value?: string,
   ) {
-    const reply = (value: unknown, isError = false) => ({
-      isError,
-      content: [{ type: "text" as const, text: JSON.stringify(value) }],
-    });
     if (
-      !(env.ORB_CI_REPOSITORIES ?? "")
-        .split(",")
-        .map((v) => v.trim().toLowerCase())
-        .includes(repo.toLowerCase())
+      !repositoryAllowed(env, repo)
     )
       return reply({ error: "Repository unavailable" }, true);
     const write = value !== undefined;
@@ -1322,15 +1253,8 @@ export async function serveDispatchMcp(
       annotations: writeAnnotations,
     },
     async ({ repository: repo, commentId, body }) => {
-      const reply = (value: unknown, isError = false) => ({
-        isError,
-        content: [{ type: "text" as const, text: JSON.stringify(value) }],
-      });
       if (
-        !(env.ORB_CI_REPOSITORIES ?? "")
-          .split(",")
-          .map((v) => v.trim().toLowerCase())
-          .includes(repo.toLowerCase())
+        !repositoryAllowed(env, repo)
       )
         return reply({ error: "Repository unavailable" }, true);
       if (githubAuthMode(env) !== "app")
