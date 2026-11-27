@@ -1,4 +1,15 @@
-import { repository, runId, page, limit, annotations, writeAnnotations, environmentName, variableName, repositoryAllowed, reply } from "./shared";
+import {
+  repository,
+  runId,
+  page,
+  limit,
+  annotations,
+  writeAnnotations,
+  environmentName,
+  variableName,
+  repositoryAllowed,
+  reply,
+} from "./shared";
 import { registerSecretSync } from "./secret-sync";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
@@ -354,9 +365,7 @@ export async function serveDispatchMcp(
     action: "sync" | "checks",
     expectedHead?: string,
   ) {
-    if (
-      !repositoryAllowed(env, repo)
-    )
+    if (!repositoryAllowed(env, repo))
       return reply({ error: "Repository unavailable" }, true);
     if (action === "sync" && githubAuthMode(env) !== "app")
       return reply({ error: "GitHub App required" }, true);
@@ -522,9 +531,7 @@ export async function serveDispatchMcp(
       annotations: writeAnnotations,
     },
     async ({ repository: repo, prNumber, key, body }) => {
-      if (
-        !repositoryAllowed(env, repo)
-      )
+      if (!repositoryAllowed(env, repo))
         return reply({ error: "Repository unavailable" }, true);
       if (githubAuthMode(env) !== "app")
         return reply({ error: "GitHub App required" }, true);
@@ -666,9 +673,7 @@ export async function serveDispatchMcp(
       annotations: writeAnnotations,
     },
     async ({ repository: repo, branch, expectedHeadSha, message, files }) => {
-      if (
-        !repositoryAllowed(env, repo)
-      )
+      if (!repositoryAllowed(env, repo))
         return reply({ error: "Repository unavailable" }, true);
       if (githubAuthMode(env) !== "app")
         return reply({ error: "GitHub App required" }, true);
@@ -806,9 +811,7 @@ export async function serveDispatchMcp(
       annotations,
     },
     async ({ repository: repo, base, head, pathPrefix, maxBytes }) => {
-      if (
-        !repositoryAllowed(env, repo)
-      )
+      if (!repositoryAllowed(env, repo))
         return reply({ error: "Repository unavailable" }, true);
       try {
         const token = await githubToken(env);
@@ -904,9 +907,7 @@ export async function serveDispatchMcp(
     method: "POST" | "PATCH" | "PUT",
     body: unknown,
   ) {
-    if (
-      !repositoryAllowed(env, repo)
-    )
+    if (!repositoryAllowed(env, repo))
       return reply({ error: "Repository unavailable" }, true);
     if (githubAuthMode(env) !== "app")
       return reply({ error: "GitHub App required" }, true);
@@ -1081,9 +1082,7 @@ export async function serveDispatchMcp(
     name?: string,
     value?: string,
   ) {
-    if (
-      !repositoryAllowed(env, repo)
-    )
+    if (!repositoryAllowed(env, repo))
       return reply({ error: "Repository unavailable" }, true);
     const write = value !== undefined;
     if (write && githubAuthMode(env) !== "app")
@@ -1253,9 +1252,7 @@ export async function serveDispatchMcp(
       annotations: writeAnnotations,
     },
     async ({ repository: repo, commentId, body }) => {
-      if (
-        !repositoryAllowed(env, repo)
-      )
+      if (!repositoryAllowed(env, repo))
         return reply({ error: "Repository unavailable" }, true);
       if (githubAuthMode(env) !== "app")
         return reply({ error: "GitHub App required" }, true);

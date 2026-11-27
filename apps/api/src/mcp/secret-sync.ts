@@ -1,11 +1,21 @@
-import { repository, environmentName, variableName, writeAnnotations, repositoryAllowed, reply } from "./shared";
+import {
+  repository,
+  environmentName,
+  variableName,
+  writeAnnotations,
+  repositoryAllowed,
+  reply,
+} from "./shared";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { repositoryRead } from "../repository-read";
 import { githubAuthMode, githubToken } from "../github-auth";
 import { sealGitHubSecret } from "./sealed-secret";
 
-export function registerSecretSync(server: McpServer, env: Parameters<typeof repositoryRead>[0]) {
+export function registerSecretSync(
+  server: McpServer,
+  env: Parameters<typeof repositoryRead>[0],
+) {
   server.registerTool(
     "github_secret_upsert",
     {
@@ -37,9 +47,7 @@ export function registerSecretSync(server: McpServer, env: Parameters<typeof rep
         if (!Object.prototype.hasOwnProperty.call(mapping, alias))
           return reply({ error: "Unknown secret alias" }, true);
         const target = mapping[alias]!;
-        if (
-          !repositoryAllowed(env, target.repository)
-        )
+        if (!repositoryAllowed(env, target.repository))
           return reply({ error: "Destination unavailable" }, true);
         const value = bindings[target.binding];
         if (
