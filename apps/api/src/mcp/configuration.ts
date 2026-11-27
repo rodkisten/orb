@@ -1,4 +1,3 @@
-import { mutateResource } from "./mutations";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
@@ -115,7 +114,7 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     "github_environment_upsert",
     {
       description:
-        "Create an environment or update its wait timer. Does not accept protection bypass settings.",
+        "Environment creation or update is temporarily disabled to preserve deployment protection rules.",
       inputSchema: {
         repository,
         environment: environmentName,
@@ -123,14 +122,17 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
       },
       annotations: writeAnnotations,
     },
-    async (args) =>
-      mutateResource(
-        env,
-        args.repository,
-        "/environments/" + encodeURIComponent(args.environment),
-        "PUT",
-        args.waitTimer === undefined ? {} : { wait_timer: args.waitTimer },
-      ),
+    async (args) => {
+      if (!repositoryAllowed(env, args.repository))
+        return reply({ error: "Repository unavailable" }, true);
+      if (githubAuthMode(env) !== "app")
+        return reply({ error: "GitHub App required" }, true);
+      // Fail closed: PUT may replace existing deployment protection settings.
+      // Even a 404 can conceal insufficient permissions, so do not infer absence.
+      return reply({
+        error: "Environment writes disabled pending protection-preserving implementation",
+      }, true);
+    },
   );
   server.registerTool(
     "github_variable_list",
