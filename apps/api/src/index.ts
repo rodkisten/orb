@@ -1121,12 +1121,16 @@ export default {
             },
           );
         }
-        return await serveDispatchMcp(request, async (internal) => {
-          // Internal capability stays server-side; REST authorization is unchanged.
-          const headers = new Headers(internal.headers);
-          headers.set("authorization", "Bearer " + secret);
-          return createApp(env).fetch(new Request(internal, { headers }));
-        });
+        return await serveDispatchMcp(
+          request,
+          async (internal) => {
+            // Internal capability stays server-side; REST authorization is unchanged.
+            const headers = new Headers(internal.headers);
+            headers.set("authorization", "Bearer " + secret);
+            return createApp(env).fetch(new Request(internal, { headers }));
+          },
+          env,
+        );
       }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
         return handleGitHubWebhook(request, env);

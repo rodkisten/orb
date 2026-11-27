@@ -1,3 +1,4 @@
+import { registerCiDiagnosis } from "./ci-diagnosis";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { McpEnv } from "./shared";
@@ -16,6 +17,7 @@ export async function serveDispatchMcp(
 ): Promise<Response> {
   const server = new McpServer({ name: "orb", version: "0.1.0" });
   registerWorkflows(server, request, dispatch, env);
+  registerCiDiagnosis(server, env);
   registerPullRequests(server, env);
   registerIssues(server, env);
   registerGit(server, env);
