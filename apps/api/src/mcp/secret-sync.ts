@@ -1,3 +1,4 @@
+import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
 import {
   repository,
   environmentName,
@@ -58,20 +59,13 @@ export function registerSecretSync(
           return reply({ error: "Source unavailable" }, true);
         const token = await githubToken(env);
         const endpoint =
-          "https://api.github.com/repos/" +
-          target.repository.split("/").map(encodeURIComponent).join("/") +
+          githubRepositoryUrl(target.repository) +
           (target.environment
             ? "/environments/" + encodeURIComponent(target.environment)
             : "/actions") +
           "/secrets";
-        const headers = {
-          Authorization: "Bearer " + token,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-          "User-Agent": "orb-api",
-          "X-GitHub-Api-Version": "2022-11-28",
-        };
-        const signal = AbortSignal.timeout(15000);
+        const headers = githubHeaders(token, "2022-11-28", true);
+        const signal = githubTimeout(15000);
         const keyResponse = await fetch(endpoint + "/public-key", {
           headers,
           signal,
