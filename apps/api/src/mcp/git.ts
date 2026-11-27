@@ -283,7 +283,10 @@ export function registerGit(server: McpServer, env: McpEnv) {
             status: file.status,
             additions: file.additions,
             deletions: file.deletions,
-            patch: file.patch === undefined ? undefined : redactDiagnostic(file.patch, [token]),
+            patch:
+              file.patch === undefined
+                ? undefined
+                : redactDiagnostic(file.patch, [token]),
             patchUnavailable: file.patch === undefined,
           };
           const size = encoder.encode(JSON.stringify(entry)).length;
