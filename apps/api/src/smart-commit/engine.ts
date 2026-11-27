@@ -1,6 +1,10 @@
 import { classifyMessage, validateSuggestion } from "./policy";
 import { screenDiff, type DiffFile } from "./sanitize";
-import { evaluateChangelog, type ChangelogAdapter, type ChangelogRule } from "./changelog";
+import {
+  evaluateChangelog,
+  type ChangelogAdapter,
+  type ChangelogRule,
+} from "./changelog";
 
 export type GenerationProvider = (input: {
   subject: string;
@@ -22,13 +26,21 @@ export async function generateSmartCommit(
   },
 ) {
   const policy = classifyMessage(input.original);
-  if (!policy.eligible) return { status: "unchanged" as const, message: input.original };
+  if (!policy.eligible)
+    return { status: "unchanged" as const, message: input.original };
   const files = screenDiff(input.files);
-  const suggestion = await dependencies.generate({ subject: policy.subject, files });
+  const suggestion = await dependencies.generate({
+    subject: policy.subject,
+    files,
+  });
   const message = validateSuggestion(input.original, suggestion);
   if (message === null || !(await dependencies.lint(suggestion.trim()))) {
     return { status: "rejected" as const, message: input.original };
   }
-  const changelog = await evaluateChangelog(suggestion.trim(), input.rules, dependencies.changelog);
+  const changelog = await evaluateChangelog(
+    suggestion.trim(),
+    input.rules,
+    dependencies.changelog,
+  );
   return { status: "suggested" as const, message, changelog };
 }
