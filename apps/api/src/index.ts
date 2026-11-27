@@ -1,3 +1,5 @@
+import { serveDispatchMcp } from "./mcp/server";
+import { dispatchWorkflow } from "./github-dispatch";
 import type { JardimBindings } from "./jardim";
 import { processDelivery, replayDelivery } from "./delivery";
 import { GitHubGateway, gatewayMetrics } from "./github-gateway";
@@ -28,6 +30,7 @@ import {
 
 type Bindings = JardimBindings & {
   ORB_INGEST_TOKEN?: string;
+  ORB_DISPATCH_TOKEN?: string;
   ORB_WEBHOOK_SECRET?: string;
   ORB_GITHUB_APP_ID?: string;
   ORB_GITHUB_APP_INSTALLATION_ID?: string;
@@ -48,6 +51,18 @@ const paginationQuery = t.Object({
   page: t.Optional(t.Numeric({ minimum: 1, maximum: 1000, multipleOf: 1 })),
   limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, multipleOf: 1 })),
 });
+async function equalDispatchToken(a: string, b: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [left, right] = await Promise.all(
+    [a, b].map((v) => crypto.subtle.digest("SHA-256", encoder.encode(v))),
+  );
+  const x = new Uint8Array(left),
+    y = new Uint8Array(right);
+  let difference = 0;
+  for (let i = 0; i < x.length; i++) difference |= x[i]! ^ y[i]!;
+  return difference === 0;
+}
+
 function createApp(env: Bindings) {
   return new Elysia({ prefix: "/v1", aot: false })
     .use(
@@ -65,6 +80,76 @@ function createApp(env: Bindings) {
           ],
         },
       }),
+    )
+    .post(
+      "/github/workflows/dispatch",
+      async ({ request, body, set }) => {
+        set.headers["cache-control"] = "no-store";
+        const secret = env.ORB_DISPATCH_TOKEN;
+        const supplied = request.headers.get("authorization") ?? "";
+        if (
+          !secret ||
+          secret.length < 32 ||
+          !(await equalDispatchToken(supplied, "Bearer " + secret))
+        ) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        if (githubAuthMode(env) !== "app") {
+          set.status = 503;
+          return { error: "GitHub App required for dispatch" };
+        }
+        const [owner, repo] = body.repository.split("/");
+        const path = ".github/workflows/" + body.workflow;
+        try {
+          const source = await workflowSource(
+            env,
+            owner!,
+            repo!,
+            path,
+            body.ref,
+          );
+          const outcome = await dispatchWorkflow(
+            env,
+            { owner: owner!, repo: repo! },
+            {
+              path,
+              ref: body.ref,
+              sha: source.sha,
+              inputs: body.inputs ?? {},
+            },
+          );
+          set.status = outcome.status;
+          return outcome.result;
+        } catch (error) {
+          set.status = error instanceof GatewayError ? error.status : 502;
+          return {
+            error: "Dispatch not confirmed; check GitHub before retrying",
+          };
+        }
+      },
+      {
+        body: t.Object({
+          repository: t.String({
+            pattern: "^[A-Za-z0-9-]{1,39}/[A-Za-z0-9_.-]{1,100}$",
+          }),
+          workflow: t.String({
+            pattern: "^[A-Za-z0-9_.-]+\\.ya?ml$",
+            maxLength: 230,
+          }),
+          ref: t.String({ minLength: 1, maxLength: 255 }),
+          inputs: t.Optional(
+            t.Record(
+              t.String({ maxLength: 255 }),
+              t.String({ maxLength: 65535 }),
+            ),
+          ),
+        }),
+        detail: {
+          tags: ["GitHub"],
+          summary: "Dispatch workflow using machine credentials",
+        },
+      },
     )
     .get("/github/gateway/metrics", async ({ request, set }) => {
       if (!(await accessIdentity(request, env))) {
@@ -479,127 +564,9 @@ function createApp(env: Bindings) {
           set.status = 403;
           return { error: "Dispatch requires production Studio origin" };
         }
-        if (githubAuthMode(env) !== "app") {
-          set.status = 503;
-          return { error: "GitHub App required for dispatch" };
-        }
-        try {
-          const source = await workflowSource(
-            env,
-            params.owner,
-            params.repo,
-            body.path,
-            body.ref,
-          );
-          if (source.sha !== body.sha) {
-            set.status = 409;
-            return { error: "Published workflow changed; reload the form" };
-          }
-          const model = inspectWorkflow(source.yaml);
-          if (
-            !model.valid ||
-            !model.triggerNames.includes("workflow_dispatch")
-          ) {
-            set.status = 422;
-            return { error: "Workflow has no valid manual trigger" };
-          }
-          const schema = model.dispatchSchema as Record<
-            string,
-            {
-              type?: string;
-              required?: boolean;
-              default?: unknown;
-              options?: string[];
-            }
-          >;
-          const inputs = body.inputs;
-          if (
-            Object.keys(inputs).length > 25 ||
-            JSON.stringify(inputs).length > 65535 ||
-            Object.keys(inputs).some((k) => !Object.hasOwn(schema, k))
-          ) {
-            set.status = 422;
-            return { error: "Invalid input names or payload size" };
-          }
-          for (const [key, field] of Object.entries(schema)) {
-            const v = Object.hasOwn(inputs, key) ? inputs[key] : undefined;
-            if (v === undefined) {
-              if (field.required && field.default === undefined) {
-                set.status = 422;
-                return { error: "Missing required input: " + key };
-              }
-              continue;
-            }
-            if (
-              (field.required && !v.trim()) ||
-              (field.type === "boolean" && !["true", "false"].includes(v)) ||
-              (field.type === "number" &&
-                (!v.trim() || !Number.isFinite(Number(v)))) ||
-              (field.type === "choice" && !field.options?.includes(v))
-            ) {
-              set.status = 422;
-              return { error: "Invalid input: " + key };
-            }
-          }
-          const token = await githubToken(env);
-          const repoUrl =
-            "https://api.github.com/repos/" +
-            encodeURIComponent(params.owner) +
-            "/" +
-            encodeURIComponent(params.repo);
-          const response = await fetch(
-            repoUrl +
-              "/actions/workflows/" +
-              encodeURIComponent(body.path.split("/").pop()!) +
-              "/dispatches",
-            {
-              method: "POST",
-              headers: {
-                Authorization: "Bearer " + token,
-                Accept: "application/vnd.github+json",
-                "Content-Type": "application/json",
-                "User-Agent": "orb-api",
-                "X-GitHub-Api-Version": "2026-03-10",
-              },
-              body: JSON.stringify({ ref: body.ref, inputs }),
-              redirect: "error",
-              signal: AbortSignal.timeout(15000),
-            },
-          );
-          if (!response.ok) {
-            set.status =
-              response.status === 403
-                ? 403
-                : response.status === 422
-                  ? 422
-                  : 502;
-            return {
-              error: "GitHub rejected dispatch (" + response.status + ")",
-            };
-          }
-          const details = await response
-            .json<{ workflow_run_id?: number }>()
-            .catch(() => null);
-          const runId = details?.workflow_run_id;
-          set.status = 202;
-          return {
-            accepted: true,
-            runId:
-              Number.isSafeInteger(runId) && runId! > 0 ? runId : undefined,
-            runsUrl:
-              "https://github.com/" +
-              params.owner +
-              "/" +
-              params.repo +
-              "/actions/workflows/" +
-              encodeURIComponent(body.path.split("/").pop()!),
-          };
-        } catch (error) {
-          set.status = error instanceof GatewayError ? error.status : 502;
-          return {
-            error: "Dispatch not confirmed; check GitHub before retrying",
-          };
-        }
+        const outcome = await dispatchWorkflow(env, params, body);
+        set.status = outcome.status;
+        return outcome.result;
       },
       {
         params: repositoryParams,
@@ -1117,6 +1084,31 @@ export type OrbApi = ReturnType<typeof createApp>;
 export default {
   async fetch(request: Request, env: Bindings) {
     try {
+      if (new URL(request.url).pathname === "/mcp") {
+        const secret = env.ORB_DISPATCH_TOKEN;
+        if (
+          !secret ||
+          secret.length < 32 ||
+          !(await equalDispatchToken(
+            request.headers.get("authorization") ?? "",
+            "Bearer " + secret,
+          ))
+        ) {
+          return Response.json(
+            { error: "Unauthorized" },
+            {
+              status: 401,
+              headers: {
+                "cache-control": "no-store",
+                "www-authenticate": "Bearer",
+              },
+            },
+          );
+        }
+        return await serveDispatchMcp(request, async (internal) =>
+          createApp(env).fetch(internal),
+        );
+      }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
         return handleGitHubWebhook(request, env);
       }
