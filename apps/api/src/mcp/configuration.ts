@@ -8,6 +8,8 @@ import {
 } from "./github-client";
 import {
   repository,
+  page,
+  limit,
   annotations,
   writeAnnotations,
   environmentName,
@@ -23,6 +25,8 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     kind: "variables" | "secrets" | "environments",
     name?: string,
     value?: string,
+    pageNumber = 1,
+    pageSize = 30,
   ) {
     if (!repositoryAllowed(env, repo))
       return reply({ error: "Repository unavailable" }, true);
@@ -68,7 +72,7 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
           !response.ok,
         );
       }
-      const response = await fetch(endpoint + "?per_page=30", {
+      const response = await fetch(endpoint + "?per_page=" + pageSize + "&page=" + pageNumber, {
         headers,
         redirect: "error",
         signal,
@@ -87,6 +91,8 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
       const entries = (data[kind] ?? []).map((item) => ({ name: item.name }));
       return reply({
         entries,
+        page: pageNumber,
+        limit: pageSize,
         total: data.total_count,
         hasNext: (response.headers.get("link") ?? "").includes('rel="next"'),
       });
@@ -105,10 +111,10 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     "github_environment_list",
     {
       description: "List repository environments.",
-      inputSchema: { repository },
+      inputSchema: { repository, page, limit },
       annotations,
     },
-    async (args) => configuration(args.repository, undefined, "environments"),
+    async (args) => configuration(args.repository, undefined, "environments", undefined, undefined, args.page, args.limit),
   );
   server.registerTool(
     "github_environment_upsert",
@@ -143,11 +149,11 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     {
       description:
         "List Actions variable names, not values, at repository or environment scope.",
-      inputSchema: { repository, environment: environmentName.optional() },
+      inputSchema: { repository, environment: environmentName.optional(), page, limit },
       annotations,
     },
     async (args) =>
-      configuration(args.repository, args.environment, "variables"),
+      configuration(args.repository, args.environment, "variables", undefined, undefined, args.page, args.limit),
   );
   server.registerTool(
     "github_variable_upsert",
@@ -176,9 +182,9 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     {
       description:
         "List Actions secret names only. Never returns secret values.",
-      inputSchema: { repository, environment: environmentName.optional() },
+      inputSchema: { repository, environment: environmentName.optional(), page, limit },
       annotations,
     },
-    async (args) => configuration(args.repository, args.environment, "secrets"),
+    async (args) => configuration(args.repository, args.environment, "secrets", undefined, undefined, args.page, args.limit),
   );
 }
