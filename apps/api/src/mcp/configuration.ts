@@ -72,11 +72,14 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
           !response.ok,
         );
       }
-      const response = await fetch(endpoint + "?per_page=" + pageSize + "&page=" + pageNumber, {
-        headers,
-        redirect: "error",
-        signal,
-      });
+      const response = await fetch(
+        endpoint + "?per_page=" + pageSize + "&page=" + pageNumber,
+        {
+          headers,
+          redirect: "error",
+          signal,
+        },
+      );
       if (!response.ok)
         return reply(
           { error: "Configuration lookup failed", status: response.status },
@@ -114,7 +117,16 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
       inputSchema: { repository, page, limit },
       annotations,
     },
-    async (args) => configuration(args.repository, undefined, "environments", undefined, undefined, args.page, args.limit),
+    async (args) =>
+      configuration(
+        args.repository,
+        undefined,
+        "environments",
+        undefined,
+        undefined,
+        args.page,
+        args.limit,
+      ),
   );
   server.registerTool(
     "github_environment_upsert",
@@ -149,11 +161,24 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     {
       description:
         "List Actions variable names, not values, at repository or environment scope.",
-      inputSchema: { repository, environment: environmentName.optional(), page, limit },
+      inputSchema: {
+        repository,
+        environment: environmentName.optional(),
+        page,
+        limit,
+      },
       annotations,
     },
     async (args) =>
-      configuration(args.repository, args.environment, "variables", undefined, undefined, args.page, args.limit),
+      configuration(
+        args.repository,
+        args.environment,
+        "variables",
+        undefined,
+        undefined,
+        args.page,
+        args.limit,
+      ),
   );
   server.registerTool(
     "github_variable_upsert",
@@ -182,9 +207,23 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     {
       description:
         "List Actions secret names only. Never returns secret values.",
-      inputSchema: { repository, environment: environmentName.optional(), page, limit },
+      inputSchema: {
+        repository,
+        environment: environmentName.optional(),
+        page,
+        limit,
+      },
       annotations,
     },
-    async (args) => configuration(args.repository, args.environment, "secrets", undefined, undefined, args.page, args.limit),
+    async (args) =>
+      configuration(
+        args.repository,
+        args.environment,
+        "secrets",
+        undefined,
+        undefined,
+        args.page,
+        args.limit,
+      ),
   );
 }

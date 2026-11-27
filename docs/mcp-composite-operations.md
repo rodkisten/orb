@@ -2,17 +2,17 @@
 
 Goal: one MCP call per investigation, not one call per REST endpoint. Keep granular tools available. Reuse the existing GitHub client, authorization, pagination and redaction. Read-only by default.
 
-| Tool | Aggregated result |
-| --- | --- |
-| github_pr_logs | PR head SHA, matching workflow runs, jobs, failed steps and bounded failure logs |
-| github_repository_ci | Repository workflows, latest relevant runs, status, jobs and optional failure logs |
-| github_pr_overview | PR metadata, mergeability, reviews, checks, changed files summary and CI |
-| github_repository_overview | Default branch, open PRs/issues summary, latest CI and deployments |
-| github_workflow_diagnose | Run status, failed jobs, failed steps, annotations and bounded logs |
-| github_pr_review_context | PR overview, bounded diff, review threads and unresolved checks |
-| github_repository_configuration | Environments, variable names and secret names, never values |
-| github_branch_health | Branch SHA, divergence from base, associated PRs and checks |
-| github_multi_repo_ci | Bounded parallel CI summaries across explicitly allowed repositories |
+| Tool                            | Aggregated result                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| github_pr_logs                  | PR head SHA, matching workflow runs, jobs, failed steps and bounded failure logs   |
+| github_repository_ci            | Repository workflows, latest relevant runs, status, jobs and optional failure logs |
+| github_pr_overview              | PR metadata, mergeability, reviews, checks, changed files summary and CI           |
+| github_repository_overview      | Default branch, open PRs/issues summary, latest CI and deployments                 |
+| github_workflow_diagnose        | Run status, failed jobs, failed steps, annotations and bounded logs                |
+| github_pr_review_context        | PR overview, bounded diff, review threads and unresolved checks                    |
+| github_repository_configuration | Environments, variable names and secret names, never values                        |
+| github_branch_health            | Branch SHA, divergence from base, associated PRs and checks                        |
+| github_multi_repo_ci            | Bounded parallel CI summaries across explicitly allowed repositories               |
 
 ## Contracts
 
