@@ -1,5 +1,8 @@
 /** Resolve configuration at an immutable repository revision, without executing repository code. */
-export type ConfigReader = (path: string, revision: string) => Promise<string | null>;
+export type ConfigReader = (
+  path: string,
+  revision: string,
+) => Promise<string | null>;
 
 export type RuleSource = {
   kind: "orb" | "git-cliff" | "commitlint" | "conventional-changelog";
@@ -24,8 +27,12 @@ const candidates = [
   ["conventional-changelog", "package.json"],
 ] as const;
 
-export async function discoverRepositoryRules(read: ConfigReader, revision: string) {
-  if (!/^[a-f0-9]{40}$/i.test(revision)) throw new Error("Expected immutable commit SHA");
+export async function discoverRepositoryRules(
+  read: ConfigReader,
+  revision: string,
+) {
+  if (!/^[a-f0-9]{40}$/i.test(revision))
+    throw new Error("Expected immutable commit SHA");
   const sources: RuleSource[] = [];
   for (const [kind, path] of candidates) {
     const content = await read(path, revision);
