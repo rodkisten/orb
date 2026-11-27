@@ -1105,8 +1105,9 @@ export default {
             },
           );
         }
-        return await serveDispatchMcp(request, async (internal) =>
-          createApp(env).fetch(internal),
+        return await serveDispatchMcp(
+          request,
+          async (internal) => createApp(env).fetch(internal),
           env,
         );
       }
