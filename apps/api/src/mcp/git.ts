@@ -1,3 +1,4 @@
+import { redactDiagnostic } from "./redaction";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
@@ -282,12 +283,7 @@ export function registerGit(server: McpServer, env: McpEnv) {
             status: file.status,
             additions: file.additions,
             deletions: file.deletions,
-            patch: file.patch
-              ?.replaceAll(token, "[REDACTED]")
-              .replace(
-                /(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]+/g,
-                "[REDACTED]",
-              ),
+            patch: file.patch === undefined ? undefined : redactDiagnostic(file.patch, [token]),
             patchUnavailable: file.patch === undefined,
           };
           const size = encoder.encode(JSON.stringify(entry)).length;
