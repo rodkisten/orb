@@ -1,3 +1,4 @@
+import { repository, environmentName, variableName, writeAnnotations, repositoryAllowed, reply } from "./shared";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { repositoryRead } from "../repository-read";
@@ -5,10 +6,6 @@ import { githubAuthMode, githubToken } from "../github-auth";
 import { sealGitHubSecret } from "./sealed-secret";
 
 export function registerSecretSync(server: McpServer, env: Parameters<typeof repositoryRead>[0]) {
-  const repository = z.string().regex(/^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9_.-]{1,100}$/);
-  const environmentName = z.string().min(1).max(255).refine(v => v !== "." && v !== ".." && !/[\x00-\x1f]/.test(v));
-  const variableName = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]{0,254}$/);
-  const writeAnnotations = { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true };
   server.registerTool(
     "github_secret_upsert",
     {
@@ -18,10 +15,6 @@ export function registerSecretSync(server: McpServer, env: Parameters<typeof rep
       annotations: writeAnnotations,
     },
     async ({ alias }) => {
-      const reply = (value: unknown, isError = false) => ({
-        isError,
-        content: [{ type: "text" as const, text: JSON.stringify(value) }],
-      });
       try {
         const bindings = env as unknown as Record<string, unknown>;
         const raw = bindings.ORB_SECRET_SYNC_MAP;
@@ -45,10 +38,7 @@ export function registerSecretSync(server: McpServer, env: Parameters<typeof rep
           return reply({ error: "Unknown secret alias" }, true);
         const target = mapping[alias]!;
         if (
-          !(env.ORB_CI_REPOSITORIES ?? "")
-            .split(",")
-            .map((v) => v.trim().toLowerCase())
-            .includes(target.repository.toLowerCase())
+          !repositoryAllowed(env, target.repository)
         )
           return reply({ error: "Destination unavailable" }, true);
         const value = bindings[target.binding];
