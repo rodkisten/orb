@@ -1088,26 +1088,38 @@ export default {
       if (new URL(request.url).pathname === "/mcp") {
         const secret = env.ORB_DISPATCH_TOKEN;
         const configured = !!secret && secret.length >= 32;
-        const bearer = configured && await equalDispatchToken(
-          request.headers.get("authorization") ?? "",
-          "Bearer " + secret,
-        );
+        const bearer =
+          configured &&
+          (await equalDispatchToken(
+            request.headers.get("authorization") ?? "",
+            "Bearer " + secret,
+          ));
         // Only accept a signed Access assertion for the dedicated MCP audience.
         // Never accept a browser cookie or the Studio application's audience.
         const assertion = request.headers.get("cf-access-jwt-assertion");
-        const identity = env.CF_ACCESS_MCP_AUD && assertion
-          ? await accessIdentity(new Request(request.url, {
-              headers: { "cf-access-jwt-assertion": assertion },
-            }), {
-              CF_ACCESS_TEAM_DOMAIN: env.CF_ACCESS_TEAM_DOMAIN,
-              CF_ACCESS_AUD: env.CF_ACCESS_MCP_AUD,
-            })
-          : null;
+        const identity =
+          env.CF_ACCESS_MCP_AUD && assertion
+            ? await accessIdentity(
+                new Request(request.url, {
+                  headers: { "cf-access-jwt-assertion": assertion },
+                }),
+                {
+                  CF_ACCESS_TEAM_DOMAIN: env.CF_ACCESS_TEAM_DOMAIN,
+                  CF_ACCESS_AUD: env.CF_ACCESS_MCP_AUD,
+                },
+              )
+            : null;
         if (!configured || (!bearer && !identity)) {
-          return Response.json({ error: "Unauthorized" }, {
-            status: 401,
-            headers: { "cache-control": "no-store", "www-authenticate": "Bearer" },
-          });
+          return Response.json(
+            { error: "Unauthorized" },
+            {
+              status: 401,
+              headers: {
+                "cache-control": "no-store",
+                "www-authenticate": "Bearer",
+              },
+            },
+          );
         }
         return await serveDispatchMcp(request, async (internal) => {
           // Internal capability stays server-side; REST authorization is unchanged.
