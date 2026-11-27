@@ -39,6 +39,7 @@ type Bindings = JardimBindings & {
   ORB_CI_REPOSITORIES?: string;
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
+  CF_ACCESS_MCP_AUD?: string;
   ORB_DB: D1Database;
   ORB_EVENTS: Queue<{ eventId: string }>;
 };
@@ -1086,14 +1087,29 @@ export default {
     try {
       if (new URL(request.url).pathname === "/mcp") {
         const secret = env.ORB_DISPATCH_TOKEN;
-        if (
-          !secret ||
-          secret.length < 32 ||
-          !(await equalDispatchToken(
+        const configured = !!secret && secret.length >= 32;
+        const bearer =
+          configured &&
+          (await equalDispatchToken(
             request.headers.get("authorization") ?? "",
             "Bearer " + secret,
-          ))
-        ) {
+          ));
+        // Only accept a signed Access assertion for the dedicated MCP audience.
+        // Never accept a browser cookie or the Studio application's audience.
+        const assertion = request.headers.get("cf-access-jwt-assertion");
+        const identity =
+          env.CF_ACCESS_MCP_AUD && assertion
+            ? await accessIdentity(
+                new Request(request.url, {
+                  headers: { "cf-access-jwt-assertion": assertion },
+                }),
+                {
+                  CF_ACCESS_TEAM_DOMAIN: env.CF_ACCESS_TEAM_DOMAIN,
+                  CF_ACCESS_AUD: env.CF_ACCESS_MCP_AUD,
+                },
+              )
+            : null;
+        if (!configured || (!bearer && !identity)) {
           return Response.json(
             { error: "Unauthorized" },
             {
@@ -1105,11 +1121,12 @@ export default {
             },
           );
         }
-        return await serveDispatchMcp(
-          request,
-          async (internal) => createApp(env).fetch(internal),
-          env,
-        );
+        return await serveDispatchMcp(request, async (internal) => {
+          // Internal capability stays server-side; REST authorization is unchanged.
+          const headers = new Headers(internal.headers);
+          headers.set("authorization", "Bearer " + secret);
+          return createApp(env).fetch(new Request(internal, { headers }));
+        });
       }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
         return handleGitHubWebhook(request, env);
