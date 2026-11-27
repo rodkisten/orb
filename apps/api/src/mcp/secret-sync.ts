@@ -65,8 +65,12 @@ export function registerSecretSync(
         // Environment-scoped secret endpoints require separate runtime verification.
         // Never fall back to repository scope for an environment destination.
         if (target.environment)
-          return reply({ error: "Environment secret synchronization not yet verified" }, true);
-        const endpoint = githubRepositoryUrl(target.repository) + "/actions/secrets";
+          return reply(
+            { error: "Environment secret synchronization not yet verified" },
+            true,
+          );
+        const endpoint =
+          githubRepositoryUrl(target.repository) + "/actions/secrets";
         const headers = githubHeaders(token, "2022-11-28", true);
         const signal = githubTimeout(15000);
         const keyResponse = await fetch(endpoint + "/public-key", {
