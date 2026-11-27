@@ -1,0 +1,30 @@
+name: DELETE ME - MCP dependencies
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/workflow-dispatch-mcp'
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: ploocky
+        with:
+          app-id: "5784353"
+          private-key: ${{ secrets.PLOOCKY_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.ploocky.outputs.token }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: pnpm --filter ./apps/api add @modelcontextprotocol/sdk@^1.29.0 zod@^3.25.0
+      - run: pnpm --filter ./apps/api typecheck
+      - run: |
+          git config user.name 'ploocky[bot]'
+          git config user.email 'ploocky[bot]@users.noreply.github.com'
+          git add apps/api/package.json pnpm-lock.yaml
+          git commit -m 'build(api): install MCP SDK and lock dependencies' || exit 1
+          git push
