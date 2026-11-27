@@ -62,12 +62,11 @@ export function registerSecretSync(
         )
           return reply({ error: "Source unavailable" }, true);
         const token = await githubToken(env);
-        const endpoint =
-          githubRepositoryUrl(target.repository) +
-          (target.environment
-            ? "/environments/" + encodeURIComponent(target.environment)
-            : "/actions") +
-          "/secrets";
+        // Environment-scoped secret endpoints require separate runtime verification.
+        // Never fall back to repository scope for an environment destination.
+        if (target.environment)
+          return reply({ error: "Environment secret synchronization not yet verified" }, true);
+        const endpoint = githubRepositoryUrl(target.repository) + "/actions/secrets";
         const headers = githubHeaders(token, "2022-11-28", true);
         const signal = githubTimeout(15000);
         const keyResponse = await fetch(endpoint + "/public-key", {
@@ -94,6 +93,7 @@ export function registerSecretSync(
             body: JSON.stringify({ encrypted_value, key_id: key.key_id }),
           },
         );
+        await response.body?.cancel();
         return reply(
           { accepted: response.ok, status: response.status, alias },
           !response.ok,
