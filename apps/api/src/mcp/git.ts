@@ -120,7 +120,9 @@ export function registerGit(server: McpServer, env: McpEnv) {
         async function entries(sha: string): Promise<Entry[]> {
           const cached = cache.get(sha);
           if (cached) return cached;
-          const result = await api<{ tree: Entry[]; truncated?: boolean }>("/git/trees/" + sha);
+          const result = await api<{ tree: Entry[]; truncated?: boolean }>(
+            "/git/trees/" + sha,
+          );
           if (result.truncated || !Array.isArray(result.tree))
             throw new Error("Incomplete parent tree");
           cache.set(sha, result.tree);
@@ -130,24 +132,44 @@ export function registerGit(server: McpServer, env: McpEnv) {
         const changes = [];
         for (const file of files) {
           const parts = file.path.split("/");
-          if (parts.some((_, i) => i > 0 && paths.has(parts.slice(0, i).join("/"))))
+          if (
+            parts.some(
+              (_, i) => i > 0 && paths.has(parts.slice(0, i).join("/")),
+            )
+          )
             return reply({ error: "Conflicting file paths" }, true);
           let sha = parent.tree.sha;
           let mode = "100644";
           for (let i = 0; i < parts.length; i++) {
-            const entry = (await entries(sha)).find((item) => item.path === parts[i]);
+            const entry = (await entries(sha)).find(
+              (item) => item.path === parts[i],
+            );
             if (!entry) break;
             if (i === parts.length - 1) {
-              if (entry.type !== "blob" || !["100644", "100755"].includes(entry.mode))
-                return reply({ error: "Unsupported existing file type", path: file.path }, true);
+              if (
+                entry.type !== "blob" ||
+                !["100644", "100755"].includes(entry.mode)
+              )
+                return reply(
+                  { error: "Unsupported existing file type", path: file.path },
+                  true,
+                );
               mode = entry.mode;
             } else {
               if (entry.type !== "tree")
-                return reply({ error: "Parent path is not a directory", path: file.path }, true);
+                return reply(
+                  { error: "Parent path is not a directory", path: file.path },
+                  true,
+                );
               sha = entry.sha;
             }
           }
-          changes.push({ path: file.path, mode, type: "blob", content: file.content });
+          changes.push({
+            path: file.path,
+            mode,
+            type: "blob",
+            content: file.content,
+          });
         }
         const tree = await api<{ sha: string }>("/git/trees", "POST", {
           base_tree: parent.tree.sha,
@@ -165,7 +187,10 @@ export function registerGit(server: McpServer, env: McpEnv) {
         });
         const latest = await api<{ object: { sha: string } }>(refPath);
         if (latest.object.sha !== expectedHeadSha)
-          return reply({ error: "Branch head changed before publication" }, true);
+          return reply(
+            { error: "Branch head changed before publication" },
+            true,
+          );
         await api(refPath, "PATCH", { sha: commit.sha, force: false });
         return reply({
           sha: commit.sha,
