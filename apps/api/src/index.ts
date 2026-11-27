@@ -1086,10 +1086,28 @@ export default {
     try {
       if (new URL(request.url).pathname === "/mcp") {
         const secret = env.ORB_DISPATCH_TOKEN;
-        if (!secret || secret.length < 32 || !(await equalDispatchToken(request.headers.get("authorization") ?? "", "Bearer " + secret))) {
-          return Response.json({ error: "Unauthorized" }, { status: 401, headers: { "cache-control": "no-store", "www-authenticate": "Bearer" } });
+        if (
+          !secret ||
+          secret.length < 32 ||
+          !(await equalDispatchToken(
+            request.headers.get("authorization") ?? "",
+            "Bearer " + secret,
+          ))
+        ) {
+          return Response.json(
+            { error: "Unauthorized" },
+            {
+              status: 401,
+              headers: {
+                "cache-control": "no-store",
+                "www-authenticate": "Bearer",
+              },
+            },
+          );
         }
-        return await serveDispatchMcp(request, async (internal) => createApp(env).fetch(internal));
+        return await serveDispatchMcp(request, async (internal) =>
+          createApp(env).fetch(internal),
+        );
       }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
         return handleGitHubWebhook(request, env);

@@ -39,4 +39,4 @@ jobs:
           mode: commit
           branch: feat/workflow-dispatch-mcp
           base-branch: feat/workflow-dispatch-mcp
-          commit-message: 'build(api): install MCP SDK and lock dependencies [deploy]'
+          commit-message: "build(api): install MCP SDK and lock dependencies [deploy]"
