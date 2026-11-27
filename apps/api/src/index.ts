@@ -1107,6 +1107,7 @@ export default {
         }
         return await serveDispatchMcp(request, async (internal) =>
           createApp(env).fetch(internal),
+          env,
         );
       }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
