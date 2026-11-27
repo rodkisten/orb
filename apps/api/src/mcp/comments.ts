@@ -81,7 +81,11 @@ export function registerComments(server: McpServer, env: McpEnv) {
               performed_via_github_app?: { id: number };
             }>
           >();
-          foreignMarker ||= comments.some((c) => c.body?.startsWith(marker + "\n") && c.performed_via_github_app?.id !== appId);
+          foreignMarker ||= comments.some(
+            (c) =>
+              c.body?.startsWith(marker + "\n") &&
+              c.performed_via_github_app?.id !== appId,
+          );
           matches.push(
             ...comments.filter(
               (c) =>
@@ -151,15 +155,17 @@ export function registerComments(server: McpServer, env: McpEnv) {
       inputSchema: { repository, issueNumber: runId, body: bodyText.min(1) },
     },
     async ({ repository: repo, issueNumber, body }) =>
-      body.includes("<!-- orb:") ? reply({ error: "Reserved comment marker" }, true) : mutateResource(
-        env,
-        repo,
-        "/issues/" + issueNumber + "/comments",
-        "POST",
-        {
-          body,
-        },
-      ),
+      body.includes("<!-- orb:")
+        ? reply({ error: "Reserved comment marker" }, true)
+        : mutateResource(
+            env,
+            repo,
+            "/issues/" + issueNumber + "/comments",
+            "POST",
+            {
+              body,
+            },
+          ),
   );
   server.registerTool(
     "github_comment_edit",
