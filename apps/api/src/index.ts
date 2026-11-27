@@ -52,8 +52,11 @@ const paginationQuery = t.Object({
 });
 async function equalDispatchToken(a: string, b: string): Promise<boolean> {
   const encoder = new TextEncoder();
-  const [left, right] = await Promise.all([a,b].map(v => crypto.subtle.digest("SHA-256", encoder.encode(v))));
-  const x = new Uint8Array(left), y = new Uint8Array(right);
+  const [left, right] = await Promise.all(
+    [a, b].map((v) => crypto.subtle.digest("SHA-256", encoder.encode(v))),
+  );
+  const x = new Uint8Array(left),
+    y = new Uint8Array(right);
   let difference = 0;
   for (let i = 0; i < x.length; i++) difference |= x[i]! ^ y[i]!;
   return difference === 0;
@@ -77,40 +80,76 @@ function createApp(env: Bindings) {
         },
       }),
     )
-    .post("/github/workflows/dispatch", async ({ request, body, set }) => {
-      set.headers["cache-control"] = "no-store";
-      const secret = env.ORB_DISPATCH_TOKEN;
-      const supplied = request.headers.get("authorization") ?? "";
-      if (!secret || secret.length < 32 || !(await equalDispatchToken(supplied, "Bearer " + secret))) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-      if (githubAuthMode(env) !== "app") {
-        set.status = 503;
-        return { error: "GitHub App required for dispatch" };
-      }
-      const [owner, repo] = body.repository.split("/");
-      const path = ".github/workflows/" + body.workflow;
-      try {
-        const source = await workflowSource(env, owner!, repo!, path, body.ref);
-        const outcome = await dispatchWorkflow(env, { owner: owner!, repo: repo! }, {
-          path, ref: body.ref, sha: source.sha, inputs: body.inputs ?? {},
-        });
-        set.status = outcome.status;
-        return outcome.result;
-      } catch (error) {
-        set.status = error instanceof GatewayError ? error.status : 502;
-        return { error: "Dispatch not confirmed; check GitHub before retrying" };
-      }
-    }, {
-      body: t.Object({
-        repository: t.String({ pattern: "^[A-Za-z0-9-]{1,39}/[A-Za-z0-9_.-]{1,100}$" }),
-        workflow: t.String({ pattern: "^[A-Za-z0-9_.-]+\\.ya?ml$", maxLength: 230 }),
-        ref: t.String({ minLength: 1, maxLength: 255 }),
-        inputs: t.Optional(t.Record(t.String({ maxLength: 255 }), t.String({ maxLength: 65535 }))),
-      }),
-      detail: { tags: ["GitHub"], summary: "Dispatch workflow using machine credentials" },
-    })
+    .post(
+      "/github/workflows/dispatch",
+      async ({ request, body, set }) => {
+        set.headers["cache-control"] = "no-store";
+        const secret = env.ORB_DISPATCH_TOKEN;
+        const supplied = request.headers.get("authorization") ?? "";
+        if (
+          !secret ||
+          secret.length < 32 ||
+          !(await equalDispatchToken(supplied, "Bearer " + secret))
+        ) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        if (githubAuthMode(env) !== "app") {
+          set.status = 503;
+          return { error: "GitHub App required for dispatch" };
+        }
+        const [owner, repo] = body.repository.split("/");
+        const path = ".github/workflows/" + body.workflow;
+        try {
+          const source = await workflowSource(
+            env,
+            owner!,
+            repo!,
+            path,
+            body.ref,
+          );
+          const outcome = await dispatchWorkflow(
+            env,
+            { owner: owner!, repo: repo! },
+            {
+              path,
+              ref: body.ref,
+              sha: source.sha,
+              inputs: body.inputs ?? {},
+            },
+          );
+          set.status = outcome.status;
+          return outcome.result;
+        } catch (error) {
+          set.status = error instanceof GatewayError ? error.status : 502;
+          return {
+            error: "Dispatch not confirmed; check GitHub before retrying",
+          };
+        }
+      },
+      {
+        body: t.Object({
+          repository: t.String({
+            pattern: "^[A-Za-z0-9-]{1,39}/[A-Za-z0-9_.-]{1,100}$",
+          }),
+          workflow: t.String({
+            pattern: "^[A-Za-z0-9_.-]+\\.ya?ml$",
+            maxLength: 230,
+          }),
+          ref: t.String({ minLength: 1, maxLength: 255 }),
+          inputs: t.Optional(
+            t.Record(
+              t.String({ maxLength: 255 }),
+              t.String({ maxLength: 65535 }),
+            ),
+          ),
+        }),
+        detail: {
+          tags: ["GitHub"],
+          summary: "Dispatch workflow using machine credentials",
+        },
+      },
+    )
     .get("/github/gateway/metrics", async ({ request, set }) => {
       if (!(await accessIdentity(request, env))) {
         set.status = 401;
