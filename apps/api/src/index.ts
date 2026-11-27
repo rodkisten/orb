@@ -152,14 +152,23 @@ function createApp(env: Bindings) {
         },
       },
     )
-    .get("/previews", async ({ request, set }) => {
-      set.headers["cache-control"] = "no-store";
-      if (!(await accessIdentity(request, env))) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-      return { previews: await listPreviews(env.ORB_DB) };
-    }, { detail: { tags: ["Previews"], summary: "List registered preview deployments" } })
+    .get(
+      "/previews",
+      async ({ request, set }) => {
+        set.headers["cache-control"] = "no-store";
+        if (!(await accessIdentity(request, env))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        return { previews: await listPreviews(env.ORB_DB) };
+      },
+      {
+        detail: {
+          tags: ["Previews"],
+          summary: "List registered preview deployments",
+        },
+      },
+    )
     .get("/github/gateway/metrics", async ({ request, set }) => {
       if (!(await accessIdentity(request, env))) {
         set.status = 401;
