@@ -118,9 +118,15 @@ export async function dispatchWorkflow(
       return {
         accepted: true,
         runId: Number.isSafeInteger(runId) && runId! > 0 ? runId : undefined,
-        runUrl: Number.isSafeInteger(runId) && runId! > 0
-          ? "https://github.com/" + params.owner + "/" + params.repo + "/actions/runs/" + runId
-          : undefined,
+        runUrl:
+          Number.isSafeInteger(runId) && runId! > 0
+            ? "https://github.com/" +
+              params.owner +
+              "/" +
+              params.repo +
+              "/actions/runs/" +
+              runId
+            : undefined,
         runsUrl:
           "https://github.com/" +
           params.owner +
