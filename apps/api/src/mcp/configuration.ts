@@ -112,6 +112,7 @@ export function registerConfiguration(server: McpServer, env: McpEnv) {
     },
     async (args) =>
       mutateResource(
+        env,
         args.repository,
         "/environments/" + encodeURIComponent(args.environment),
         "PUT",
