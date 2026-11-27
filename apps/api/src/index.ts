@@ -1,3 +1,4 @@
+import { serveDispatchMcp } from "./mcp/server";
 import { dispatchWorkflow } from "./github-dispatch";
 import type { JardimBindings } from "./jardim";
 import { processDelivery, replayDelivery } from "./delivery";
@@ -1083,6 +1084,13 @@ export type OrbApi = ReturnType<typeof createApp>;
 export default {
   async fetch(request: Request, env: Bindings) {
     try {
+      if (new URL(request.url).pathname === "/mcp") {
+        const secret = env.ORB_DISPATCH_TOKEN;
+        if (!secret || secret.length < 32 || !(await equalDispatchToken(request.headers.get("authorization") ?? "", "Bearer " + secret))) {
+          return Response.json({ error: "Unauthorized" }, { status: 401, headers: { "cache-control": "no-store", "www-authenticate": "Bearer" } });
+        }
+        return await serveDispatchMcp(request, (internal) => createApp(env).fetch(internal));
+      }
       if (new URL(request.url).pathname === "/v1/webhooks/github") {
         return handleGitHubWebhook(request, env);
       }
