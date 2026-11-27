@@ -1,4 +1,8 @@
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
 import {
   repository,
   environmentName,

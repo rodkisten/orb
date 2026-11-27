@@ -1,4 +1,8 @@
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
 import {
   repository,
   runId,
@@ -150,11 +154,7 @@ export async function serveDispatchMcp(
     try {
       const token = await githubToken(env);
       const url = new URL(
-        githubRepositoryUrl(repo) +
-          "/actions/runs/" +
-          id +
-          "/" +
-          action,
+        githubRepositoryUrl(repo) + "/actions/runs/" + id + "/" + action,
       );
       if (!write) {
         url.searchParams.set("page", String(p));
@@ -360,8 +360,7 @@ export async function serveDispatchMcp(
       return reply({ error: "GitHub App required" }, true);
     try {
       const token = await githubToken(env);
-      const base =
-        githubRepositoryUrl(repo);
+      const base = githubRepositoryUrl(repo);
       const headers = githubHeaders(token, "2022-11-28", true);
       const signal = githubTimeout(15000);
       const request = await fetch(base + "/pulls/" + pr, {
@@ -521,8 +520,7 @@ export async function serveDispatchMcp(
         return reply({ error: "Reserved comment marker" }, true);
       try {
         const token = await githubToken(env);
-        const base =
-          githubRepositoryUrl(repo);
+        const base = githubRepositoryUrl(repo);
         const headers = githubHeaders(token, "2022-11-28", true);
         const signal = AbortSignal.timeout(20000);
         const pr = await fetch(base + "/pulls/" + prNumber, {
@@ -689,8 +687,7 @@ export async function serveDispatchMcp(
         );
       try {
         const token = await githubToken(env);
-        const base =
-          githubRepositoryUrl(repo);
+        const base = githubRepositoryUrl(repo);
         const headers = githubHeaders(token, "2022-11-28", true);
         const signal = githubTimeout(30000);
         async function api<T>(
@@ -875,17 +872,13 @@ export async function serveDispatchMcp(
       return reply({ error: "GitHub App required" }, true);
     try {
       const token = await githubToken(env);
-      const response = await fetch(
-        githubRepositoryUrl(repo) +
-          path,
-        {
-          method,
-          headers: githubHeaders(token, "2022-11-28", true),
-          body: JSON.stringify(body),
-          redirect: "error",
-          signal: githubTimeout(15000),
-        },
-      );
+      const response = await fetch(githubRepositoryUrl(repo) + path, {
+        method,
+        headers: githubHeaders(token, "2022-11-28", true),
+        body: JSON.stringify(body),
+        redirect: "error",
+        signal: githubTimeout(15000),
+      });
       if (!response.ok)
         return reply(
           { error: "GitHub rejected operation", status: response.status },
@@ -1044,8 +1037,7 @@ export async function serveDispatchMcp(
       return reply({ error: "GitHub App required" }, true);
     try {
       const token = await githubToken(env);
-      const root =
-        githubRepositoryUrl(repo);
+      const root = githubRepositoryUrl(repo);
       const headers = githubHeaders(token, "2022-11-28", true);
       const signal = githubTimeout(15000);
       const endpoint =
@@ -1208,10 +1200,7 @@ export async function serveDispatchMcp(
         return reply({ error: "Reserved comment marker" }, true);
       try {
         const token = await githubToken(env);
-        const url =
-          githubRepositoryUrl(repo) +
-          "/issues/comments/" +
-          commentId;
+        const url = githubRepositoryUrl(repo) + "/issues/comments/" + commentId;
         const headers = githubHeaders(token, "2022-11-28", true);
         const signal = githubTimeout(15000);
         const current = await fetch(url, {
