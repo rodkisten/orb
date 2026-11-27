@@ -946,146 +946,468 @@ export async function serveDispatchMcp(
       }
     },
   );
-  async function mutateResource(repo: string, path: string, method: "POST" | "PATCH" | "PUT", body: unknown) {
+  async function mutateResource(
+    repo: string,
+    path: string,
+    method: "POST" | "PATCH" | "PUT",
+    body: unknown,
+  ) {
     const reply = (value: unknown, isError = false) => ({
-      isError, content: [{ type: "text" as const, text: JSON.stringify(value) }],
+      isError,
+      content: [{ type: "text" as const, text: JSON.stringify(value) }],
     });
-    if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+    if (
+      !(env.ORB_CI_REPOSITORIES ?? "")
+        .split(",")
+        .map((v) => v.trim().toLowerCase())
+        .includes(repo.toLowerCase())
+    )
       return reply({ error: "Repository unavailable" }, true);
-    if (githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
+    if (githubAuthMode(env) !== "app")
+      return reply({ error: "GitHub App required" }, true);
     try {
       const token = await githubToken(env);
-      const response = await fetch("https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/") + path, {
-        method, headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" },
-        body: JSON.stringify(body), redirect: "error", signal: AbortSignal.timeout(15000),
+      const response = await fetch(
+        "https://api.github.com/repos/" +
+          repo.split("/").map(encodeURIComponent).join("/") +
+          path,
+        {
+          method,
+          headers: {
+            Authorization: "Bearer " + token,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+            "User-Agent": "orb-api",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+          body: JSON.stringify(body),
+          redirect: "error",
+          signal: AbortSignal.timeout(15000),
+        },
+      );
+      if (!response.ok)
+        return reply(
+          { error: "GitHub rejected operation", status: response.status },
+          true,
+        );
+      const data = await response
+        .json<{
+          id?: number;
+          number?: number;
+          html_url?: string;
+          name?: string;
+        }>()
+        .catch(() => null);
+      return reply({
+        accepted: true,
+        id: data?.id,
+        number: data?.number,
+        url: data?.html_url,
+        name: data?.name,
       });
-      if (!response.ok) return reply({ error: "GitHub rejected operation", status: response.status }, true);
-      const data = await response.json<{ id?: number; number?: number; html_url?: string; name?: string }>().catch(() => null);
-      return reply({ accepted: true, id: data?.id, number: data?.number, url: data?.html_url, name: data?.name });
     } catch {
-      return reply({ error: "Write not confirmed; inspect resource before retrying" }, true);
+      return reply(
+        { error: "Write not confirmed; inspect resource before retrying" },
+        true,
+      );
     }
   }
   const title = z.string().min(1).max(256);
   const bodyText = z.string().max(60000);
   const labelName = z.string().min(1).max(50);
   const refName = z.string().min(1).max(255);
-  server.registerTool("github_pr_create", {
-    description: "Create a pull request from an existing branch.", annotations: writeAnnotations,
-    inputSchema: { repository, title, body: bodyText.optional(), head: refName, base: refName, draft: z.boolean().default(true) },
-  }, async ({ repository: repo, ...body }) => mutateResource(repo, "/pulls", "POST", body));
-  server.registerTool("github_pr_edit", {
-    description: "Edit PR title, description or base branch. Does not merge or close the PR.", annotations: writeAnnotations,
-    inputSchema: { repository, prNumber: runId, title: title.optional(), body: bodyText.optional(), base: refName.optional() },
-  }, async ({ repository: repo, prNumber, ...body }) => mutateResource(repo, "/pulls/" + prNumber, "PATCH", body));
-  server.registerTool("github_issue_create", {
-    description: "Create an issue in an allowed repository.", annotations: writeAnnotations,
-    inputSchema: { repository, title, body: bodyText.optional(), labels: z.array(labelName).max(30).optional() },
-  }, async ({ repository: repo, ...body }) => mutateResource(repo, "/issues", "POST", body));
-  server.registerTool("github_issue_edit", {
-    description: "Edit issue title, description or labels.", annotations: writeAnnotations,
-    inputSchema: { repository, issueNumber: runId, title: title.optional(), body: bodyText.optional(), labels: z.array(labelName).max(30).optional() },
-  }, async ({ repository: repo, issueNumber, ...body }) => mutateResource(repo, "/issues/" + issueNumber, "PATCH", body));
+  server.registerTool(
+    "github_pr_create",
+    {
+      description: "Create a pull request from an existing branch.",
+      annotations: writeAnnotations,
+      inputSchema: {
+        repository,
+        title,
+        body: bodyText.optional(),
+        head: refName,
+        base: refName,
+        draft: z.boolean().default(true),
+      },
+    },
+    async ({ repository: repo, ...body }) =>
+      mutateResource(repo, "/pulls", "POST", body),
+  );
+  server.registerTool(
+    "github_pr_edit",
+    {
+      description:
+        "Edit PR title, description or base branch. Does not merge or close the PR.",
+      annotations: writeAnnotations,
+      inputSchema: {
+        repository,
+        prNumber: runId,
+        title: title.optional(),
+        body: bodyText.optional(),
+        base: refName.optional(),
+      },
+    },
+    async ({ repository: repo, prNumber, ...body }) =>
+      mutateResource(repo, "/pulls/" + prNumber, "PATCH", body),
+  );
+  server.registerTool(
+    "github_issue_create",
+    {
+      description: "Create an issue in an allowed repository.",
+      annotations: writeAnnotations,
+      inputSchema: {
+        repository,
+        title,
+        body: bodyText.optional(),
+        labels: z.array(labelName).max(30).optional(),
+      },
+    },
+    async ({ repository: repo, ...body }) =>
+      mutateResource(repo, "/issues", "POST", body),
+  );
+  server.registerTool(
+    "github_issue_edit",
+    {
+      description: "Edit issue title, description or labels.",
+      annotations: writeAnnotations,
+      inputSchema: {
+        repository,
+        issueNumber: runId,
+        title: title.optional(),
+        body: bodyText.optional(),
+        labels: z.array(labelName).max(30).optional(),
+      },
+    },
+    async ({ repository: repo, issueNumber, ...body }) =>
+      mutateResource(repo, "/issues/" + issueNumber, "PATCH", body),
+  );
   const color = z.string().regex(/^[a-fA-F0-9]{6}$/);
-  server.registerTool("github_label_create", {
-    description: "Create a repository label.", annotations: writeAnnotations,
-    inputSchema: { repository, name: labelName, color, description: z.string().max(100).optional() },
-  }, async ({ repository: repo, ...body }) => mutateResource(repo, "/labels", "POST", body));
-  server.registerTool("github_label_edit", {
-    description: "Edit a repository label by its existing name.", annotations: writeAnnotations,
-    inputSchema: { repository, name: labelName, newName: labelName.optional(), color: color.optional(), description: z.string().max(100).optional() },
-  }, async ({ repository: repo, name, newName, ...body }) => mutateResource(repo, "/labels/" + encodeURIComponent(name), "PATCH", { ...body, new_name: newName }));
-  server.registerTool("github_comment_create", {
-    description: "Create a comment on an issue or PR. Use comment upsert for recurring reports.", annotations: writeAnnotations,
-    inputSchema: { repository, issueNumber: runId, body: bodyText.min(1) },
-  }, async ({ repository: repo, issueNumber, body }) => mutateResource(repo, "/issues/" + issueNumber + "/comments", "POST", { body }));
-  const environmentName = z.string().min(1).max(255).refine(v => v !== "." && v !== ".." && !/[\x00-\x1f]/.test(v));
+  server.registerTool(
+    "github_label_create",
+    {
+      description: "Create a repository label.",
+      annotations: writeAnnotations,
+      inputSchema: {
+        repository,
+        name: labelName,
+        color,
+        description: z.string().max(100).optional(),
+      },
+    },
+    async ({ repository: repo, ...body }) =>
+      mutateResource(repo, "/labels", "POST", body),
+  );
+  server.registerTool(
+    "github_label_edit",
+    {
+      description: "Edit a repository label by its existing name.",
+      annotations: writeAnnotations,
+      inputSchema: {
+        repository,
+        name: labelName,
+        newName: labelName.optional(),
+        color: color.optional(),
+        description: z.string().max(100).optional(),
+      },
+    },
+    async ({ repository: repo, name, newName, ...body }) =>
+      mutateResource(repo, "/labels/" + encodeURIComponent(name), "PATCH", {
+        ...body,
+        new_name: newName,
+      }),
+  );
+  server.registerTool(
+    "github_comment_create",
+    {
+      description:
+        "Create a comment on an issue or PR. Use comment upsert for recurring reports.",
+      annotations: writeAnnotations,
+      inputSchema: { repository, issueNumber: runId, body: bodyText.min(1) },
+    },
+    async ({ repository: repo, issueNumber, body }) =>
+      mutateResource(repo, "/issues/" + issueNumber + "/comments", "POST", {
+        body,
+      }),
+  );
+  const environmentName = z
+    .string()
+    .min(1)
+    .max(255)
+    .refine((v) => v !== "." && v !== ".." && !/[\x00-\x1f]/.test(v));
   const variableName = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]{0,254}$/);
-  async function configuration(repo: string, environment: string | undefined, kind: "variables" | "secrets" | "environments", name?: string, value?: string) {
+  async function configuration(
+    repo: string,
+    environment: string | undefined,
+    kind: "variables" | "secrets" | "environments",
+    name?: string,
+    value?: string,
+  ) {
     const reply = (value: unknown, isError = false) => ({
-      isError, content: [{ type: "text" as const, text: JSON.stringify(value) }],
+      isError,
+      content: [{ type: "text" as const, text: JSON.stringify(value) }],
     });
-    if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+    if (
+      !(env.ORB_CI_REPOSITORIES ?? "")
+        .split(",")
+        .map((v) => v.trim().toLowerCase())
+        .includes(repo.toLowerCase())
+    )
       return reply({ error: "Repository unavailable" }, true);
     const write = value !== undefined;
-    if (write && githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
+    if (write && githubAuthMode(env) !== "app")
+      return reply({ error: "GitHub App required" }, true);
     try {
       const token = await githubToken(env);
-      const root = "https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/");
-      const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" };
+      const root =
+        "https://api.github.com/repos/" +
+        repo.split("/").map(encodeURIComponent).join("/");
+      const headers = {
+        Authorization: "Bearer " + token,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+        "User-Agent": "orb-api",
+        "X-GitHub-Api-Version": "2022-11-28",
+      };
       const signal = AbortSignal.timeout(15000);
-      const endpoint = kind === "environments" ? root + "/environments" : root + (environment ? "/environments/" + encodeURIComponent(environment) : "/actions") + "/" + kind;
+      const endpoint =
+        kind === "environments"
+          ? root + "/environments"
+          : root +
+            (environment
+              ? "/environments/" + encodeURIComponent(environment)
+              : "/actions") +
+            "/" +
+            kind;
       if (write && kind === "variables" && name) {
         const target = endpoint + "/" + encodeURIComponent(name);
-        const current = await fetch(target, { headers, redirect: "error", signal });
-        if (!current.ok && current.status !== 404) return reply({ error: "Variable lookup failed", status: current.status }, true);
+        const current = await fetch(target, {
+          headers,
+          redirect: "error",
+          signal,
+        });
+        if (!current.ok && current.status !== 404)
+          return reply(
+            { error: "Variable lookup failed", status: current.status },
+            true,
+          );
         await current.body?.cancel();
         const response = await fetch(current.ok ? target : endpoint, {
-          method: current.ok ? "PATCH" : "POST", headers, redirect: "error", signal,
+          method: current.ok ? "PATCH" : "POST",
+          headers,
+          redirect: "error",
+          signal,
           body: JSON.stringify({ name, value }),
         });
-        return reply({ accepted: response.ok, status: response.status, name, environment }, !response.ok);
+        return reply(
+          { accepted: response.ok, status: response.status, name, environment },
+          !response.ok,
+        );
       }
-      const response = await fetch(endpoint + "?per_page=30", { headers, redirect: "error", signal });
-      if (!response.ok) return reply({ error: "Configuration lookup failed", status: response.status }, true);
-      const data = await response.json<{ total_count?: number; variables?: Array<{ name: string; updated_at: string }>; secrets?: Array<{ name: string; updated_at: string }>; environments?: Array<{ name: string; html_url: string }> }>();
-      const entries = (data[kind] ?? []).map(item => ({ name: item.name }));
-      return reply({ entries, total: data.total_count, hasNext: (response.headers.get("link") ?? "").includes('rel="next"') });
+      const response = await fetch(endpoint + "?per_page=30", {
+        headers,
+        redirect: "error",
+        signal,
+      });
+      if (!response.ok)
+        return reply(
+          { error: "Configuration lookup failed", status: response.status },
+          true,
+        );
+      const data = await response.json<{
+        total_count?: number;
+        variables?: Array<{ name: string; updated_at: string }>;
+        secrets?: Array<{ name: string; updated_at: string }>;
+        environments?: Array<{ name: string; html_url: string }>;
+      }>();
+      const entries = (data[kind] ?? []).map((item) => ({ name: item.name }));
+      return reply({
+        entries,
+        total: data.total_count,
+        hasNext: (response.headers.get("link") ?? "").includes('rel="next"'),
+      });
     } catch {
-      return reply({ error: write ? "Write not confirmed; inspect before retrying" : "Configuration lookup failed" }, true);
+      return reply(
+        {
+          error: write
+            ? "Write not confirmed; inspect before retrying"
+            : "Configuration lookup failed",
+        },
+        true,
+      );
     }
   }
-  server.registerTool("github_environment_list", {
-    description: "List repository environments.", inputSchema: { repository }, annotations,
-  }, async args => configuration(args.repository, undefined, "environments"));
-  server.registerTool("github_environment_upsert", {
-    description: "Create an environment or update its wait timer. Does not accept protection bypass settings.",
-    inputSchema: { repository, environment: environmentName, waitTimer: z.number().int().min(0).max(43200).optional() }, annotations: writeAnnotations,
-  }, async args => mutateResource(args.repository, "/environments/" + encodeURIComponent(args.environment), "PUT", args.waitTimer === undefined ? {} : { wait_timer: args.waitTimer }));
-  server.registerTool("github_variable_list", {
-    description: "List Actions variable names, not values, at repository or environment scope.",
-    inputSchema: { repository, environment: environmentName.optional() }, annotations,
-  }, async args => configuration(args.repository, args.environment, "variables"));
-  server.registerTool("github_variable_upsert", {
-    description: "Create or update a non-secret Actions variable. Never pass credentials or secret values.",
-    inputSchema: { repository, environment: environmentName.optional(), name: variableName, value: z.string().max(48000) }, annotations: writeAnnotations,
-  }, async args => configuration(args.repository, args.environment, "variables", args.name, args.value));
-  server.registerTool("github_secret_list", {
-    description: "List Actions secret names only. Never returns secret values.",
-    inputSchema: { repository, environment: environmentName.optional() }, annotations,
-  }, async args => configuration(args.repository, args.environment, "secrets"));
+  server.registerTool(
+    "github_environment_list",
+    {
+      description: "List repository environments.",
+      inputSchema: { repository },
+      annotations,
+    },
+    async (args) => configuration(args.repository, undefined, "environments"),
+  );
+  server.registerTool(
+    "github_environment_upsert",
+    {
+      description:
+        "Create an environment or update its wait timer. Does not accept protection bypass settings.",
+      inputSchema: {
+        repository,
+        environment: environmentName,
+        waitTimer: z.number().int().min(0).max(43200).optional(),
+      },
+      annotations: writeAnnotations,
+    },
+    async (args) =>
+      mutateResource(
+        args.repository,
+        "/environments/" + encodeURIComponent(args.environment),
+        "PUT",
+        args.waitTimer === undefined ? {} : { wait_timer: args.waitTimer },
+      ),
+  );
+  server.registerTool(
+    "github_variable_list",
+    {
+      description:
+        "List Actions variable names, not values, at repository or environment scope.",
+      inputSchema: { repository, environment: environmentName.optional() },
+      annotations,
+    },
+    async (args) =>
+      configuration(args.repository, args.environment, "variables"),
+  );
+  server.registerTool(
+    "github_variable_upsert",
+    {
+      description:
+        "Create or update a non-secret Actions variable. Never pass credentials or secret values.",
+      inputSchema: {
+        repository,
+        environment: environmentName.optional(),
+        name: variableName,
+        value: z.string().max(48000),
+      },
+      annotations: writeAnnotations,
+    },
+    async (args) =>
+      configuration(
+        args.repository,
+        args.environment,
+        "variables",
+        args.name,
+        args.value,
+      ),
+  );
+  server.registerTool(
+    "github_secret_list",
+    {
+      description:
+        "List Actions secret names only. Never returns secret values.",
+      inputSchema: { repository, environment: environmentName.optional() },
+      annotations,
+    },
+    async (args) => configuration(args.repository, args.environment, "secrets"),
+  );
   server.registerTool(
     "github_comment_edit",
     {
-      description: "Edit an existing issue or PR comment authored by the configured GitHub App. Managed report comments must use upsert instead.",
-      inputSchema: { repository, commentId: runId, body: z.string().min(1).max(60000) },
+      description:
+        "Edit an existing issue or PR comment authored by the configured GitHub App. Managed report comments must use upsert instead.",
+      inputSchema: {
+        repository,
+        commentId: runId,
+        body: z.string().min(1).max(60000),
+      },
       annotations: writeAnnotations,
     },
     async ({ repository: repo, commentId, body }) => {
       const reply = (value: unknown, isError = false) => ({
-        isError, content: [{ type: "text" as const, text: JSON.stringify(value) }],
+        isError,
+        content: [{ type: "text" as const, text: JSON.stringify(value) }],
       });
-      if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+      if (
+        !(env.ORB_CI_REPOSITORIES ?? "")
+          .split(",")
+          .map((v) => v.trim().toLowerCase())
+          .includes(repo.toLowerCase())
+      )
         return reply({ error: "Repository unavailable" }, true);
-      if (githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
-      if (body.includes("<!-- orb:")) return reply({ error: "Reserved comment marker" }, true);
+      if (githubAuthMode(env) !== "app")
+        return reply({ error: "GitHub App required" }, true);
+      if (body.includes("<!-- orb:"))
+        return reply({ error: "Reserved comment marker" }, true);
       try {
         const token = await githubToken(env);
-        const url = "https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/") + "/issues/comments/" + commentId;
-        const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" };
+        const url =
+          "https://api.github.com/repos/" +
+          repo.split("/").map(encodeURIComponent).join("/") +
+          "/issues/comments/" +
+          commentId;
+        const headers = {
+          Authorization: "Bearer " + token,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json",
+          "User-Agent": "orb-api",
+          "X-GitHub-Api-Version": "2022-11-28",
+        };
         const signal = AbortSignal.timeout(15000);
-        const current = await fetch(url, { headers, redirect: "error", signal });
-        if (!current.ok) return reply({ error: "Comment unavailable", status: current.status }, true);
-        const comment = await current.json<{ body: string; html_url: string; performed_via_github_app?: { id: number } }>();
+        const current = await fetch(url, {
+          headers,
+          redirect: "error",
+          signal,
+        });
+        if (!current.ok)
+          return reply(
+            { error: "Comment unavailable", status: current.status },
+            true,
+          );
+        const comment = await current.json<{
+          body: string;
+          html_url: string;
+          performed_via_github_app?: { id: number };
+        }>();
         const appId = Number(env.ORB_GITHUB_APP_ID);
-        if (!Number.isSafeInteger(appId) || appId <= 0 || comment.performed_via_github_app?.id !== appId)
-          return reply({ error: "Comment is not owned by the configured App" }, true);
-        if (comment.body.includes("<!-- orb:")) return reply({ error: "Use comment upsert for managed reports" }, true);
-        if (comment.body === body) return reply({ action: "unchanged", id: commentId, url: comment.html_url });
-        const response = await fetch(url, { method: "PATCH", headers, redirect: "error", signal, body: JSON.stringify({ body }) });
-        return reply({ accepted: response.ok, status: response.status, id: commentId, url: comment.html_url }, !response.ok);
+        if (
+          !Number.isSafeInteger(appId) ||
+          appId <= 0 ||
+          comment.performed_via_github_app?.id !== appId
+        )
+          return reply(
+            { error: "Comment is not owned by the configured App" },
+            true,
+          );
+        if (comment.body.includes("<!-- orb:"))
+          return reply(
+            { error: "Use comment upsert for managed reports" },
+            true,
+          );
+        if (comment.body === body)
+          return reply({
+            action: "unchanged",
+            id: commentId,
+            url: comment.html_url,
+          });
+        const response = await fetch(url, {
+          method: "PATCH",
+          headers,
+          redirect: "error",
+          signal,
+          body: JSON.stringify({ body }),
+        });
+        return reply(
+          {
+            accepted: response.ok,
+            status: response.status,
+            id: commentId,
+            url: comment.html_url,
+          },
+          !response.ok,
+        );
       } catch {
-        return reply({ error: "Comment edit not confirmed; inspect before retrying" }, true);
+        return reply(
+          { error: "Comment edit not confirmed; inspect before retrying" },
+          true,
+        );
       }
     },
   );
