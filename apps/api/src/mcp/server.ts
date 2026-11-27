@@ -535,6 +535,62 @@ export async function serveDispatchMcp(
     },
     async (args) => pullOperation(args.repository, args.prNumber, "checks"),
   );
+  server.registerTool(
+    "github_pr_comment_upsert",
+    {
+      description: "Create or update an Orb-managed PR comment identified by a stable key. Never edit another author's comment. Concurrent creates may require reconciliation.",
+      inputSchema: {
+        repository,
+        prNumber: runId,
+        key: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),
+        body: z.string().min(1).max(60000),
+      },
+      annotations: writeAnnotations,
+    },
+    async ({ repository: repo, prNumber, key, body }) => {
+      const reply = (value: unknown, isError = false) => ({
+        isError,
+        content: [{ type: "text" as const, text: JSON.stringify(value) }],
+      });
+      if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+        return reply({ error: "Repository unavailable" }, true);
+      if (githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
+      if (body.includes("<!-- orb:")) return reply({ error: "Reserved comment marker" }, true);
+      try {
+        const token = await githubToken(env);
+        const base = "https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/");
+        const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" };
+        const signal = AbortSignal.timeout(20000);
+        const pr = await fetch(base + "/pulls/" + prNumber, { headers, redirect: "error", signal });
+        if (!pr.ok) return reply({ error: "PR unavailable", status: pr.status }, true);
+        const marker = "<!-- orb:" + key + " -->";
+        const content = marker + "\n" + body;
+        const matches: Array<{ id: number; body: string; html_url: string }> = [];
+        const appId = Number(env.ORB_GITHUB_APP_ID);
+        if (!Number.isSafeInteger(appId) || appId <= 0) return reply({ error: "Invalid app identity" }, true);
+        let complete = false;
+        for (let page = 1; page <= 10; page++) {
+          const response = await fetch(base + "/issues/" + prNumber + "/comments?per_page=100&page=" + page, { headers, redirect: "error", signal });
+          if (!response.ok) return reply({ error: "Comment lookup failed", status: response.status }, true);
+          const comments = await response.json<Array<{ id: number; body: string; html_url: string; performed_via_github_app?: { id: number } }>>();
+          matches.push(...comments.filter(c => c.performed_via_github_app?.id === appId && c.body?.startsWith(marker + "\n")));
+          if (!(response.headers.get("link") ?? "").includes('rel="next"')) { complete = true; break; }
+        }
+        if (!complete || matches.length > 1) return reply({ error: "Comment lookup incomplete or duplicate markers; reconcile before writing" }, true);
+        const existing = matches[0];
+        if (existing?.body === content) return reply({ action: "unchanged", id: existing.id, url: existing.html_url });
+        const response = await fetch(base + (existing ? "/issues/comments/" + existing.id : "/issues/" + prNumber + "/comments"), {
+          method: existing ? "PATCH" : "POST", headers, redirect: "error", signal,
+          body: JSON.stringify({ body: content }),
+        });
+        if (!response.ok) return reply({ error: "Comment write rejected", status: response.status }, true);
+        const comment = await response.json<{ id: number; html_url: string }>();
+        return reply({ action: existing ? "updated" : "created", id: comment.id, url: comment.html_url });
+      } catch {
+        return reply({ error: "Comment write not confirmed; inspect before retrying" }, true);
+      }
+    },
+  );
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
