@@ -1,3 +1,4 @@
+import { mutateResource } from "./mutations";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
