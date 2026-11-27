@@ -1,7 +1,10 @@
 import sodium from "libsodium-wrappers";
 
 /** Encrypt a secret using the GitHub Actions public key. Never log inputs. */
-export async function sealGitHubSecret(publicKey: string, value: string): Promise<string> {
+export async function sealGitHubSecret(
+  publicKey: string,
+  value: string,
+): Promise<string> {
   await sodium.ready;
   const key = sodium.from_base64(publicKey, sodium.base64_variants.ORIGINAL);
   if (key.length !== sodium.crypto_box_PUBLICKEYBYTES) {
