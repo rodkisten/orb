@@ -1,4 +1,4 @@
-import { listPreviews } from "./previews/registry";
+import { listPreviews, updatePreview } from "./previews/registry";
 import { serveDispatchMcp } from "./mcp/server";
 import { dispatchWorkflow } from "./github-dispatch";
 import type { JardimBindings } from "./jardim";
@@ -31,6 +31,7 @@ import {
 
 type Bindings = JardimBindings & {
   ORB_INGEST_TOKEN?: string;
+  ORB_PREVIEW_TOKEN?: string;
   ORB_DISPATCH_TOKEN?: string;
   ORB_WEBHOOK_SECRET?: string;
   ORB_GITHUB_APP_ID?: string;
@@ -167,6 +168,33 @@ function createApp(env: Bindings) {
           tags: ["Previews"],
           summary: "List registered preview deployments",
         },
+      },
+    )
+    .put(
+      "/previews/:project/:pr",
+      async ({ request, params, body, set }) => {
+        set.headers["cache-control"] = "no-store";
+        const secret = env.ORB_PREVIEW_TOKEN;
+        if (!secret || secret.length < 32 || !(await equalDispatchToken(request.headers.get("authorization") ?? "", "Bearer " + secret))) {
+          set.status = 401;
+          return { error: "Unauthorized" };
+        }
+        if (params.project !== "sandbox") {
+          set.status = 400;
+          return { error: "Unsupported project" };
+        }
+        const accepted = await updatePreview(env.ORB_DB, { project: params.project, pr: params.pr, sha: body.sha, runId: body.runId, status: body.status });
+        if (!accepted) set.status = 409;
+        return { accepted };
+      },
+      {
+        params: t.Object({ project: t.String(), pr: t.Numeric({ minimum: 1, maximum: 999999999, multipleOf: 1 }) }),
+        body: t.Object({
+          sha: t.String({ pattern: "^[a-f0-9]{40}$" }),
+          runId: t.String({ pattern: "^[1-9][0-9]{0,17}$" }),
+          status: t.Union([t.Literal("building"), t.Literal("ready"), t.Literal("failed"), t.Literal("removed")]),
+        }),
+        detail: { tags: ["Previews"], summary: "Register pilot preview lifecycle from CI" },
       },
     )
     .get("/github/gateway/metrics", async ({ request, set }) => {
