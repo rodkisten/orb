@@ -9,7 +9,7 @@
     {
       "binding": "ORB_DB",
       "database_name": "orb-events",
-      "database_id": "103adc47-28f5-4774-972a-002a7ffcd9a8"
-    }
-  ]
+      "database_id": "103adc47-28f5-4774-972a-002a7ffcd9a8",
+    },
+  ],
 }
