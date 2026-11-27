@@ -1054,6 +1054,41 @@ export async function serveDispatchMcp(
     description: "List Actions secret names only. Never returns secret values.",
     inputSchema: { repository, environment: environmentName.optional() }, annotations,
   }, async args => configuration(args.repository, args.environment, "secrets"));
+  server.registerTool(
+    "github_comment_edit",
+    {
+      description: "Edit an existing issue or PR comment authored by the configured GitHub App. Managed report comments must use upsert instead.",
+      inputSchema: { repository, commentId: runId, body: z.string().min(1).max(60000) },
+      annotations: writeAnnotations,
+    },
+    async ({ repository: repo, commentId, body }) => {
+      const reply = (value: unknown, isError = false) => ({
+        isError, content: [{ type: "text" as const, text: JSON.stringify(value) }],
+      });
+      if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+        return reply({ error: "Repository unavailable" }, true);
+      if (githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
+      if (body.includes("<!-- orb:")) return reply({ error: "Reserved comment marker" }, true);
+      try {
+        const token = await githubToken(env);
+        const url = "https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/") + "/issues/comments/" + commentId;
+        const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" };
+        const signal = AbortSignal.timeout(15000);
+        const current = await fetch(url, { headers, redirect: "error", signal });
+        if (!current.ok) return reply({ error: "Comment unavailable", status: current.status }, true);
+        const comment = await current.json<{ body: string; html_url: string; performed_via_github_app?: { id: number } }>();
+        const appId = Number(env.ORB_GITHUB_APP_ID);
+        if (!Number.isSafeInteger(appId) || appId <= 0 || comment.performed_via_github_app?.id !== appId)
+          return reply({ error: "Comment is not owned by the configured App" }, true);
+        if (comment.body.includes("<!-- orb:")) return reply({ error: "Use comment upsert for managed reports" }, true);
+        if (comment.body === body) return reply({ action: "unchanged", id: commentId, url: comment.html_url });
+        const response = await fetch(url, { method: "PATCH", headers, redirect: "error", signal, body: JSON.stringify({ body }) });
+        return reply({ accepted: response.ok, status: response.status, id: commentId, url: comment.html_url }, !response.ok);
+      } catch {
+        return reply({ error: "Comment edit not confirmed; inspect before retrying" }, true);
+      }
+    },
+  );
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
