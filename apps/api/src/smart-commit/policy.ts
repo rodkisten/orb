@@ -18,12 +18,20 @@ export function classifyMessage(original: string) {
 }
 
 /** Reject generated directives and malformed subjects rather than silently accepting them. */
-export function validateSuggestion(original: string, suggestion: string): string | null {
+export function validateSuggestion(
+  original: string,
+  suggestion: string,
+): string | null {
   const policy = classifyMessage(original);
   if (!policy.eligible) return null;
   const subject = suggestion.trim();
   if (subject.length > 100 || /[\x00-\x1f\x7f]/.test(subject)) return null;
   if (/\[(?:skip ci|deploy)\]/i.test(subject)) return null;
-  if (!/^(?:feat|fix|docs|refactor|perf|test|build|ci|chore|style|revert)(?:\([a-z0-9][a-z0-9./_-]*\))?!?: \S.*$/.test(subject)) return null;
+  if (
+    !/^(?:feat|fix|docs|refactor|perf|test|build|ci|chore|style|revert)(?:\([a-z0-9][a-z0-9./_-]*\))?!?: \S.*$/.test(
+      subject,
+    )
+  )
+    return null;
   return [subject, ...policy.markers].join(" ");
 }
