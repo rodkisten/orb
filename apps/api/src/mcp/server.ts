@@ -946,6 +946,59 @@ export async function serveDispatchMcp(
       }
     },
   );
+  async function mutateResource(repo: string, path: string, method: "POST" | "PATCH" | "PUT", body: unknown) {
+    const reply = (value: unknown, isError = false) => ({
+      isError, content: [{ type: "text" as const, text: JSON.stringify(value) }],
+    });
+    if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+      return reply({ error: "Repository unavailable" }, true);
+    if (githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
+    try {
+      const token = await githubToken(env);
+      const response = await fetch("https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/") + path, {
+        method, headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" },
+        body: JSON.stringify(body), redirect: "error", signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) return reply({ error: "GitHub rejected operation", status: response.status }, true);
+      const data = await response.json<{ id?: number; number?: number; html_url?: string; name?: string }>().catch(() => null);
+      return reply({ accepted: true, id: data?.id, number: data?.number, url: data?.html_url, name: data?.name });
+    } catch {
+      return reply({ error: "Write not confirmed; inspect resource before retrying" }, true);
+    }
+  }
+  const title = z.string().min(1).max(256);
+  const bodyText = z.string().max(60000);
+  const labelName = z.string().min(1).max(50);
+  const refName = z.string().min(1).max(255);
+  server.registerTool("github_pr_create", {
+    description: "Create a pull request from an existing branch.", annotations: writeAnnotations,
+    inputSchema: { repository, title, body: bodyText.optional(), head: refName, base: refName, draft: z.boolean().default(true) },
+  }, async ({ repository: repo, ...body }) => mutateResource(repo, "/pulls", "POST", body));
+  server.registerTool("github_pr_edit", {
+    description: "Edit PR title, description or base branch. Does not merge or close the PR.", annotations: writeAnnotations,
+    inputSchema: { repository, prNumber: runId, title: title.optional(), body: bodyText.optional(), base: refName.optional() },
+  }, async ({ repository: repo, prNumber, ...body }) => mutateResource(repo, "/pulls/" + prNumber, "PATCH", body));
+  server.registerTool("github_issue_create", {
+    description: "Create an issue in an allowed repository.", annotations: writeAnnotations,
+    inputSchema: { repository, title, body: bodyText.optional(), labels: z.array(labelName).max(30).optional() },
+  }, async ({ repository: repo, ...body }) => mutateResource(repo, "/issues", "POST", body));
+  server.registerTool("github_issue_edit", {
+    description: "Edit issue title, description or labels.", annotations: writeAnnotations,
+    inputSchema: { repository, issueNumber: runId, title: title.optional(), body: bodyText.optional(), labels: z.array(labelName).max(30).optional() },
+  }, async ({ repository: repo, issueNumber, ...body }) => mutateResource(repo, "/issues/" + issueNumber, "PATCH", body));
+  const color = z.string().regex(/^[a-fA-F0-9]{6}$/);
+  server.registerTool("github_label_create", {
+    description: "Create a repository label.", annotations: writeAnnotations,
+    inputSchema: { repository, name: labelName, color, description: z.string().max(100).optional() },
+  }, async ({ repository: repo, ...body }) => mutateResource(repo, "/labels", "POST", body));
+  server.registerTool("github_label_edit", {
+    description: "Edit a repository label by its existing name.", annotations: writeAnnotations,
+    inputSchema: { repository, name: labelName, newName: labelName.optional(), color: color.optional(), description: z.string().max(100).optional() },
+  }, async ({ repository: repo, name, newName, ...body }) => mutateResource(repo, "/labels/" + encodeURIComponent(name), "PATCH", { ...body, new_name: newName }));
+  server.registerTool("github_comment_create", {
+    description: "Create a comment on an issue or PR. Use comment upsert for recurring reports.", annotations: writeAnnotations,
+    inputSchema: { repository, issueNumber: runId, body: bodyText.min(1) },
+  }, async ({ repository: repo, issueNumber, body }) => mutateResource(repo, "/issues/" + issueNumber + "/comments", "POST", { body }));
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
