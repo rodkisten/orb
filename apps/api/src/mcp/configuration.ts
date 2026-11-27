@@ -2,8 +2,21 @@ import { mutateResource } from "./mutations";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
-import { repository, annotations, writeAnnotations, environmentName, variableName, repositoryAllowed, reply, type McpEnv } from "./shared";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
+import {
+  repository,
+  annotations,
+  writeAnnotations,
+  environmentName,
+  variableName,
+  repositoryAllowed,
+  reply,
+  type McpEnv,
+} from "./shared";
 export function registerConfiguration(server: McpServer, env: McpEnv) {
   async function configuration(
     repo: string,

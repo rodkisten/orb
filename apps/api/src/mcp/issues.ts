@@ -68,9 +68,15 @@ export function registerIssues(server: McpServer, env: McpEnv) {
       },
     },
     async ({ repository: repo, name, newName, ...body }) =>
-      mutateResource(env, repo, "/labels/" + encodeURIComponent(name), "PATCH", {
-        ...body,
-        new_name: newName,
-      }),
+      mutateResource(
+        env,
+        repo,
+        "/labels/" + encodeURIComponent(name),
+        "PATCH",
+        {
+          ...body,
+          new_name: newName,
+        },
+      ),
   );
 }

@@ -1,8 +1,21 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
-import { repository, runId, page, annotations, writeAnnotations, repositoryAllowed, reply, type McpEnv } from "./shared";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
+import {
+  repository,
+  runId,
+  page,
+  annotations,
+  writeAnnotations,
+  repositoryAllowed,
+  reply,
+  type McpEnv,
+} from "./shared";
 import { mutateResource } from "./mutations";
 export function registerComments(server: McpServer, env: McpEnv) {
   server.registerTool(
@@ -136,9 +149,15 @@ export function registerComments(server: McpServer, env: McpEnv) {
       inputSchema: { repository, issueNumber: runId, body: bodyText.min(1) },
     },
     async ({ repository: repo, issueNumber, body }) =>
-      mutateResource(env, repo, "/issues/" + issueNumber + "/comments", "POST", {
-        body,
-      }),
+      mutateResource(
+        env,
+        repo,
+        "/issues/" + issueNumber + "/comments",
+        "POST",
+        {
+          body,
+        },
+      ),
   );
   server.registerTool(
     "github_comment_edit",

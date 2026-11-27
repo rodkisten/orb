@@ -1,8 +1,20 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
-import { repository, runId, annotations, writeAnnotations, repositoryAllowed, reply, type McpEnv } from "./shared";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
+import {
+  repository,
+  runId,
+  annotations,
+  writeAnnotations,
+  repositoryAllowed,
+  reply,
+  type McpEnv,
+} from "./shared";
 import { mutateResource } from "./mutations";
 export function registerPullRequests(server: McpServer, env: McpEnv) {
   async function pullOperation(

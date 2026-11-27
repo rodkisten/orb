@@ -1,8 +1,19 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { githubAuthMode, githubToken } from "../github-auth";
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
-import { repository, annotations, writeAnnotations, repositoryAllowed, reply, type McpEnv } from "./shared";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
+import {
+  repository,
+  annotations,
+  writeAnnotations,
+  repositoryAllowed,
+  reply,
+  type McpEnv,
+} from "./shared";
 export function registerGit(server: McpServer, env: McpEnv) {
   server.registerTool(
     "github_commit_batch",
