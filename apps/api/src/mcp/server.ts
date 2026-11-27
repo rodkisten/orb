@@ -674,6 +674,70 @@ export async function serveDispatchMcp(
       }
     },
   );
+  server.registerTool(
+    "github_commit_batch",
+    {
+      description: "Atomically publish text file changes to an existing non-default branch using the GitHub App. Requires the expected branch head. Never force push.",
+      inputSchema: {
+        repository,
+        branch: z.string().min(1).max(200).regex(/^[A-Za-z0-9_./-]+$/),
+        expectedHeadSha: z.string().regex(/^[a-f0-9]{40}$/),
+        message: z.string().min(1).max(4000),
+        files: z.array(z.object({
+          path: z.string().min(1).max(512),
+          content: z.string().max(262144),
+        })).min(1).max(50),
+      },
+      annotations: writeAnnotations,
+    },
+    async ({ repository: repo, branch, expectedHeadSha, message, files }) => {
+      const reply = (value: unknown, isError = false) => ({
+        isError,
+        content: [{ type: "text" as const, text: JSON.stringify(value) }],
+      });
+      if (!(env.ORB_CI_REPOSITORIES ?? "").split(",").map(v => v.trim().toLowerCase()).includes(repo.toLowerCase()))
+        return reply({ error: "Repository unavailable" }, true);
+      if (githubAuthMode(env) !== "app") return reply({ error: "GitHub App required" }, true);
+      const identity = env as typeof env & { ORB_COMMIT_AUTHOR_NAME?: string; ORB_COMMIT_AUTHOR_EMAIL?: string; ORB_COMMIT_COAUTHOR_EMAIL?: string };
+      const author = { name: identity.ORB_COMMIT_AUTHOR_NAME, email: identity.ORB_COMMIT_AUTHOR_EMAIL };
+      const botEmail = identity.ORB_COMMIT_COAUTHOR_EMAIL;
+      if (!author.name || !author.email || !botEmail || [author.name, author.email, botEmail].some(v => /[\r\n<>]/.test(v)))
+        return reply({ error: "Commit identities not configured" }, true);
+      if (/^Co-authored-by:/im.test(message) || new Set(files.map(f => f.path)).size !== files.length ||
+        files.some(f => f.path.split("/").some(p => !p || p === "." || p === ".." || p.toLowerCase() === ".git") || /[\\\x00-\x1f]/.test(f.path)) ||
+        new TextEncoder().encode(JSON.stringify(files)).length > 1048576)
+        return reply({ error: "Invalid paths, attribution or payload size" }, true);
+      try {
+        const token = await githubToken(env);
+        const base = "https://api.github.com/repos/" + repo.split("/").map(encodeURIComponent).join("/");
+        const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "orb-api", "X-GitHub-Api-Version": "2022-11-28" };
+        const signal = AbortSignal.timeout(30000);
+        async function api<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+          const response = await fetch(base + path, { method, headers, redirect: "error", signal, body: body === undefined ? undefined : JSON.stringify(body) });
+          if (!response.ok) throw new Error("GitHub request rejected: " + response.status);
+          return response.json<T>();
+        }
+        const metadata = await api<{ default_branch: string }>("");
+        if (branch === metadata.default_branch) return reply({ error: "Default branch writes are prohibited" }, true);
+        const refPath = "/git/refs/heads/" + branch.split("/").map(encodeURIComponent).join("/");
+        const head = await api<{ object: { sha: string } }>(refPath);
+        if (head.object.sha !== expectedHeadSha) return reply({ error: "Branch head changed" }, true);
+        const parent = await api<{ tree: { sha: string } }>("/git/commits/" + expectedHeadSha);
+        const tree = await api<{ sha: string }>("/git/trees", "POST", {
+          base_tree: parent.tree.sha,
+          tree: files.map(f => ({ path: f.path, mode: "100644", type: "blob", content: f.content })),
+        });
+        const commit = await api<{ sha: string }>("/git/commits", "POST", {
+          message: message.trimEnd() + "\n\nCo-authored-by: ploocky[bot] <" + botEmail + ">",
+          tree: tree.sha, parents: [expectedHeadSha], author,
+        });
+        await api(refPath, "PATCH", { sha: commit.sha, force: false });
+        return reply({ sha: commit.sha, url: "https://github.com/" + repo + "/commit/" + commit.sha });
+      } catch {
+        return reply({ error: "Commit publication not confirmed; inspect branch before retrying" }, true);
+      }
+    },
+  );
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
