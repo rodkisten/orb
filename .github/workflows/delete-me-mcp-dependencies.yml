@@ -5,6 +5,9 @@ on:
     branches: [feat/workflow-dispatch-mcp]
     paths:
       - .github/workflows/delete-me-mcp-dependencies.yml
+      - apps/api/src/mcp/**
+      - apps/api/src/index.ts
+      - apps/api/src/github-dispatch.ts
 permissions:
   contents: read
 concurrency:
