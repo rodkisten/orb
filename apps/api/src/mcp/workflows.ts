@@ -1,3 +1,4 @@
+import { redactDiagnostic } from "./redaction";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { repositoryRead, GatewayError } from "../repository-read";
@@ -334,10 +335,7 @@ export function registerWorkflows(
         } finally {
           await reader.cancel().catch(() => {});
         }
-        logs = logs
-          .replaceAll(token, "[REDACTED]")
-          .replace(/(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]+/g, "[REDACTED]")
-          .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+/gi, "Bearer [REDACTED]");
+        logs = redactDiagnostic(logs, [token]);
         return reply({ jobId, stepNumber, bytes, truncated, logs });
       } catch {
         return reply({ error: "Unable to retrieve job logs" }, true);
