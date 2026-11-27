@@ -54,13 +54,25 @@ export type PreviewUpdate = {
 };
 
 // Pilot targets are derived, never accepted as arbitrary proxy URLs.
-export async function updatePreview(db: D1Database, input: PreviewUpdate): Promise<boolean> {
+export async function updatePreview(
+  db: D1Database,
+  input: PreviewUpdate,
+): Promise<boolean> {
   const hostname = previewHostname(input.project, input.pr);
-  if (input.project !== "sandbox" || !/^[a-f0-9]{40}$/.test(input.sha) || !/^[1-9][0-9]{0,17}$/.test(input.runId)) {
+  if (
+    input.project !== "sandbox" ||
+    !/^[a-f0-9]{40}$/.test(input.sha) ||
+    !/^[1-9][0-9]{0,17}$/.test(input.runId)
+  ) {
     throw new Error("Invalid preview update");
   }
-  const upstream = input.status === "ready" ? "https://pr" + input.pr + ".sandbox.migos.club" : null;
-  const result = await db.prepare(`
+  const upstream =
+    input.status === "ready"
+      ? "https://pr" + input.pr + ".sandbox.migos.club"
+      : null;
+  const result = await db
+    .prepare(
+      `
     INSERT INTO preview_deployments (project, pr_number, repository, hostname, sha, status, upstream, run_id, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(project, pr_number) DO UPDATE SET
@@ -71,6 +83,19 @@ export async function updatePreview(db: D1Database, input: PreviewUpdate): Promi
         AND (preview_deployments.status=excluded.status
           OR (preview_deployments.status='building' AND excluded.status IN ('ready','failed','removed'))
           OR (preview_deployments.status IN ('ready','failed') AND excluded.status='removed')))
-  `).bind(input.project, input.pr, "rodkisten/rodsandbox", hostname, input.sha, input.status, upstream, input.runId, Date.now()).run();
+  `,
+    )
+    .bind(
+      input.project,
+      input.pr,
+      "rodkisten/rodsandbox",
+      hostname,
+      input.sha,
+      input.status,
+      upstream,
+      input.runId,
+      Date.now(),
+    )
+    .run();
   return (result.meta.changes ?? 0) > 0;
 }
