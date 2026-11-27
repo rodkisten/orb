@@ -2,10 +2,29 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { repositoryRead, GatewayError } from "../repository-read";
 import { githubAuthMode, githubToken } from "../github-auth";
-import { githubHeaders, githubRepositoryUrl, githubTimeout } from "./github-client";
-import { repository, runId, page, limit, annotations, writeAnnotations, repositoryAllowed, reply, type McpEnv } from "./shared";
+import {
+  githubHeaders,
+  githubRepositoryUrl,
+  githubTimeout,
+} from "./github-client";
+import {
+  repository,
+  runId,
+  page,
+  limit,
+  annotations,
+  writeAnnotations,
+  repositoryAllowed,
+  reply,
+  type McpEnv,
+} from "./shared";
 
-export function registerWorkflows(server: McpServer, request: Request, dispatch: (request: Request) => Promise<Response>, env: McpEnv) {
+export function registerWorkflows(
+  server: McpServer,
+  request: Request,
+  dispatch: (request: Request) => Promise<Response>,
+  env: McpEnv,
+) {
   server.registerTool(
     "github_workflow_dispatch",
     {
