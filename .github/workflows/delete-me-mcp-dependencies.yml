@@ -21,7 +21,7 @@ jobs:
       - uses: actions/create-github-app-token@v2
         id: ploocky
         with:
-          app-id: ${{ vars.PLOOCKY_APP_ID }}
+          app-id: "5784353"
           private-key: ${{ secrets.PLOOCKY_PRIVATE_KEY }}
       - uses: actions/checkout@v4
         with:
