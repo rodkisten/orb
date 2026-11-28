@@ -16,3 +16,5 @@ coverage/
 .DS_Store
 
 .wrangler-dry-run/
+
+.parser-probe/
