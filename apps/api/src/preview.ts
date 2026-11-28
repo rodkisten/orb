@@ -7,6 +7,7 @@ export default {
       request.method === "GET" &&
       (path === "/v1/health" ||
         path === "/v1/meta" ||
+        path === "/v1/session" ||
         path.startsWith("/v1/github/") ||
         path.startsWith("/v1/actions/"));
     const parse =

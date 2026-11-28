@@ -14,3 +14,7 @@ coverage/
 *.pem
 *.local
 .DS_Store
+
+.wrangler-dry-run/
+
+.parser-probe/

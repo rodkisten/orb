@@ -2,9 +2,11 @@ import { useMemo } from "react";
 export function PatchReview({
   before,
   after,
+  title = "Review changes",
 }: {
   before: string;
   after: string;
+  title?: string;
 }) {
   const diff = useMemo(() => {
     const a = before.split("\n"),
@@ -27,30 +29,47 @@ export function PatchReview({
     };
   }, [before, after]);
   return (
-    <section aria-label="Proposed YAML diff">
-      <h3>Review YAML patch</h3>
+    <section aria-label={title} className="grid min-w-0 gap-2">
+      <h3 className="text-sm font-medium">{title}</h3>
       <small>
         {diff.removed.length} removed · {diff.added.length} added · line{" "}
         {diff.start + 1}
       </small>
-      <pre className="orb-patch-review">
+      <div
+        role="region"
+        aria-label="Diff"
+        tabIndex={0}
+        className="max-h-80 overflow-auto rounded-md border border-border bg-muted p-2 font-mono text-xs"
+      >
         {diff.context.map((line, i) => (
-          <div key={"c" + i}> {line}</div>
+          <div className="whitespace-pre" key={"c" + i}>
+            {" "}
+            {line}
+          </div>
         ))}
         {diff.removed.map((line, i) => (
-          <div className="orb-patch-removed" key={"r" + i}>
+          <div
+            className="whitespace-pre bg-destructive/10 text-destructive"
+            key={"r" + i}
+          >
             - {line}
           </div>
         ))}
         {diff.added.map((line, i) => (
-          <div className="orb-patch-added" key={"a" + i}>
+          <div
+            className="whitespace-pre bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+            key={"a" + i}
+          >
             + {line}
           </div>
         ))}
         {diff.tail.map((line, i) => (
-          <div key={"t" + i}> {line}</div>
+          <div className="whitespace-pre" key={"t" + i}>
+            {" "}
+            {line}
+          </div>
         ))}
-      </pre>
+      </div>
     </section>
   );
 }

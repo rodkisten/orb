@@ -5,6 +5,7 @@ import {
 } from "@codemirror/autocomplete";
 import { keymap } from "@codemirror/view";
 import { useEffect, useRef } from "react";
+import { Button } from "../ui/button";
 import {
   Annotation,
   Compartment,
@@ -16,7 +17,7 @@ import { basicSetup } from "codemirror";
 import { yaml } from "@codemirror/lang-yaml";
 import { oneDark } from "@codemirror/theme-one-dark";
 const external = Annotation.define<boolean>();
-export function StructuredEditor({
+export function CodeEditor({
   value,
   onChange,
   disabled = false,
@@ -24,6 +25,8 @@ export function StructuredEditor({
   script = false,
   expression = false,
   suggestions = [],
+  ariaLabel = "Code editor",
+  completionDescription = "Context reference",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -32,6 +35,8 @@ export function StructuredEditor({
   script?: boolean;
   expression?: boolean;
   suggestions?: string[];
+  ariaLabel?: string;
+  completionDescription?: string;
 }) {
   const options = useRef(suggestions);
   options.current = suggestions;
@@ -64,7 +69,7 @@ export function StructuredEditor({
                           label,
                           type: "variable",
                           detail: label.split(".")[0],
-                          info: "Workflow context reference",
+                          info: completionDescription,
                         })),
                       };
                     },
@@ -92,17 +97,13 @@ export function StructuredEditor({
           ]),
           hints.current.of(hint(placeholder)),
           EditorView.contentAttributes.of({
-            "aria-label": script
-              ? "Shell script"
-              : expression
-                ? "GitHub expression"
-                : "Structured JSON value",
+            "aria-label": ariaLabel,
             autocapitalize: "off",
             spellcheck: "false",
             autocorrect: "off",
           }),
           EditorView.theme({
-            "&": { fontSize: "12px", borderRadius: "8px", overflow: "hidden" },
+            "&": { fontSize: "16px", borderRadius: "8px", overflow: "hidden" },
             ".cm-scroller": {
               minHeight: script ? "160px" : "48px",
               maxHeight: script ? "45vh" : "220px",
@@ -125,7 +126,7 @@ export function StructuredEditor({
       view.current = null;
       editor.destroy();
     };
-  }, []);
+  }, [script, expression, ariaLabel, completionDescription]);
   useEffect(() => {
     const e = view.current;
     if (e && e.state.doc.toString() !== value)
@@ -150,7 +151,9 @@ export function StructuredEditor({
   return (
     <div>
       {expression && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           type="button"
           disabled={disabled}
           onClick={() => {
@@ -161,10 +164,11 @@ export function StructuredEditor({
           }}
         >
           Autocomplete
-        </button>
+        </Button>
       )}
       {expression && suggestions.length > 0 && (
         <select
+          className="min-w-0 rounded-md border border-input bg-background px-2 py-1 text-base"
           aria-label="Complete expression"
           value=""
           onChange={(e) => {

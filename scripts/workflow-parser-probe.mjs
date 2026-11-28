@@ -1,8 +1,5 @@
-import {
-  parseWorkflow,
-  NoOperationTraceWriter,
-} from "@actions/workflow-parser";
-import { createActionsAdapter } from "../packages/workflow-core/src/adapters.ts";
+import { parseWorkflow } from "@actions/workflow-parser";
+import { createActionsAdapter } from "@code/workflow-core/adapters";
 import { Parser } from "web-tree-sitter";
 const validate = createActionsAdapter({ parseWorkflow });
 const valid = validate(
