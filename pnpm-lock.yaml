@@ -511,7 +511,7 @@ packages:
         optional: true
 
   '@code/workflow-core@file:vendor/code-workflow-core-0.2.0.tgz':
-    resolution: {integrity: sha512-MDIkGNfLh3J9nFaaOx/ujykCyJBS/Xh7wPB/SkSwC/U66MSxqPZRQGkGCfmjGQ6dg4FSJDUl9opnvJX+MqgZsQ==, tarball: file:vendor/code-workflow-core-0.2.0.tgz}
+    resolution: {integrity: sha512-3N+Jljf52V6MV39Ejdwa+4ssM/2JJ18IfD5ihukwLIseJ6H3NfbPS1w66pd3ttnoJIVdnXjv81wx7e7QPLWz+Q==, tarball: file:vendor/code-workflow-core-0.2.0.tgz}
     version: 0.2.0
 
   '@code/workflow-studio@file:vendor/code-workflow-studio-0.2.0.tgz':
