@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "targets": [{
+    "id": "probe",
+    "workspaceId": "rodverse",
+    "repository": "rodkisten/rodsandbox",
+    "workflowFile": ".github/workflows/runtime-build.yml",
+    "workflowRef": "main",
+    "workflowBlobSha": "0000000000000000000000000000000000000000",
+    "imageRepository": "ghcr.io/rodkisten/rodsandbox/probe",
+    "subjects": ["replace-with-authorized-identity@example.invalid"],
+    "platforms": ["linux/amd64"]
+  }]
+}

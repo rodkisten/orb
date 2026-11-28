@@ -1431,7 +1431,7 @@ packages:
         optional: true
 
   '@rodverse/runtime-contracts@file:vendor/rodverse-runtime-contracts-0.1.0.tgz':
-    resolution: {integrity: sha512-JIMoMDZIFXuhCx4Unv7Te9tuN+ArZ+Xrvz3fRxxnbAWDOOAMTEiPknSfj/yAsKMq/OkusRQlWHhvFvBi2arUlQ==, tarball: file:vendor/rodverse-runtime-contracts-0.1.0.tgz}
+    resolution: {integrity: sha512-33/T/Pi0IOYQSeWvzUHBakTqU1rD4N31GtWR8Tpocdn57GGgVSKy7c7xrxxUHTjHQDfwDMQEmhlkmp54Emi1LQ==, tarball: file:vendor/rodverse-runtime-contracts-0.1.0.tgz}
     version: 0.1.0
 
   '@rolldown/pluginutils@1.0.0-beta.27':
