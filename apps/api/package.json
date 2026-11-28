@@ -17,6 +17,7 @@
     "@octokit/core": "^7.0.0",
     "@orb/workflow-core": "workspace:*",
     "elysia": "^1.4.0",
+    "jose": "6.2.18",
     "libsodium-wrappers": "^0.8.4",
     "yaml": "^2.8.1",
     "zod": "^3.25.76"

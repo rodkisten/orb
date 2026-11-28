@@ -1,35 +1,9 @@
-/**
- * Cloudflare Access JWT validation for browser read endpoints.
- * Fail closed until both team domain and application AUD are configured.
- * No browser token is stored in localStorage or embedded in a URL.
- */
+import { createRemoteJWKSet, jwtVerify, errors } from "jose";
+
 export type AccessBindings = {
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
 };
-
-type Claims = {
-  iss?: string;
-  aud?: string | string[];
-  exp?: number;
-  nbf?: number;
-  sub?: string;
-};
-
-type JwkKey = JsonWebKey & {
-  kid?: string;
-  kty?: string;
-  alg?: string;
-  use?: string;
-};
-
-function decodePart(part: string): unknown {
-  const padded = part
-    .replace(/-/g, "+")
-    .replace(/_/g, "/")
-    .padEnd(Math.ceil(part.length / 4) * 4, "=");
-  return JSON.parse(atob(padded));
-}
 
 function validTeamDomain(value: string): string | null {
   try {
@@ -51,6 +25,21 @@ function validTeamDomain(value: string): string | null {
   } catch {
     return null;
   }
+}
+
+const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function keysFor(issuer: string) {
+  let keys = keySets.get(issuer);
+  if (!keys) {
+    keys = createRemoteJWKSet(new URL("/cdn-cgi/access/certs", issuer), {
+      timeoutDuration: 5000,
+      cacheMaxAge: 600000,
+      cooldownDuration: 30000,
+    });
+    keySets.set(issuer, keys);
+  }
+  return keys;
 }
 
 export async function accessIdentity(
@@ -77,95 +66,18 @@ export async function accessIdentity(
   const jwt = request.headers.get("cf-access-jwt-assertion") || cookie;
   if (!jwt || jwt.length > 8192)
     return reject("missing_or_oversized_assertion");
-  const parts = jwt.split(".");
-  if (parts.length !== 3) return reject("malformed_assertion");
-
-  let stage = "decode";
   try {
-    const header = decodePart(parts[0]) as { alg?: string; kid?: string };
-    const claims = decodePart(parts[1]) as Claims;
-    if (header.alg !== "RS256" || !header.kid) return reject("invalid_header");
-    if (!claims.sub) return reject("missing_subject");
-    if (
-      claims.iss !== issuer ||
-      !(Array.isArray(claims.aud)
-        ? claims.aud.includes(audience)
-        : claims.aud === audience)
-    )
-      return reject(
-        claims.iss !== issuer ? "issuer_mismatch" : "audience_mismatch",
-      );
-    const now = Math.floor(Date.now() / 1000);
-    if (
-      !claims.exp ||
-      claims.exp <= now ||
-      (claims.nbf !== undefined && claims.nbf > now)
-    )
-      return reject("invalid_time_claims");
-
-    stage = "jwks_fetch";
-    const response = await fetch(issuer + "/cdn-cgi/access/certs", {
-      redirect: "error",
+    const { payload } = await jwtVerify(jwt, keysFor(issuer), {
+      issuer,
+      audience,
+      algorithms: ["RS256"],
+      requiredClaims: ["sub", "exp"],
     });
-    if (!response.ok) return reject("jwks_http_error");
-    stage = "jwks_decode";
-    const keys = (await response.json()) as { keys?: JwkKey[] };
-    const jwk = keys.keys?.find(
-      (key) =>
-        key.kid === header.kid &&
-        key.kty === "RSA" &&
-        (!key.use || key.use === "sig") &&
-        (!key.alg || key.alg === "RS256"),
-    );
-    if (!jwk) return reject("signing_key_not_found");
-    stage = "key_import";
-    const key = await crypto.subtle.importKey(
-      "jwk",
-      {
-        kty: "RSA",
-        n: jwk.n,
-        e: jwk.e,
-        alg: "RS256",
-        ext: true,
-        key_ops: ["verify"],
-      },
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["verify"],
-    );
-    stage = "signature_decode";
-    const signature = Uint8Array.from(
-      atob(
-        parts[2]
-          .replace(/-/g, "+")
-          .replace(/_/g, "/")
-          .padEnd(Math.ceil(parts[2].length / 4) * 4, "="),
-      ),
-      (char) => char.charCodeAt(0),
-    );
-    const message = new TextEncoder().encode(parts[0] + "." + parts[1]);
-    stage = "signature_verify";
-    return (await crypto.subtle.verify(
-      "RSASSA-PKCS1-v1_5",
-      key,
-      signature,
-      message,
-    ))
-      ? claims.sub
-      : reject("invalid_signature");
+    return typeof payload.sub === "string" && payload.sub.length > 0
+      ? payload.sub
+      : reject("missing_subject");
   } catch (error) {
-    const kind =
-      error instanceof Error &&
-      [
-        "TypeError",
-        "DataError",
-        "OperationError",
-        "SyntaxError",
-        "InvalidAccessError",
-        "NotSupportedError",
-      ].includes(error.name)
-        ? error.name
-        : "Error";
-    return reject(`jwt_${stage}_${kind}`);
+    if (error instanceof errors.JOSEError) return reject(error.code);
+    return reject(error instanceof TypeError ? "jwks_fetch_type_error" : "jwt_validation_exception");
   }
 }
