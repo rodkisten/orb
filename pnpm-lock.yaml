@@ -201,9 +201,15 @@ importers:
       '@orb/workflow-core':
         specifier: workspace:*
         version: link:../../packages/workflow-core
+      '@rodverse/runtime-contracts':
+        specifier: file:../../vendor/rodverse-runtime-contracts-0.1.0.tgz
+        version: file:vendor/rodverse-runtime-contracts-0.1.0.tgz
       elysia:
         specifier: ^1.4.0
         version: 1.4.32(@sinclair/typebox@0.34.52)(exact-mirror@0.2.9(@sinclair/typebox@0.34.52))(file-type@22.3.0(supports-color@10.2.2))(openapi-types@12.1.3)(typescript@5.9.3)
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
       libsodium-wrappers:
         specifier: ^0.8.4
         version: 0.8.4
@@ -1424,6 +1430,10 @@ packages:
       '@types/react':
         optional: true
 
+  '@rodverse/runtime-contracts@file:vendor/rodverse-runtime-contracts-0.1.0.tgz':
+    resolution: {integrity: sha512-JIMoMDZIFXuhCx4Unv7Te9tuN+ArZ+Xrvz3fRxxnbAWDOOAMTEiPknSfj/yAsKMq/OkusRQlWHhvFvBi2arUlQ==, tarball: file:vendor/rodverse-runtime-contracts-0.1.0.tgz}
+    version: 0.1.0
+
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
 
@@ -2213,6 +2223,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   file-type@22.3.0:
     resolution: {integrity: sha512-PrPedgnnWl5bWz3JHgar0QSzRvzeyFh7dZ9JpYOgcPZu4KALS9zw4MMa6qXRYyjeBsAlpaWB2boLuG991+0HIQ==}
@@ -3973,6 +3986,10 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.3.0
 
+  '@rodverse/runtime-contracts@file:vendor/rodverse-runtime-contracts-0.1.0.tgz':
+    dependencies:
+      zod: 3.25.76
+
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
   '@rollup/rollup-android-arm-eabi@4.68.8':
@@ -4731,6 +4748,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
+
+  fflate@0.8.3: {}
 
   file-type@22.3.0(supports-color@10.2.2):
     dependencies:

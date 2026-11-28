@@ -1,3 +1,4 @@
+import { handleRuntime, type RuntimeBindings } from "./runtime/api";
 import { serveDispatchMcp } from "./mcp/server";
 import { dispatchWorkflow } from "./github-dispatch";
 import type { JardimBindings } from "./jardim";
@@ -28,21 +29,22 @@ import {
   recoverOutbox,
 } from "./storage";
 
-type Bindings = JardimBindings & {
-  ORB_INGEST_TOKEN?: string;
-  ORB_DISPATCH_TOKEN?: string;
-  ORB_WEBHOOK_SECRET?: string;
-  ORB_GITHUB_APP_ID?: string;
-  ORB_GITHUB_APP_INSTALLATION_ID?: string;
-  ORB_GITHUB_APP_PRIVATE_KEY?: string;
-  ORB_CI_READ_TOKEN?: string;
-  ORB_CI_REPOSITORIES?: string;
-  CF_ACCESS_TEAM_DOMAIN?: string;
-  CF_ACCESS_AUD?: string;
-  CF_ACCESS_MCP_AUD?: string;
-  ORB_DB: D1Database;
-  ORB_EVENTS: Queue<{ eventId: string }>;
-};
+type Bindings = JardimBindings &
+  RuntimeBindings & {
+    ORB_INGEST_TOKEN?: string;
+    ORB_DISPATCH_TOKEN?: string;
+    ORB_WEBHOOK_SECRET?: string;
+    ORB_GITHUB_APP_ID?: string;
+    ORB_GITHUB_APP_INSTALLATION_ID?: string;
+    ORB_GITHUB_APP_PRIVATE_KEY?: string;
+    ORB_CI_READ_TOKEN?: string;
+    ORB_CI_REPOSITORIES?: string;
+    CF_ACCESS_TEAM_DOMAIN?: string;
+    CF_ACCESS_AUD?: string;
+    CF_ACCESS_MCP_AUD?: string;
+    ORB_DB: D1Database;
+    ORB_EVENTS: Queue<{ eventId: string }>;
+  };
 
 const repositoryParams = t.Object({
   owner: t.String({ pattern: "^[A-Za-z0-9-]{1,39}$" }),
@@ -82,6 +84,9 @@ function createApp(env: Bindings) {
         },
       }),
     )
+    .all("/runtime/*", ({ request }) => handleRuntime(request, env), {
+      parse: "none",
+    })
     .post(
       "/github/workflows/dispatch",
       async ({ request, body, set }) => {
