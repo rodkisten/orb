@@ -80,6 +80,7 @@ export async function accessIdentity(
   const parts = jwt.split(".");
   if (parts.length !== 3) return reject("malformed_assertion");
 
+  let stage = "decode";
   try {
     const header = decodePart(parts[0]) as { alg?: string; kid?: string };
     const claims = decodePart(parts[1]) as Claims;
@@ -102,10 +103,12 @@ export async function accessIdentity(
     )
       return reject("invalid_time_claims");
 
+    stage = "jwks_fetch";
     const response = await fetch(issuer + "/cdn-cgi/access/certs", {
       redirect: "error",
     });
     if (!response.ok) return reject("jwks_http_error");
+    stage = "jwks_decode";
     const keys = (await response.json()) as { keys?: JwkKey[] };
     const jwk = keys.keys?.find(
       (key) =>
@@ -115,13 +118,22 @@ export async function accessIdentity(
         (!key.alg || key.alg === "RS256"),
     );
     if (!jwk) return reject("signing_key_not_found");
+    stage = "key_import";
     const key = await crypto.subtle.importKey(
       "jwk",
-      jwk,
+      {
+        kty: "RSA",
+        n: jwk.n,
+        e: jwk.e,
+        alg: "RS256",
+        ext: true,
+        key_ops: ["verify"],
+      },
       { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
       false,
       ["verify"],
     );
+    stage = "signature_decode";
     const signature = Uint8Array.from(
       atob(
         parts[2]
@@ -132,6 +144,7 @@ export async function accessIdentity(
       (char) => char.charCodeAt(0),
     );
     const message = new TextEncoder().encode(parts[0] + "." + parts[1]);
+    stage = "signature_verify";
     return (await crypto.subtle.verify(
       "RSASSA-PKCS1-v1_5",
       key,
@@ -140,7 +153,19 @@ export async function accessIdentity(
     ))
       ? claims.sub
       : reject("invalid_signature");
-  } catch {
-    return reject("jwt_validation_exception");
+  } catch (error) {
+    const kind =
+      error instanceof Error &&
+      [
+        "TypeError",
+        "DataError",
+        "OperationError",
+        "SyntaxError",
+        "InvalidAccessError",
+        "NotSupportedError",
+      ].includes(error.name)
+        ? error.name
+        : "Error";
+    return reject(`jwt_${stage}_${kind}`);
   }
 }
