@@ -1,6 +1,4 @@
-import {
-  parseWorkflow,
-} from "@actions/workflow-parser";
+import { parseWorkflow } from "@actions/workflow-parser";
 import { createActionsAdapter } from "@code/workflow-core/adapters";
 import { Parser } from "web-tree-sitter";
 const validate = createActionsAdapter({ parseWorkflow });
