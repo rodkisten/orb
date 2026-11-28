@@ -121,7 +121,14 @@ export async function accessIdentity(
     stage = "key_import";
     const key = await crypto.subtle.importKey(
       "jwk",
-      { kty: "RSA", n: jwk.n, e: jwk.e, alg: "RS256", ext: true, key_ops: ["verify"] },
+      {
+        kty: "RSA",
+        n: jwk.n,
+        e: jwk.e,
+        alg: "RS256",
+        ext: true,
+        key_ops: ["verify"],
+      },
       { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
       false,
       ["verify"],
@@ -147,7 +154,18 @@ export async function accessIdentity(
       ? claims.sub
       : reject("invalid_signature");
   } catch (error) {
-    const kind = error instanceof Error && ["TypeError", "DataError", "OperationError", "SyntaxError", "InvalidAccessError", "NotSupportedError"].includes(error.name) ? error.name : "Error";
+    const kind =
+      error instanceof Error &&
+      [
+        "TypeError",
+        "DataError",
+        "OperationError",
+        "SyntaxError",
+        "InvalidAccessError",
+        "NotSupportedError",
+      ].includes(error.name)
+        ? error.name
+        : "Error";
     return reject(`jwt_${stage}_${kind}`);
   }
 }
