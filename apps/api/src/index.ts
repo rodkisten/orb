@@ -1097,7 +1097,7 @@ export default {
         // Only accept a signed Access assertion for the dedicated MCP audience.
         // Never accept a browser cookie or the Studio application's audience.
         const assertion = request.headers.get("cf-access-jwt-assertion");
-        let authReason = 'missing_mcp_audience_or_assertion';
+        let authReason = "missing_mcp_audience_or_assertion";
         const identity =
           env.CF_ACCESS_MCP_AUD && assertion
             ? await accessIdentity(
@@ -1108,11 +1108,23 @@ export default {
                   CF_ACCESS_TEAM_DOMAIN: env.CF_ACCESS_TEAM_DOMAIN,
                   CF_ACCESS_AUD: env.CF_ACCESS_MCP_AUD,
                 },
-                (reason) => { authReason = reason; },
+                (reason) => {
+                  authReason = reason;
+                },
               )
             : null;
         if (!configured || (!bearer && !identity)) {
-          console.warn(JSON.stringify({ component: 'orb.mcp.auth', reason: !configured ? 'dispatch_token_not_configured' : authReason, assertionPresent: !!assertion, audienceConfigured: !!env.CF_ACCESS_MCP_AUD, teamConfigured: !!env.CF_ACCESS_TEAM_DOMAIN }));
+          console.warn(
+            JSON.stringify({
+              component: "orb.mcp.auth",
+              reason: !configured
+                ? "dispatch_token_not_configured"
+                : authReason,
+              assertionPresent: !!assertion,
+              audienceConfigured: !!env.CF_ACCESS_MCP_AUD,
+              teamConfigured: !!env.CF_ACCESS_TEAM_DOMAIN,
+            }),
+          );
           return Response.json(
             { error: "Unauthorized" },
             {
