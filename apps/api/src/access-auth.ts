@@ -56,10 +56,12 @@ function validTeamDomain(value: string): string | null {
 export async function accessIdentity(
   request: Request,
   env: AccessBindings,
+  report: (reason: string) => void = () => {},
 ): Promise<string | null> {
+  const reject = (reason: string): null => { report(reason); return null; };
   const issuer = validTeamDomain(env.CF_ACCESS_TEAM_DOMAIN ?? "");
   const audience = env.CF_ACCESS_AUD;
-  if (!issuer || !audience) return null;
+  if (!issuer || !audience) return reject('missing_or_invalid_config');
 
   // Service bindings may omit the Access assertion header. The browser's
   // application cookie is also a signed JWT and must pass identical checks.
@@ -70,33 +72,34 @@ export async function accessIdentity(
     .find((part) => part.startsWith("CF_Authorization="))
     ?.slice("CF_Authorization=".length);
   const jwt = request.headers.get("cf-access-jwt-assertion") || cookie;
-  if (!jwt || jwt.length > 8192) return null;
+  if (!jwt || jwt.length > 8192) return reject('missing_or_oversized_assertion');
   const parts = jwt.split(".");
-  if (parts.length !== 3) return null;
+  if (parts.length !== 3) return reject('malformed_assertion');
 
   try {
     const header = decodePart(parts[0]) as { alg?: string; kid?: string };
     const claims = decodePart(parts[1]) as Claims;
-    if (header.alg !== "RS256" || !header.kid || !claims.sub) return null;
+    if (header.alg !== "RS256" || !header.kid) return reject('invalid_header');
+    if (!claims.sub) return reject('missing_subject');
     if (
       claims.iss !== issuer ||
       !(Array.isArray(claims.aud)
         ? claims.aud.includes(audience)
         : claims.aud === audience)
     )
-      return null;
+      return reject(claims.iss !== issuer ? 'issuer_mismatch' : 'audience_mismatch');
     const now = Math.floor(Date.now() / 1000);
     if (
       !claims.exp ||
       claims.exp <= now ||
       (claims.nbf !== undefined && claims.nbf > now)
     )
-      return null;
+      return reject('invalid_time_claims');
 
     const response = await fetch(issuer + "/cdn-cgi/access/certs", {
       redirect: "error",
     });
-    if (!response.ok) return null;
+    if (!response.ok) return reject('jwks_http_error');
     const keys = (await response.json()) as { keys?: JwkKey[] };
     const jwk = keys.keys?.find(
       (key) =>
@@ -105,7 +108,7 @@ export async function accessIdentity(
         (!key.use || key.use === "sig") &&
         (!key.alg || key.alg === "RS256"),
     );
-    if (!jwk) return null;
+    if (!jwk) return reject('signing_key_not_found');
     const key = await crypto.subtle.importKey(
       "jwk",
       jwk,
@@ -130,8 +133,8 @@ export async function accessIdentity(
       message,
     ))
       ? claims.sub
-      : null;
+      : reject('invalid_signature');
   } catch {
-    return null;
+    return reject('jwt_validation_exception');
   }
 }
