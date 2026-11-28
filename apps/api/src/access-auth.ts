@@ -78,6 +78,10 @@ export async function accessIdentity(
       : reject("missing_subject");
   } catch (error) {
     if (error instanceof errors.JOSEError) return reject(error.code);
-    return reject(error instanceof TypeError ? "jwks_fetch_type_error" : "jwt_validation_exception");
+    return reject(
+      error instanceof TypeError
+        ? "jwks_fetch_type_error"
+        : "jwt_validation_exception",
+    );
   }
 }
