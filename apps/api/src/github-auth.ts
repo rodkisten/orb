@@ -30,9 +30,40 @@ export async function githubToken(env: GitHubCredentials): Promise<string> {
       privateKey: env.ORB_GITHUB_APP_PRIVATE_KEY!.replace(/\\n/g, "\n"),
       installationId,
     });
-    const result = await auth({ type: "installation" });
-    return result.token;
+    try {
+      const result = await auth({ type: "installation" });
+      return result.token;
+    } catch (error) {
+      const status =
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        typeof error.status === "number"
+          ? error.status
+          : null;
+      console.warn(
+        JSON.stringify({
+          component: "orb.github.auth",
+          reason: "installation_token_failed",
+          status,
+          errorType: error instanceof TypeError ? "TypeError" : "Error",
+          pemFormat: /-----BEGIN (?:RSA )?PRIVATE KEY-----/.test(
+            env.ORB_GITHUB_APP_PRIVATE_KEY!,
+          ),
+        }),
+      );
+      throw error;
+    }
   }
   if (mode === "token") return env.ORB_CI_READ_TOKEN!;
+  console.warn(
+    JSON.stringify({
+      component: "orb.github.auth",
+      reason: "missing_credentials",
+      appIdPresent: !!env.ORB_GITHUB_APP_ID,
+      installationIdPresent: !!env.ORB_GITHUB_APP_INSTALLATION_ID,
+      privateKeyPresent: !!env.ORB_GITHUB_APP_PRIVATE_KEY,
+    }),
+  );
   throw Error("GitHub credentials unavailable");
 }
