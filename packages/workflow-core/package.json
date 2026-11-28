@@ -7,6 +7,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "yaml": "^2.8.1"
+    "@code/workflow-core": "file:../../vendor/code-workflow-core-0.2.0.tgz"
   }
 }
